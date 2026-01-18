@@ -34,7 +34,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${dmSans.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+      <body className={`${dmSans.variable} ${jetbrainsMono.variable} font-sans antialiased`} suppressHydrationWarning>
         <QueryProvider>
           <SupabaseSyncProvider>
             <ThemeProvider>

@@ -47,6 +47,7 @@ interface RunningTabState {
   // Tab management
   initializeBalance: (amount: number, initializedBy: string | null) => void;
   adjustBalance: (newBalance: number, reason: string, adjustedBy: string | null) => void;
+  addToBalance: (amount: number, description: string, addedBy: string | null) => void;
 
   // Expense CRUD
   addExpense: (name: string, amount: number, createdBy: string | null) => string;
@@ -153,6 +154,49 @@ export const useRunningTabStore = create<RunningTabState>()(
         // Sync to Supabase for cross-device sync
         updateTabBalance(currentTab.id, newBalance).catch((error) => {
           console.error("[Store] Failed to sync balance adjustment to Supabase:", error);
+        });
+        upsertHistory([historyEntry]).catch((error) => {
+          console.error("[Store] Failed to sync history entry to Supabase:", error);
+        });
+      },
+
+      addToBalance: (amount, description, addedBy) => {
+        const currentTab = get().tab;
+        if (!currentTab) return;
+
+        const now = new Date().toISOString();
+        const historyId = generateId();
+        const newBalance = currentTab.currentBalance + amount;
+
+        // Update balance
+        set((state) => ({
+          tab: state.tab
+            ? {
+                ...state.tab,
+                currentBalance: newBalance,
+                updatedAt: now,
+              }
+            : null,
+        }));
+
+        // Add history entry with type "add"
+        const historyEntry: TabHistoryEntry = {
+          id: historyId,
+          type: "add",
+          amount,
+          description: description || "Balance added",
+          relatedExpenseId: null,
+          createdBy: addedBy,
+          createdAt: now,
+        };
+
+        set((state) => ({
+          history: [historyEntry, ...state.history],
+        }));
+
+        // Sync to Supabase for cross-device sync
+        updateTabBalance(currentTab.id, newBalance).catch((error) => {
+          console.error("[Store] Failed to sync balance addition to Supabase:", error);
         });
         upsertHistory([historyEntry]).catch((error) => {
           console.error("[Store] Failed to sync history entry to Supabase:", error);

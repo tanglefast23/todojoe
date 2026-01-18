@@ -47,6 +47,7 @@ export default function RunningTabPage() {
   const adjustBalance = useRunningTabStore((state) => state.adjustBalance);
   const addExpense = useRunningTabStore((state) => state.addExpense);
   const addBulkExpenses = useRunningTabStore((state) => state.addBulkExpenses);
+  const addToBalance = useRunningTabStore((state) => state.addToBalance);
   const approveExpense = useRunningTabStore((state) => state.approveExpense);
   const rejectExpense = useRunningTabStore((state) => state.rejectExpense);
   const setAttachment = useRunningTabStore((state) => state.setAttachment);
@@ -86,6 +87,10 @@ export default function RunningTabPage() {
 
   const handleAddBulkExpenses = (entries: { name: string; amount: number }[]) => {
     addBulkExpenses(entries, activeOwnerId);
+  };
+
+  const handleTopUp = (amount: number, description: string) => {
+    addToBalance(amount, description, activeOwnerId);
   };
 
   const handleApprove = (id: string) => {
@@ -188,6 +193,7 @@ export default function RunningTabPage() {
                 <AddExpenseModal
                   onAddExpense={handleAddExpense}
                   onAddBulkExpenses={handleAddBulkExpenses}
+                  onTopUp={handleTopUp}
                 />
               </div>
 
