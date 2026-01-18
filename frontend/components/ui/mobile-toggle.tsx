@@ -1,8 +1,8 @@
 "use client";
 
-import { memo, useState, useEffect, useCallback } from "react";
+import { memo, useCallback } from "react";
 import { Monitor, Smartphone } from "lucide-react";
-import { useSettingsStore } from "@/stores/settingsStore";
+import { useMobileMode } from "@/hooks/useMobileMode";
 import { cn } from "@/lib/utils";
 import { playClickSound } from "@/lib/audio";
 
@@ -16,24 +16,14 @@ export const MobileToggle = memo(function MobileToggle({
   className,
   size = "md",
 }: MobileToggleProps) {
-  // Prevent hydration mismatch
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  const mobileMode = useSettingsStore((state) => state.mobileMode);
-  const setMobileMode = useSettingsStore((state) => state.setMobileMode);
+  const { isMobile, isMounted, setMobileMode } = useMobileMode();
 
   const handleToggle = useCallback(() => {
     playClickSound();
-    // Simply toggle between mobile and desktop - no navigation
-    setMobileMode(mobileMode === "mobile" ? "desktop" : "mobile");
-  }, [mobileMode, setMobileMode]);
-
-  // Use default "desktop" on server, actual value after mount
-  const displayMode = isMounted ? mobileMode : "desktop";
-  const isMobile = displayMode === "mobile";
+    // Toggle to the opposite of what's currently displayed
+    // This overrides auto mode and sets a firm preference
+    setMobileMode(isMobile ? "desktop" : "mobile");
+  }, [isMobile, setMobileMode]);
 
   return (
     <button

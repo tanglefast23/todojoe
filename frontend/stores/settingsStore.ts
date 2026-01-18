@@ -42,7 +42,7 @@ export const useSettingsStore = create<SettingsState>()(
       refreshIntervalSeconds: 30,
       metricsMode: "simple",
       currency: "USD",
-      mobileMode: "desktop",
+      mobileMode: "auto",
       activeView: "home",
       riskFreeRate: 4.5, // Fixed at 4.5% as per requirements
 

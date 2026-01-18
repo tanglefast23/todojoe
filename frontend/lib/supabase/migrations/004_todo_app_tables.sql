@@ -1,14 +1,17 @@
 -- TODO App Tables Migration
 -- Run this in Supabase SQL Editor to add tables for the TODO app
+-- NOTE: This migration references todo_owners table (created in migration 006)
+-- Run migration 006 FIRST, then run this migration
 
 -- Tasks table
+-- NOTE: References todo_owners, NOT owners (investment tracker uses owners)
 CREATE TABLE IF NOT EXISTS tasks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   priority TEXT NOT NULL DEFAULT 'regular' CHECK (priority IN ('regular', 'urgent')),
-  created_by UUID REFERENCES owners(id) ON DELETE SET NULL,
+  created_by UUID REFERENCES todo_owners(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  completed_by UUID REFERENCES owners(id) ON DELETE SET NULL,
+  completed_by UUID REFERENCES todo_owners(id) ON DELETE SET NULL,
   completed_at TIMESTAMPTZ,
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed')),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -19,7 +22,7 @@ CREATE TABLE IF NOT EXISTS running_tab (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   initial_balance NUMERIC(15, 0) NOT NULL DEFAULT 0,
   current_balance NUMERIC(15, 0) NOT NULL DEFAULT 0,
-  initialized_by UUID REFERENCES owners(id) ON DELETE SET NULL,
+  initialized_by UUID REFERENCES todo_owners(id) ON DELETE SET NULL,
   initialized_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -29,9 +32,9 @@ CREATE TABLE IF NOT EXISTS expenses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   amount NUMERIC(15, 0) NOT NULL,
-  created_by UUID REFERENCES owners(id) ON DELETE SET NULL,
+  created_by UUID REFERENCES todo_owners(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  approved_by UUID REFERENCES owners(id) ON DELETE SET NULL,
+  approved_by UUID REFERENCES todo_owners(id) ON DELETE SET NULL,
   approved_at TIMESTAMPTZ,
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
   attachment_url TEXT,
@@ -45,14 +48,14 @@ CREATE TABLE IF NOT EXISTS tab_history (
   amount NUMERIC(15, 0) NOT NULL,
   description TEXT,
   related_expense_id UUID REFERENCES expenses(id) ON DELETE SET NULL,
-  created_by UUID REFERENCES owners(id) ON DELETE SET NULL,
+  created_by UUID REFERENCES todo_owners(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- App Permissions (extends owner capabilities)
 CREATE TABLE IF NOT EXISTS app_permissions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  owner_id UUID NOT NULL REFERENCES owners(id) ON DELETE CASCADE UNIQUE,
+  owner_id UUID NOT NULL REFERENCES todo_owners(id) ON DELETE CASCADE UNIQUE,
   can_complete_tasks BOOLEAN DEFAULT false,
   can_approve_expenses BOOLEAN DEFAULT false,
   updated_at TIMESTAMPTZ DEFAULT NOW()
