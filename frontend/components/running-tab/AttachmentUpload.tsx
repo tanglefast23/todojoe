@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { ImagePlus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { uploadAttachment } from "@/lib/supabase/queries/storage";
 
 interface AttachmentUploadProps {
   expenseId: string;
@@ -11,16 +12,9 @@ interface AttachmentUploadProps {
 
 /**
  * Attachment upload component.
- *
- * For now, this is a placeholder that simulates upload.
- * In production, this should:
- * 1. Upload to Supabase Storage using expenseId as path prefix
- * 2. Get back the public URL
- * 3. Call onUpload with the URL
+ * Uploads files to Supabase Storage and returns the public URL.
  */
 export function AttachmentUpload({ expenseId, onUpload }: AttachmentUploadProps) {
-  // expenseId will be used as the storage path prefix when Supabase integration is added
-  void expenseId;
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -49,15 +43,9 @@ export function AttachmentUpload({ expenseId, onUpload }: AttachmentUploadProps)
     setIsUploading(true);
 
     try {
-      // TODO: Replace with actual Supabase Storage upload
-      // For now, create a local object URL as placeholder
-      const localUrl = URL.createObjectURL(file);
-
-      // Simulate upload delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // In production, this would be the Supabase public URL
-      onUpload(localUrl);
+      // Upload to Supabase Storage
+      const publicUrl = await uploadAttachment(file, expenseId);
+      onUpload(publicUrl);
 
       // Clear the input so the same file can be selected again
       if (fileInputRef.current) {

@@ -19,6 +19,7 @@ import {
 } from "@/lib/supabase/queries/expenses";
 import { upsertTab, updateTabBalance } from "@/lib/supabase/queries/runningTab";
 import { upsertHistory } from "@/lib/supabase/queries/tabHistory";
+import { deleteAttachments } from "@/lib/supabase/queries/storage";
 
 const RUNNING_TAB_STORAGE_KEY = "running-tab-storage";
 
@@ -381,12 +382,27 @@ export const useRunningTabStore = create<RunningTabState>()(
       },
 
       clearCompletedExpenses: () => {
+        // Collect attachment URLs from completed expenses before removing them
+        const completedExpenses = get().expenses.filter(
+          (e) => e.status === "approved" || e.status === "rejected"
+        );
+        const attachmentUrls = completedExpenses
+          .map((e) => e.attachmentUrl)
+          .filter((url): url is string => url !== null && url.length > 0);
+
         // Keep only pending expenses, remove approved and rejected
         set((state) => ({
           expenses: state.expenses.filter((e) => e.status === "pending"),
         }));
 
-        // Also delete from Supabase for cross-device sync
+        // Delete attachments from Supabase Storage
+        if (attachmentUrls.length > 0) {
+          deleteAttachments(attachmentUrls).catch((error) => {
+            console.error("[Store] Failed to delete attachments from Storage:", error);
+          });
+        }
+
+        // Also delete expenses from Supabase for cross-device sync
         deleteCompletedExpenses().catch((error) => {
           console.error("[Store] Failed to delete completed expenses from Supabase:", error);
         });
