@@ -1,11 +1,13 @@
 "use client";
 
 import { useMemo, useState, useRef } from "react";
+import { ChevronDown, CheckCheck, XIcon } from "lucide-react";
 import type { Expense, ExpenseWithOwner } from "@/types/runningTab";
 import { ExpenseItem } from "./ExpenseItem";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -20,7 +22,9 @@ interface ExpenseListProps {
   owners: { id: string; name: string }[];
   canApprove: boolean;
   onApprove: (id: string) => void;
+  onApproveAll?: () => void;
   onReject: (id: string, reason: string) => void;
+  onRejectAll?: (reason: string) => void;
   onAttachment: (id: string, url: string) => void;
 }
 
@@ -29,15 +33,26 @@ export function ExpenseList({
   owners,
   canApprove,
   onApprove,
+  onApproveAll,
   onReject,
+  onRejectAll,
   onAttachment,
 }: ExpenseListProps) {
-  // Rejection reason dialog state
+  // Collapsible section state - Approved and Rejected collapsed by default
+  const [approvedExpanded, setApprovedExpanded] = useState(false);
+  const [rejectedExpanded, setRejectedExpanded] = useState(false);
+
+  // Rejection reason dialog state (single expense)
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectExpenseId, setRejectExpenseId] = useState<string | null>(null);
   const [rejectExpenseName, setRejectExpenseName] = useState<string>("");
   const [rejectReason, setRejectReason] = useState("");
   const rejectReasonRef = useRef<HTMLInputElement>(null);
+
+  // Reject all dialog state
+  const [rejectAllDialogOpen, setRejectAllDialogOpen] = useState(false);
+  const [rejectAllReason, setRejectAllReason] = useState("");
+  const rejectAllReasonRef = useRef<HTMLInputElement>(null);
 
   // Handle reject button click - opens dialog
   const handleRejectClick = (id: string) => {
@@ -103,8 +118,37 @@ export function ExpenseList({
         {pending.length > 0 && (
           <Card className="border-2 border-amber-400/30 bg-gradient-to-r from-amber-500/5 to-yellow-500/5">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-500">
-                Pending ({pending.length})
+              <CardTitle className="text-lg text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-500 flex items-center justify-between">
+                <span>Pending ({pending.length})</span>
+                {canApprove && pending.length > 1 && (
+                  <div className="flex items-center gap-2">
+                    {onApproveAll && (
+                      <button
+                        onClick={onApproveAll}
+                        className="p-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 transition-colors"
+                        title="Approve all pending expenses"
+                      >
+                        <CheckCheck className="h-5 w-5" />
+                      </button>
+                    )}
+                    {onRejectAll && (
+                      <button
+                        onClick={() => {
+                          setRejectAllReason("");
+                          setRejectAllDialogOpen(true);
+                          setTimeout(() => rejectAllReasonRef.current?.focus(), 50);
+                        }}
+                        className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors"
+                        title="Reject all pending expenses"
+                      >
+                        <div className="flex">
+                          <XIcon className="h-4 w-4" />
+                          <XIcon className="h-4 w-4 -ml-2" />
+                        </div>
+                      </button>
+                    )}
+                  </div>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -119,43 +163,65 @@ export function ExpenseList({
           </Card>
         )}
 
-        {/* Approved Section */}
+        {/* Approved Section - Collapsible */}
         {approved.length > 0 && (
           <Card className="border-2 border-emerald-400/30 bg-gradient-to-r from-emerald-500/5 to-green-500/5">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-500">
-                Approved ({approved.length})
+            <CardHeader
+              className="pb-3 cursor-pointer select-none"
+              onClick={() => setApprovedExpanded(!approvedExpanded)}
+            >
+              <CardTitle className="text-lg text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-500 flex items-center justify-between">
+                <span>Approved ({approved.length})</span>
+                <ChevronDown
+                  className={cn(
+                    "h-5 w-5 text-emerald-400 transition-transform duration-200",
+                    approvedExpanded && "rotate-180"
+                  )}
+                />
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <ExpenseSection
-                expenses={approved}
-                canApprove={canApprove}
-                onApprove={onApprove}
-                onReject={handleRejectClick}
-                onAttachment={onAttachment}
-              />
-            </CardContent>
+            {approvedExpanded && (
+              <CardContent>
+                <ExpenseSection
+                  expenses={approved}
+                  canApprove={canApprove}
+                  onApprove={onApprove}
+                  onReject={handleRejectClick}
+                  onAttachment={onAttachment}
+                />
+              </CardContent>
+            )}
           </Card>
         )}
 
-        {/* Rejected Section */}
+        {/* Rejected Section - Collapsible */}
         {rejected.length > 0 && (
           <Card className="border-2 border-red-400/30 bg-gradient-to-r from-red-500/5 to-rose-500/5">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-rose-500">
-                Rejected ({rejected.length})
+            <CardHeader
+              className="pb-3 cursor-pointer select-none"
+              onClick={() => setRejectedExpanded(!rejectedExpanded)}
+            >
+              <CardTitle className="text-lg text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-rose-500 flex items-center justify-between">
+                <span>Rejected ({rejected.length})</span>
+                <ChevronDown
+                  className={cn(
+                    "h-5 w-5 text-red-400 transition-transform duration-200",
+                    rejectedExpanded && "rotate-180"
+                  )}
+                />
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <ExpenseSection
-                expenses={rejected}
-                canApprove={canApprove}
-                onApprove={onApprove}
-                onReject={handleRejectClick}
-                onAttachment={onAttachment}
-              />
-            </CardContent>
+            {rejectedExpanded && (
+              <CardContent>
+                <ExpenseSection
+                  expenses={rejected}
+                  canApprove={canApprove}
+                  onApprove={onApprove}
+                  onReject={handleRejectClick}
+                  onAttachment={onAttachment}
+                />
+              </CardContent>
+            )}
           </Card>
         )}
       </div>
@@ -195,6 +261,57 @@ export function ExpenseList({
                 disabled={!rejectReason.trim()}
               >
                 Reject Expense
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject All Dialog */}
+      <Dialog open={rejectAllDialogOpen} onOpenChange={setRejectAllDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reject All Expenses</DialogTitle>
+            <DialogDescription>
+              This will reject all {pending.length} pending expenses with the same reason.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (rejectAllReason.trim() && onRejectAll) {
+                onRejectAll(rejectAllReason.trim());
+                setRejectAllDialogOpen(false);
+                setRejectAllReason("");
+              }
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <label className="text-sm font-medium">Reason</label>
+              <Input
+                ref={rejectAllReasonRef}
+                type="text"
+                value={rejectAllReason}
+                onChange={(e) => setRejectAllReason(e.target.value)}
+                placeholder="e.g., Budget exceeded, Not approved this month"
+                className="mt-1"
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setRejectAllDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="destructive"
+                disabled={!rejectAllReason.trim()}
+              >
+                Reject All ({pending.length})
               </Button>
             </DialogFooter>
           </form>

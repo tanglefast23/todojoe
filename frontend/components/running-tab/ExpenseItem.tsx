@@ -33,6 +33,101 @@ const NUMBER_COLORS = [
   "from-fuchsia-500 to-pink-500",
 ];
 
+// Icon can be either an emoji string or cat image info
+type ExpenseIcon =
+  | { type: "emoji"; value: string }
+  | { type: "cat"; cat: "ivory" | "tom" | "both" }
+  | null;
+
+// Get icon/emoji for expense based on name
+function getExpenseIcon(name: string): ExpenseIcon {
+  const lowerName = name.toLowerCase();
+
+  // Cat-related expenses - use actual cat photos
+  if (lowerName.includes("tom and ivory") || lowerName.includes("both")) {
+    return { type: "cat", cat: "both" };
+  }
+  if (lowerName.includes("ivory")) {
+    return { type: "cat", cat: "ivory" };
+  }
+  if (lowerName.includes("tom")) {
+    return { type: "cat", cat: "tom" };
+  }
+
+  // Kia Top Up - white minivan
+  if (lowerName.includes("kia")) {
+    return { type: "emoji", value: "🚐" };
+  }
+
+  // Quick shortcut expenses
+  if (lowerName.includes("groceries") || lowerName.includes("grocery")) {
+    return { type: "emoji", value: "🛒" };
+  }
+  if (lowerName.includes("gas") || lowerName.includes("fuel") || lowerName.includes("petrol")) {
+    return { type: "emoji", value: "⛽" };
+  }
+  if (lowerName.includes("bubble tea") || lowerName.includes("boba")) {
+    return { type: "emoji", value: "🧋" };
+  }
+  if (lowerName.includes("coffee") || lowerName.includes("café") || lowerName.includes("cafe")) {
+    return { type: "emoji", value: "☕" };
+  }
+  if (lowerName.includes("many drinks")) {
+    return { type: "emoji", value: "🍹🍸🍺" };
+  }
+  if (lowerName.includes("drinks") || lowerName.includes("cocktail") || lowerName.includes("alcohol")) {
+    return { type: "emoji", value: "🍹" };
+  }
+  if (lowerName.includes("food") || lowerName.includes("lunch") || lowerName.includes("dinner") || lowerName.includes("breakfast")) {
+    return { type: "emoji", value: "🍜" };
+  }
+  if (lowerName.includes("parking") || lowerName.includes("park")) {
+    return { type: "emoji", value: "🅿️" };
+  }
+
+  // Vet (from cat expenses)
+  if (lowerName.includes("vet")) {
+    return { type: "emoji", value: "💉" };
+  }
+  // Grooming (from cat expenses)
+  if (lowerName.includes("grooming") || lowerName.includes("groom")) {
+    return { type: "emoji", value: "✂️" };
+  }
+
+  return null;
+}
+
+// Component to render expense icon (emoji or cat image)
+function ExpenseIconDisplay({ icon }: { icon: ExpenseIcon }) {
+  if (!icon) return null;
+
+  if (icon.type === "emoji") {
+    return (
+      <span className="text-lg" role="img" aria-label="expense icon">
+        {icon.value}
+      </span>
+    );
+  }
+
+  if (icon.type === "cat") {
+    if (icon.cat === "both") {
+      return (
+        <div className="flex -space-x-1">
+          <img src="/ivory.PNG" alt="Ivory" className="w-6 h-7 rounded object-contain" />
+          <img src="/tom.png" alt="Tom" className="w-6 h-7 rounded object-contain" />
+        </div>
+      );
+    }
+    const imgSrc = icon.cat === "ivory" ? "/ivory.PNG" : "/tom.png";
+    const altText = icon.cat === "ivory" ? "Ivory" : "Tom";
+    return (
+      <img src={imgSrc} alt={altText} className="w-7 h-8 rounded object-contain" />
+    );
+  }
+
+  return null;
+}
+
 const statusConfig: Record<
   ExpenseStatus,
   { label: string; variant: "default" | "secondary" | "destructive" | "outline"; className?: string }
@@ -69,6 +164,7 @@ export function ExpenseItem({
   const config = statusConfig[expense.status];
   const isPending = expense.status === "pending";
   const numberColor = itemNumber ? NUMBER_COLORS[(itemNumber - 1) % NUMBER_COLORS.length] : NUMBER_COLORS[0];
+  const expenseIcon = getExpenseIcon(expense.name);
 
   // Check if attachment is a PDF
   const isPdf = expense.attachmentUrl?.toLowerCase().includes(".pdf");
@@ -99,10 +195,14 @@ export function ExpenseItem({
       {/* Main Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
+          <ExpenseIconDisplay icon={expenseIcon} />
           <h4 className="font-medium text-sm truncate">{expense.name}</h4>
-          <Badge variant={config.variant} className={config.className}>
-            {config.label}
-          </Badge>
+          {/* Only show status badge for non-pending expenses */}
+          {expense.status !== "pending" && (
+            <Badge variant={config.variant} className={config.className}>
+              {config.label}
+            </Badge>
+          )}
         </div>
 
         <p className="text-lg font-semibold mt-1">{formatVND(expense.amount)}</p>
@@ -190,8 +290,7 @@ export function ExpenseItem({
           <>
             <Button
               variant="outline"
-              size="icon-sm"
-              className="text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950"
+              className="h-9 w-9 p-0 rounded-lg text-green-600 hover:text-green-700 hover:bg-green-500/20 border-green-500/50"
               onClick={() => onApprove(expense.id)}
               title="Approve expense"
             >
@@ -200,8 +299,7 @@ export function ExpenseItem({
             </Button>
             <Button
               variant="outline"
-              size="icon-sm"
-              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+              className="h-9 w-9 p-0 rounded-lg text-red-600 hover:text-red-700 hover:bg-red-500/20 border-red-500/50"
               onClick={() => onReject(expense.id)}
               title="Reject expense"
             >

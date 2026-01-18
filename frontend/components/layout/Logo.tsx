@@ -8,25 +8,29 @@ interface LogoProps {
   size?: "sm" | "md" | "lg";
 }
 
-const sizes = {
-  sm: { icon: 28, text: "text-xl" },
-  md: { icon: 38, text: "text-3xl" },
-  lg: { icon: 48, text: "text-4xl" },
-};
-
 /** Thanh Khong To Do logo - minimalist notebook icon */
 export function Logo({ className, showText = true, size = "md" }: LogoProps) {
-  const { icon, text } = sizes[size];
+  // Responsive icon sizes
+  const iconSizes = {
+    sm: "w-6 h-6 md:w-7 md:h-7",
+    md: "w-5 h-5 md:w-9 md:h-9",
+    lg: "w-8 h-8 md:w-12 md:h-12",
+  };
+
+  // Responsive text sizes
+  const textSizes = {
+    sm: "text-xs md:text-xl",
+    md: "text-xs md:text-3xl",
+    lg: "text-sm md:text-4xl",
+  };
 
   return (
-    <div className={cn("flex items-center gap-3", className)}>
+    <div className={cn("flex flex-col md:flex-row items-center gap-0 md:gap-3", className)}>
       <svg
-        width={icon}
-        height={icon}
         viewBox="0 0 40 40"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className="flex-shrink-0"
+        className={cn("flex-shrink-0", iconSizes[size])}
       >
         {/* Gradient definitions */}
         <defs>
@@ -86,7 +90,7 @@ export function Logo({ className, showText = true, size = "md" }: LogoProps) {
         <span
           className={cn(
             "whitespace-nowrap text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400",
-            text
+            textSizes[size]
           )}
           style={{
             fontWeight: 900,

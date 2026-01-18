@@ -56,6 +56,8 @@ interface RunningTabState {
     createdBy: string | null
   ) => string[];
   approveExpense: (id: string, approvedBy: string | null) => void;
+  approveAllPendingExpenses: (approvedBy: string | null) => void;
+  rejectAllPendingExpenses: (reason: string, rejectedBy: string | null) => void;
   rejectExpense: (id: string, reason: string, approvedBy: string | null) => void;
   setAttachment: (expenseId: string, url: string) => void;
   deleteExpense: (id: string) => void;
@@ -268,7 +270,11 @@ export const useRunningTabStore = create<RunningTabState>()(
 
         const now = new Date().toISOString();
         const historyId = generateId();
-        const newBalance = (currentTab?.currentBalance ?? 0) - expense.amount;
+
+        // Check if this is a top-up (adds money) vs expense (subtracts money)
+        const isTopUp = expense.name === "Kia Top Up";
+        const balanceChange = isTopUp ? expense.amount : -expense.amount;
+        const newBalance = (currentTab?.currentBalance ?? 0) + balanceChange;
 
         // Update expense status
         set((state) => ({
@@ -285,7 +291,7 @@ export const useRunningTabStore = create<RunningTabState>()(
           ),
         }));
 
-        // Subtract from balance
+        // Update balance (add for top-up, subtract for expense)
         set((state) => {
           if (!state.tab) return state;
           return {
@@ -300,8 +306,8 @@ export const useRunningTabStore = create<RunningTabState>()(
         // Add history entry
         const historyEntry: TabHistoryEntry = {
           id: historyId,
-          type: "expense_approved",
-          amount: -expense.amount,
+          type: isTopUp ? "add" : "expense_approved",
+          amount: balanceChange,
           description: expense.name,
           relatedExpenseId: id,
           createdBy: approvedBy,
@@ -331,6 +337,24 @@ export const useRunningTabStore = create<RunningTabState>()(
         upsertHistory([historyEntry]).catch((error) => {
           console.error("[Store] Failed to sync history entry to Supabase:", error);
         });
+      },
+
+      approveAllPendingExpenses: (approvedBy) => {
+        const pendingExpenses = get().expenses.filter((e) => e.status === "pending");
+
+        // Approve each pending expense
+        for (const expense of pendingExpenses) {
+          get().approveExpense(expense.id, approvedBy);
+        }
+      },
+
+      rejectAllPendingExpenses: (reason, rejectedBy) => {
+        const pendingExpenses = get().expenses.filter((e) => e.status === "pending");
+
+        // Reject each pending expense with the same reason
+        for (const expense of pendingExpenses) {
+          get().rejectExpense(expense.id, reason, rejectedBy);
+        }
       },
 
       rejectExpense: (id, reason, approvedBy) => {

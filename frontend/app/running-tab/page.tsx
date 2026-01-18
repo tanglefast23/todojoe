@@ -10,9 +10,10 @@ import { usePermissionsStore } from "@/stores/permissionsStore";
 import { BalanceDisplay, formatVND } from "@/components/running-tab/BalanceDisplay";
 import { InitializeBalanceForm } from "@/components/running-tab/InitializeBalanceForm";
 import { AddExpenseModal } from "@/components/running-tab/AddExpenseModal";
+import { ExpenseShortcuts } from "@/components/running-tab/ExpenseShortcuts";
 import { ExpenseList } from "@/components/running-tab/ExpenseList";
 import { TabHistory } from "@/components/running-tab/TabHistory";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -49,6 +50,8 @@ export default function RunningTabPage() {
   const addBulkExpenses = useRunningTabStore((state) => state.addBulkExpenses);
   const addToBalance = useRunningTabStore((state) => state.addToBalance);
   const approveExpense = useRunningTabStore((state) => state.approveExpense);
+  const approveAllPendingExpenses = useRunningTabStore((state) => state.approveAllPendingExpenses);
+  const rejectAllPendingExpenses = useRunningTabStore((state) => state.rejectAllPendingExpenses);
   const rejectExpense = useRunningTabStore((state) => state.rejectExpense);
   const setAttachment = useRunningTabStore((state) => state.setAttachment);
   const clearCompletedExpenses = useRunningTabStore((state) => state.clearCompletedExpenses);
@@ -61,6 +64,9 @@ export default function RunningTabPage() {
 
   // Clear all modal state (admin only)
   const [clearAllModalOpen, setClearAllModalOpen] = useState(false);
+
+  // Prefilled expense name from shortcuts
+  const [prefilledExpenseName, setPrefilledExpenseName] = useState("");
 
   // Permissions
   const canApproveExpenses = usePermissionsStore((state) => state.canApproveExpenses);
@@ -95,6 +101,14 @@ export default function RunningTabPage() {
 
   const handleApprove = (id: string) => {
     approveExpense(id, activeOwnerId);
+  };
+
+  const handleApproveAll = () => {
+    approveAllPendingExpenses(activeOwnerId);
+  };
+
+  const handleRejectAll = (reason: string) => {
+    rejectAllPendingExpenses(reason, activeOwnerId);
   };
 
   const handleReject = (id: string, reason: string) => {
@@ -158,8 +172,8 @@ export default function RunningTabPage() {
     <div className="flex flex-col min-h-screen">
       <Header />
 
-      <main className="flex-1 p-6">
-        <div className="max-w-3xl mx-auto space-y-6">
+      <main className="flex-1 px-4 py-4 sm:px-6">
+        <div className="max-w-3xl mx-auto space-y-4">
           {/* Show Initialize Form if not initialized (master only) */}
           {!isTabInitialized && isMaster && (
             <InitializeBalanceForm onInitialize={handleInitialize} />
@@ -188,14 +202,27 @@ export default function RunningTabPage() {
                 onEdit={openAdjustModal}
               />
 
-              {/* Add Expense Button */}
-              <div className="flex justify-center">
-                <AddExpenseModal
-                  onAddExpense={handleAddExpense}
-                  onAddBulkExpenses={handleAddBulkExpenses}
-                  onTopUp={handleTopUp}
-                />
-              </div>
+              {/* Expense Actions - Shortcuts + Buttons grouped together */}
+              <section className="space-y-3">
+                {/* Quick Expense Shortcuts */}
+                <ExpenseShortcuts onSelectExpense={setPrefilledExpenseName} />
+
+                {/* Action Buttons */}
+                <div className="flex justify-center items-center gap-3">
+                  <AddExpenseModal
+                    onAddExpense={handleAddExpense}
+                    onAddBulkExpenses={handleAddBulkExpenses}
+                    prefilledName={prefilledExpenseName}
+                    onClearPrefilled={() => setPrefilledExpenseName("")}
+                  />
+                  <Button
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm px-4 h-10"
+                    onClick={() => handleTopUp(5000000, "Kia Top Up")}
+                  >
+                    +5M
+                  </Button>
+                </div>
+              </section>
 
               {/* Expense List - each section has its own card */}
               <ExpenseList
@@ -203,7 +230,9 @@ export default function RunningTabPage() {
                 owners={ownerList}
                 canApprove={userCanApprove}
                 onApprove={handleApprove}
+                onApproveAll={userCanApprove ? handleApproveAll : undefined}
                 onReject={handleReject}
+                onRejectAll={userCanApprove ? handleRejectAll : undefined}
                 onAttachment={handleAttachment}
               />
 

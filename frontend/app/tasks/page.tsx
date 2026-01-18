@@ -2,12 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Header } from "@/components/layout/Header";
-import { AddTaskForm } from "@/components/tasks/AddTaskForm";
 import { TaskList } from "@/components/tasks/TaskList";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useTasksStore } from "@/stores/tasksStore";
 import { useOwnerStore } from "@/stores/ownerStore";
-import type { TaskPriority } from "@/types/tasks";
 
 export default function TasksPage() {
   // Redirect to login if not authenticated
@@ -15,7 +13,6 @@ export default function TasksPage() {
 
   // Tasks state
   const tasks = useTasksStore((state) => state.tasks);
-  const addTask = useTasksStore((state) => state.addTask);
   const completeTask = useTasksStore((state) => state.completeTask);
   const uncompleteTask = useTasksStore((state) => state.uncompleteTask);
   const deleteTask = useTasksStore((state) => state.deleteTask);
@@ -40,12 +37,6 @@ export default function TasksPage() {
     const owner = owners.find((o) => o.id === ownerId);
     return owner?.name;
   }, [owners]);
-
-  // Handle adding a new task
-  const handleAddTask = useCallback((title: string, priority: TaskPriority) => {
-    if (!activeOwnerId) return;
-    addTask(title, priority, activeOwnerId);
-  }, [activeOwnerId, addTask]);
 
   // Handle completing a task
   const handleComplete = useCallback((id: string) => {
@@ -79,12 +70,6 @@ export default function TasksPage() {
       <main className="flex-1 p-6">
         <div className="max-w-3xl mx-auto space-y-6">
           <h1 className="text-2xl font-bold">Tasks</h1>
-
-          {/* Add Task Form */}
-          <AddTaskForm
-            onAddTask={handleAddTask}
-            disabled={!isMounted || !activeOwnerId}
-          />
 
           {/* Task List */}
           <TaskList

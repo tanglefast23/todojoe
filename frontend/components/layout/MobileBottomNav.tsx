@@ -1,20 +1,41 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Table2, Calculator } from "lucide-react";
+import { Table2, Calculator, PenLine } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { playClickSound } from "@/lib/audio";
-
-const navItems = [
-  { title: "Tasks", href: "/tasks", icon: Table2 },
-  { title: "Tab", href: "/running-tab", icon: Calculator },
-];
+import { useOwnerStore } from "@/stores/ownerStore";
 
 /** Mobile bottom navigation bar for TODO app */
 export const MobileBottomNav = memo(function MobileBottomNav() {
   const pathname = usePathname();
+  const isMasterLoggedIn = useOwnerStore((state) => state.isMasterLoggedIn);
+
+  // Hydration-safe
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const isMaster = isMounted ? isMasterLoggedIn() : false;
+
+  // Build nav items based on user role
+  const navItems = useMemo(() => {
+    const items = [];
+
+    // Entry tab - only for master users
+    if (isMaster) {
+      items.push({ title: "Entry", href: "/entry", icon: PenLine });
+    }
+
+    // Tasks and Tab - for all users
+    items.push({ title: "Tasks", href: "/tasks", icon: Table2 });
+    items.push({ title: "Tab", href: "/running-tab", icon: Calculator });
+
+    return items;
+  }, [isMaster]);
 
   const handleNavClick = (href: string) => {
     if (pathname !== href) {

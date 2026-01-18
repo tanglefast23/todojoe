@@ -28,10 +28,10 @@ export function BalanceDisplay({ amount, className, canEdit, onEdit }: BalanceDi
   };
 
   return (
-    <div className={cn("text-center py-6", className)}>
+    <div className={cn("text-center py-2", className)}>
       <p
         className={cn(
-          "text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight select-none",
+          "text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight select-none",
           isPositive
             ? "text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-green-500 to-teal-400"
             : "text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-rose-500 to-pink-500",

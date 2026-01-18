@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { Plus, Zap } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,20 +10,21 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface AddExpenseModalProps {
   onAddExpense: (name: string, amount: number) => void;
   onAddBulkExpenses: (entries: { name: string; amount: number }[]) => void;
-  onTopUp: (amount: number, description: string) => void;
+  prefilledName?: string;
+  onClearPrefilled?: () => void;
 }
 
 export function AddExpenseModal({
   onAddExpense,
   onAddBulkExpenses,
-  onTopUp,
+  prefilledName,
+  onClearPrefilled,
 }: AddExpenseModalProps) {
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("simple");
@@ -49,6 +49,19 @@ export function AddExpenseModal({
     setBulkError(null);
     setActiveTab("simple");
   };
+
+  // Handle prefilled name from shortcuts
+  useEffect(() => {
+    if (prefilledName) {
+      setName(prefilledName);
+      setActiveTab("simple");
+      setOpen(true);
+      // Focus amount field since name is already filled
+      setTimeout(() => {
+        amountInputRef.current?.focus();
+      }, 100);
+    }
+  }, [prefilledName]);
 
   const handleSimpleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,6 +112,19 @@ export function AddExpenseModal({
     }
   };
 
+  // Handle Enter key on amount field - submit the form
+  const handleAmountKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const numAmount = parseInt(amount.replace(/[^0-9]/g, ""), 10);
+      if (name.trim() && numAmount > 0) {
+        onAddExpense(name.trim(), numAmount);
+        resetForm();
+        setOpen(false);
+      }
+    }
+  };
+
   // Focus name input when dialog opens
   const handleOpenChange = (isOpen: boolean) => {
     setOpen(isOpen);
@@ -106,11 +132,22 @@ export function AddExpenseModal({
       // Small delay to ensure dialog is rendered
       setTimeout(() => {
         if (activeTab === "simple") {
-          nameInputRef.current?.focus();
+          // If name is prefilled, focus amount; otherwise focus name
+          if (name.trim()) {
+            amountInputRef.current?.focus();
+          } else {
+            nameInputRef.current?.focus();
+          }
         } else {
           bulkTextareaRef.current?.focus();
         }
       }, 50);
+    } else {
+      // Clear prefilled name when modal closes
+      if (onClearPrefilled) {
+        onClearPrefilled();
+      }
+      resetForm();
     }
   };
 
@@ -139,14 +176,44 @@ export function AddExpenseModal({
     }
   };
 
+  // Open modal with a specific tab
+  const openWithTab = (tab: string) => {
+    setActiveTab(tab);
+    setOpen(true);
+    setTimeout(() => {
+      if (tab === "simple") {
+        nameInputRef.current?.focus();
+      } else {
+        bulkTextareaRef.current?.focus();
+      }
+    }, 50);
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Expense
+      {/* Two separate trigger buttons */}
+      <div className="flex gap-3">
+        <Button
+          variant="destructive"
+          className="font-semibold text-sm px-4 h-10"
+          onClick={() => openWithTab("simple")}
+        >
+          Simple
         </Button>
-      </DialogTrigger>
+        <div className="relative">
+          {/* Stacked effect layers - 4 distinct stacks */}
+          <div className="absolute inset-0 bg-red-950/90 rounded-md translate-x-[6px] translate-y-[6px]" />
+          <div className="absolute inset-0 bg-red-900/90 rounded-md translate-x-[4px] translate-y-[4px]" />
+          <div className="absolute inset-0 bg-red-700/90 rounded-md translate-x-[2px] translate-y-[2px]" />
+          <Button
+            variant="destructive"
+            className="relative font-semibold text-sm px-4 h-10"
+            onClick={() => openWithTab("bulk")}
+          >
+            Many
+          </Button>
+        </div>
+      </div>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add Expense</DialogTitle>
@@ -163,27 +230,6 @@ export function AddExpenseModal({
           </TabsList>
 
           <TabsContent value="simple" className="mt-4">
-            {/* Quick Top-Up */}
-            <div className="mb-4 pb-4 border-b">
-              <p className="text-xs text-muted-foreground mb-2">Quick Top-Up</p>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full justify-start gap-2 h-auto py-3 bg-green-500/10 border-green-500/30 hover:bg-green-500/20 text-green-600 dark:text-green-400"
-                onClick={() => {
-                  onTopUp(5000000, "Kia 5 mil Reload");
-                  resetForm();
-                  setOpen(false);
-                }}
-              >
-                <Zap className="h-4 w-4" />
-                <div className="flex flex-col items-start">
-                  <span className="font-medium">Kia 5 mil Reload</span>
-                  <span className="text-xs opacity-70">+5,000,000 VND</span>
-                </div>
-              </Button>
-            </div>
-
             <form onSubmit={handleSimpleSubmit} className="space-y-4">
               <div>
                 <label className="text-sm font-medium">Expense Name</label>
@@ -205,6 +251,7 @@ export function AddExpenseModal({
                   inputMode="numeric"
                   value={amount}
                   onChange={handleAmountChange}
+                  onKeyDown={handleAmountKeyDown}
                   placeholder="50,000"
                   className="mt-1"
                 />

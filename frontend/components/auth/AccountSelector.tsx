@@ -355,7 +355,8 @@ export function AccountSelector({ onLoginSuccess }: AccountSelectorProps) {
             { top: 60, left: 8, rotate: 12 },      // Bottom-left (cliff)
             { top: 5, left: 77, rotate: 20 },      // Top-right (foad)
             { top: 60, left: 75, rotate: -10 },    // Bottom-right (ivy)
-            { top: 8, left: 42, rotate: 0 },       // Center behind logo (leonard) - moved up and right
+            { top: 8, left: 42, rotate: 0 },       // Center behind logo (leonard)
+            { top: 35, left: 82, rotate: -8 },     // Right side (thanh)
           ];
           const pos = positions[index % positions.length];
           return (

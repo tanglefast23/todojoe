@@ -70,16 +70,15 @@ export function AttachmentUpload({ expenseId, onUpload }: AttachmentUploadProps)
       />
       <Button
         variant="outline"
-        size="lg"
         onClick={handleClick}
         disabled={isUploading}
         title="Add photo or receipt"
-        className="h-14 w-14 rounded-xl bg-gradient-to-br from-pink-500/20 to-purple-500/20 border-2 border-pink-400/50 hover:border-pink-400 hover:from-pink-500/30 hover:to-purple-500/30 hover:scale-105 transition-all duration-200 shadow-md"
+        className="h-9 w-9 p-0 rounded-lg bg-gradient-to-br from-pink-500/20 to-purple-500/20 border border-pink-400/50 hover:border-pink-400 hover:from-pink-500/30 hover:to-purple-500/30 transition-all"
       >
         {isUploading ? (
-          <Loader2 className="h-7 w-7 animate-spin text-pink-500" />
+          <Loader2 className="h-4 w-4 animate-spin text-pink-500" />
         ) : (
-          <ImagePlus className="h-7 w-7 text-pink-500" />
+          <ImagePlus className="h-4 w-4 text-pink-500" />
         )}
         <span className="sr-only">Add attachment</span>
       </Button>

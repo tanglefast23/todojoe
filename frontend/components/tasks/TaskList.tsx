@@ -23,25 +23,25 @@ export function TaskList({
   canComplete,
   canDelete = false,
 }: TaskListProps) {
-  // Separate pending and completed tasks
-  const { pendingTasks, completedTasks } = useMemo(() => {
-    const pending: Task[] = [];
+  // Separate tasks by status and priority
+  const { normalTasks, urgentTasks, completedTasks } = useMemo(() => {
+    const normal: Task[] = [];
+    const urgent: Task[] = [];
     const completed: Task[] = [];
 
     for (const task of tasks) {
       if (task.status === "completed") {
         completed.push(task);
+      } else if (task.priority === "urgent") {
+        urgent.push(task);
       } else {
-        pending.push(task);
+        normal.push(task);
       }
     }
 
-    // Sort pending: urgent first, then by creation date (newest first)
-    pending.sort((a, b) => {
-      if (a.priority === "urgent" && b.priority !== "urgent") return -1;
-      if (a.priority !== "urgent" && b.priority === "urgent") return 1;
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
+    // Sort by creation date (newest first)
+    normal.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    urgent.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     // Sort completed by completion date (most recent first)
     completed.sort((a, b) => {
@@ -49,8 +49,10 @@ export function TaskList({
       return new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime();
     });
 
-    return { pendingTasks: pending, completedTasks: completed };
+    return { normalTasks: normal, urgentTasks: urgent, completedTasks: completed };
   }, [tasks]);
+
+  const hasPendingTasks = normalTasks.length > 0 || urgentTasks.length > 0;
 
   if (tasks.length === 0) {
     return (
@@ -62,34 +64,72 @@ export function TaskList({
   }
 
   return (
-    <div className="space-y-8">
-      {/* Pending Tasks */}
-      {pendingTasks.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
-            Pending ({pendingTasks.length})
-          </h3>
-          <div className="space-y-3">
-            {pendingTasks.map((task) => (
-              <TaskItem
-                key={task.id}
-                task={task}
-                creatorName={getOwnerName(task.createdBy)}
-                completerName={undefined}
-                onComplete={onComplete}
-                onUncomplete={onUncomplete}
-                onDelete={onDelete}
-                canComplete={canComplete}
-                canDelete={canDelete}
-              />
-            ))}
+    <div className="space-y-6">
+      {/* Active Tasks - Side by Side Columns */}
+      {hasPendingTasks && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Urgent Tasks Column - First (top on mobile, left on desktop) */}
+          <div className="rounded-2xl bg-gradient-to-br from-orange-500/5 to-red-500/5 p-4">
+            <h3 className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500 mb-3">
+              Urgent ({urgentTasks.length})
+            </h3>
+            {urgentTasks.length > 0 ? (
+              <div className="space-y-3">
+                {urgentTasks.map((task) => (
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    creatorName={getOwnerName(task.createdBy)}
+                    completerName={undefined}
+                    onComplete={onComplete}
+                    onUncomplete={onUncomplete}
+                    onDelete={onDelete}
+                    canComplete={canComplete}
+                    canDelete={canDelete}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">No urgent tasks</p>
+            )}
+          </div>
+
+          {/* Normal Tasks Column - Second (bottom on mobile, right on desktop) */}
+          <div className="rounded-2xl bg-gradient-to-br from-cyan-500/5 to-blue-500/5 p-4">
+            <h3 className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-3">
+              Normal ({normalTasks.length})
+            </h3>
+            {normalTasks.length > 0 ? (
+              <div className="space-y-3">
+                {normalTasks.map((task) => (
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    creatorName={getOwnerName(task.createdBy)}
+                    completerName={undefined}
+                    onComplete={onComplete}
+                    onUncomplete={onUncomplete}
+                    onDelete={onDelete}
+                    canComplete={canComplete}
+                    canDelete={canDelete}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">No normal tasks</p>
+            )}
           </div>
         </div>
       )}
 
+      {/* Hairline Separator */}
+      {completedTasks.length > 0 && (
+        <div className="border-t border-muted-foreground/20" />
+      )}
+
       {/* Completed Tasks */}
       {completedTasks.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           <h3 className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-500">
             Completed ({completedTasks.length})
           </h3>
