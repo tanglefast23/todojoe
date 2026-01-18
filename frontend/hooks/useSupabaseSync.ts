@@ -117,11 +117,13 @@ export function useSupabaseSync(): void {
     };
   }, []);
 
-  // Sync tasks when they change
-  useEffect(() => {
-    if (!initialLoadComplete.current) return;
-    syncTasks.current(tasks);
-  }, [tasks]);
+  // Tasks sync disabled - individual actions (add, delete, complete, uncomplete)
+  // now sync directly to Supabase. Bulk sync was causing deleted tasks to reappear
+  // because upsertTasks doesn't delete removed items.
+  // useEffect(() => {
+  //   if (!initialLoadComplete.current) return;
+  //   syncTasks.current(tasks);
+  // }, [tasks]);
 
   // Sync tags when they change
   useEffect(() => {
@@ -147,11 +149,13 @@ export function useSupabaseSync(): void {
     syncRunningTab.current(tab);
   }, [tab]);
 
-  // Sync expenses when they change
-  useEffect(() => {
-    if (!initialLoadComplete.current) return;
-    syncExpenses.current(expenses);
-  }, [expenses]);
+  // Expenses sync disabled - individual actions (add, approve, reject, delete, clear)
+  // now sync directly to Supabase. Bulk sync was causing deleted items to reappear
+  // because upsertExpenses doesn't delete removed items.
+  // useEffect(() => {
+  //   if (!initialLoadComplete.current) return;
+  //   syncExpenses.current(expenses);
+  // }, [expenses]);
 
   // Sync tab history when it changes
   useEffect(() => {
