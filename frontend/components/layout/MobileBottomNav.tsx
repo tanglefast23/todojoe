@@ -3,14 +3,13 @@
 import { memo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Table2, Calculator, Settings } from "lucide-react";
+import { Table2, Calculator } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { playClickSound } from "@/lib/audio";
 
 const navItems = [
   { title: "Tasks", href: "/tasks", icon: Table2 },
   { title: "Tab", href: "/running-tab", icon: Calculator },
-  { title: "Settings", href: "/settings", icon: Settings },
 ];
 
 /** Mobile bottom navigation bar for TODO app */
