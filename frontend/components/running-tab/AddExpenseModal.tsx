@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -108,6 +108,27 @@ export function AddExpenseModal({
           </TabsList>
 
           <TabsContent value="simple" className="mt-4">
+            {/* Quick Actions */}
+            <div className="mb-4 pb-4 border-b">
+              <p className="text-xs text-muted-foreground mb-2">Quick Add</p>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full justify-start gap-2 h-auto py-3 bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                onClick={() => {
+                  onAddExpense("Kia 5 mil Reload", 5000000);
+                  resetForm();
+                  setOpen(false);
+                }}
+              >
+                <Zap className="h-4 w-4" />
+                <div className="flex flex-col items-start">
+                  <span className="font-medium">Kia 5 mil Reload</span>
+                  <span className="text-xs opacity-70">5,000,000 VND</span>
+                </div>
+              </Button>
+            </div>
+
             <form onSubmit={handleSimpleSubmit} className="space-y-4">
               <div>
                 <label className="text-sm font-medium">Expense Name</label>
