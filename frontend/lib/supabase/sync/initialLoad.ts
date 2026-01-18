@@ -9,7 +9,7 @@
 
 import { fetchAllTasks, upsertTasks } from "@/lib/supabase/queries/tasks";
 import { fetchTags, syncTags } from "@/lib/supabase/queries/tags";
-import { fetchOwners, syncOwners } from "@/lib/supabase/queries/owners";
+import { fetchOwners, syncOwners } from "@/lib/supabase/queries/owners"; // Uses todo_owners table
 import {
   fetchAllPermissions,
   upsertPermissions,
@@ -20,7 +20,7 @@ import { fetchTabHistory, upsertHistory } from "@/lib/supabase/queries/tabHistor
 
 import { useTasksStore } from "@/stores/tasksStore";
 import { useTagsStore } from "@/stores/tagsStore";
-import { useOwnerStore } from "@/stores/ownerStore";
+import { useOwnerStore } from "@/stores/ownerStore"; // Syncs to todo_owners table
 import { usePermissionsStore } from "@/stores/permissionsStore";
 import { useRunningTabStore } from "@/stores/runningTabStore";
 
@@ -33,8 +33,9 @@ import type { AppPermissions, RunningTab, Expense, TabHistoryEntry } from "@/typ
 import type { Database } from "@/types/database";
 
 // Database row types for conversions
-type OwnerRow = Database["public"]["Tables"]["owners"]["Row"];
-type OwnerInsert = Database["public"]["Tables"]["owners"]["Insert"];
+// NOTE: Uses todo_owners table (separate from investment tracker's owners table)
+type OwnerRow = Database["public"]["Tables"]["todo_owners"]["Row"];
+type OwnerInsert = Database["public"]["Tables"]["todo_owners"]["Insert"];
 type TagRow = Database["public"]["Tables"]["tags"]["Row"];
 type TagInsert = Database["public"]["Tables"]["tags"]["Insert"];
 
@@ -98,6 +99,7 @@ export async function performInitialLoad(): Promise<void> {
   console.log("[Sync] Starting initial load from Supabase...");
 
   // Fetch all data from Supabase in parallel with retry logic
+  // NOTE: Owners sync to todo_owners table (separate from investment tracker's owners table)
   const [
     cloudTasks,
     cloudTagRows,
@@ -109,7 +111,7 @@ export async function performInitialLoad(): Promise<void> {
   ] = await Promise.all([
     retryWithBackoff(() => fetchAllTasks(), 3, "fetchAllTasks"),
     retryWithBackoff(() => fetchTags(), 3, "fetchTags"),
-    retryWithBackoff(() => fetchOwners(), 3, "fetchOwners"),
+    retryWithBackoff(() => fetchOwners(), 3, "fetchOwners"), // Uses todo_owners table
     retryWithBackoff(() => fetchAllPermissions(), 3, "fetchAllPermissions"),
     retryWithBackoff(() => fetchRunningTab(), 3, "fetchRunningTab"),
     retryWithBackoff(() => fetchAllExpenses(), 3, "fetchAllExpenses"),
@@ -151,7 +153,7 @@ export async function performInitialLoad(): Promise<void> {
     pushToCloud: (data) => syncTags(data.map(tagAppToInsert)),
   });
 
-  // Sync Owners
+  // Sync Owners (uses todo_owners table - separate from investment tracker)
   await syncDataType<Owner[]>({
     name: "owners",
     cloudData: cloudOwners,

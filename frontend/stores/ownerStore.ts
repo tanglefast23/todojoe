@@ -17,7 +17,7 @@ function resetPortfolioView(): void {
 
 // Special ID for guest users (no password, only sees public portfolios)
 export const GUEST_ID = "__guest__";
-const ACTIVE_OWNER_KEY = "active-owner-id";
+const ACTIVE_OWNER_KEY = "todo-active-owner-id";
 
 // Rate limiting constants
 const MAX_LOGIN_ATTEMPTS = 5;

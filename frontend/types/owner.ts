@@ -15,6 +15,6 @@ export interface OwnerUnlockState {
   unlockedOwnerIds: string[];  // IDs of owners whose portfolios are unlocked this session
 }
 
-// Storage keys
-export const OWNER_STORAGE_KEY = "owner-storage";
-export const UNLOCK_STATE_KEY = "owner-unlock-state";
+// Storage keys - unique to this TODO app (separate from investment tracker)
+export const OWNER_STORAGE_KEY = "todo-owner-storage";
+export const UNLOCK_STATE_KEY = "todo-owner-unlock-state";

@@ -40,6 +40,33 @@ export interface Database {
           updated_at?: string;
         };
       };
+      // Separate owners table for TODO app (separate from investment tracker)
+      todo_owners: {
+        Row: {
+          id: string;
+          name: string;
+          password_hash: string;
+          is_master: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          password_hash: string;
+          is_master?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          password_hash?: string;
+          is_master?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       portfolios: {
         Row: {
           id: string;
