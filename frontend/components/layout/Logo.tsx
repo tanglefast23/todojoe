@@ -19,7 +19,7 @@ export function Logo({ className, showText = true, size = "md" }: LogoProps) {
   const { icon, text } = sizes[size];
 
   return (
-    <div className={cn("flex items-center gap-2 max-w-full overflow-hidden", className)}>
+    <div className={cn("flex items-center gap-2", className)}>
       <svg
         width={icon}
         height={icon}
@@ -58,7 +58,7 @@ export function Logo({ className, showText = true, size = "md" }: LogoProps) {
       </svg>
 
       {showText && (
-        <span className={cn("font-bold tracking-tight truncate", text)}>
+        <span className={cn("font-bold tracking-tight whitespace-nowrap", text)}>
           <span className="text-blue-500">JV</span>
           <span className="text-purple-500"> Todo</span>
         </span>

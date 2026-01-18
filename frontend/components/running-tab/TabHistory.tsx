@@ -28,6 +28,7 @@ const historyTypeConfig: Record<
   add: { label: "Balance Added", colorClass: "text-green-500" },
   expense_approved: { label: "Expense Approved", colorClass: "text-red-500" },
   expense_rejected: { label: "Expense Rejected", colorClass: "text-muted-foreground" },
+  adjustment: { label: "Balance Adjustment", colorClass: "text-amber-500" },
 };
 
 export function TabHistory({ history, owners }: TabHistoryProps) {
