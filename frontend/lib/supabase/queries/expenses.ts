@@ -124,6 +124,23 @@ export async function deleteExpense(id: string): Promise<void> {
   }
 }
 
+/**
+ * Delete all completed (approved/rejected) expenses from Supabase
+ * Used when clearing completed expenses for cross-device sync
+ */
+export async function deleteCompletedExpenses(): Promise<void> {
+  const supabase = getSupabaseClient();
+  const { error } = await supabase
+    .from("expenses")
+    .delete()
+    .in("status", ["approved", "rejected"]);
+
+  if (error) {
+    console.error("Error deleting completed expenses:", error);
+    throw error;
+  }
+}
+
 export async function upsertExpenses(expenses: Expense[]): Promise<void> {
   if (expenses.length === 0) return;
 

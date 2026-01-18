@@ -11,6 +11,7 @@ import type {
   TabHistoryEntry,
   ExpenseStatus,
 } from "@/types/runningTab";
+import { deleteCompletedExpenses } from "@/lib/supabase/queries/expenses";
 
 const RUNNING_TAB_STORAGE_KEY = "running-tab-storage";
 
@@ -301,6 +302,11 @@ export const useRunningTabStore = create<RunningTabState>()(
         set((state) => ({
           expenses: state.expenses.filter((e) => e.status === "pending"),
         }));
+
+        // Also delete from Supabase for cross-device sync
+        deleteCompletedExpenses().catch((error) => {
+          console.error("[Store] Failed to delete completed expenses from Supabase:", error);
+        });
       },
 
       getTabBalance: () => {
