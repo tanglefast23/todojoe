@@ -1,0 +1,16 @@
+[build]
+builder = "nixpacks"
+
+[build.nixpacksPlan.phases.setup]
+nixPkgs = ["nodejs_20", "pnpm"]
+
+[build.nixpacksPlan.phases.install]
+cmds = ["pnpm install --frozen-lockfile"]
+
+[build.nixpacksPlan.phases.build]
+cmds = ["pnpm run build"]
+
+[deploy]
+startCommand = "pnpm start"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 300
