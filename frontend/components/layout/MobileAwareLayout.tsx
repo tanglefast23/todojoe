@@ -2,6 +2,7 @@
 
 import { ReactNode } from "react";
 import { useMobileMode } from "@/hooks/useMobileMode";
+import { MobileBottomNav } from "./MobileBottomNav";
 
 interface MobileAwareLayoutProps {
   children: ReactNode;
@@ -25,13 +26,14 @@ export function MobileAwareLayout({ children }: MobileAwareLayoutProps) {
     );
   }
 
-  // Mobile mode: full width content (mobile nav handled in MobileApp)
+  // Mobile mode: full width content with bottom navigation
   if (isMobile) {
     return (
       <div className="flex min-h-screen flex-col">
-        <main id="main-content" className="flex-1 min-w-0">
+        <main id="main-content" className="flex-1 min-w-0 pb-20">
           {children}
         </main>
+        <MobileBottomNav />
       </div>
     );
   }
