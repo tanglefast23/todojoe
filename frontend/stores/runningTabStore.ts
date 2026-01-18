@@ -11,7 +11,14 @@ import type {
   TabHistoryEntry,
   ExpenseStatus,
 } from "@/types/runningTab";
-import { deleteCompletedExpenses } from "@/lib/supabase/queries/expenses";
+import {
+  deleteCompletedExpenses,
+  updateExpense,
+  upsertExpenses,
+  deleteExpense as deleteExpenseFromSupabase,
+} from "@/lib/supabase/queries/expenses";
+import { upsertTab, updateTabBalance } from "@/lib/supabase/queries/runningTab";
+import { upsertHistory } from "@/lib/supabase/queries/tabHistory";
 
 const RUNNING_TAB_STORAGE_KEY = "running-tab-storage";
 
@@ -98,6 +105,14 @@ export const useRunningTabStore = create<RunningTabState>()(
           tab: newTab,
           history: [historyEntry, ...state.history],
         }));
+
+        // Sync to Supabase for cross-device sync
+        upsertTab(newTab).catch((error) => {
+          console.error("[Store] Failed to sync tab initialization to Supabase:", error);
+        });
+        upsertHistory([historyEntry]).catch((error) => {
+          console.error("[Store] Failed to sync history entry to Supabase:", error);
+        });
       },
 
       adjustBalance: (newBalance, reason, adjustedBy) => {
@@ -133,6 +148,14 @@ export const useRunningTabStore = create<RunningTabState>()(
         set((state) => ({
           history: [historyEntry, ...state.history],
         }));
+
+        // Sync to Supabase for cross-device sync
+        updateTabBalance(currentTab.id, newBalance).catch((error) => {
+          console.error("[Store] Failed to sync balance adjustment to Supabase:", error);
+        });
+        upsertHistory([historyEntry]).catch((error) => {
+          console.error("[Store] Failed to sync history entry to Supabase:", error);
+        });
       },
 
       addExpense: (name, amount, createdBy) => {
@@ -157,6 +180,11 @@ export const useRunningTabStore = create<RunningTabState>()(
           expenses: [newExpense, ...state.expenses],
         }));
 
+        // Sync to Supabase for cross-device sync
+        upsertExpenses([newExpense]).catch((error) => {
+          console.error("[Store] Failed to sync new expense to Supabase:", error);
+        });
+
         return id;
       },
 
@@ -180,15 +208,22 @@ export const useRunningTabStore = create<RunningTabState>()(
           expenses: [...newExpenses, ...state.expenses],
         }));
 
+        // Sync to Supabase for cross-device sync
+        upsertExpenses(newExpenses).catch((error) => {
+          console.error("[Store] Failed to sync bulk expenses to Supabase:", error);
+        });
+
         return newExpenses.map((e) => e.id);
       },
 
       approveExpense: (id, approvedBy) => {
         const expense = get().expenses.find((e) => e.id === id);
+        const currentTab = get().tab;
         if (!expense || expense.status !== "pending") return;
 
         const now = new Date().toISOString();
         const historyId = generateId();
+        const newBalance = (currentTab?.currentBalance ?? 0) - expense.amount;
 
         // Update expense status
         set((state) => ({
@@ -211,7 +246,7 @@ export const useRunningTabStore = create<RunningTabState>()(
           return {
             tab: {
               ...state.tab,
-              currentBalance: state.tab.currentBalance - expense.amount,
+              currentBalance: newBalance,
               updatedAt: now,
             },
           };
@@ -231,6 +266,26 @@ export const useRunningTabStore = create<RunningTabState>()(
         set((state) => ({
           history: [historyEntry, ...state.history],
         }));
+
+        // Sync all changes to Supabase for cross-device sync
+        updateExpense(id, {
+          status: "approved",
+          approvedBy,
+          approvedAt: now,
+          updatedAt: now,
+        }).catch((error) => {
+          console.error("[Store] Failed to sync expense approval to Supabase:", error);
+        });
+
+        if (currentTab) {
+          updateTabBalance(currentTab.id, newBalance).catch((error) => {
+            console.error("[Store] Failed to sync tab balance to Supabase:", error);
+          });
+        }
+
+        upsertHistory([historyEntry]).catch((error) => {
+          console.error("[Store] Failed to sync history entry to Supabase:", error);
+        });
       },
 
       rejectExpense: (id, reason, approvedBy) => {
@@ -270,6 +325,21 @@ export const useRunningTabStore = create<RunningTabState>()(
         set((state) => ({
           history: [historyEntry, ...state.history],
         }));
+
+        // Sync all changes to Supabase for cross-device sync
+        updateExpense(id, {
+          status: "rejected",
+          approvedBy,
+          approvedAt: now,
+          rejectionReason: reason,
+          updatedAt: now,
+        }).catch((error) => {
+          console.error("[Store] Failed to sync expense rejection to Supabase:", error);
+        });
+
+        upsertHistory([historyEntry]).catch((error) => {
+          console.error("[Store] Failed to sync history entry to Supabase:", error);
+        });
       },
 
       setAttachment: (expenseId, url) => {
@@ -285,6 +355,14 @@ export const useRunningTabStore = create<RunningTabState>()(
               : e
           ),
         }));
+
+        // Sync to Supabase for cross-device sync
+        updateExpense(expenseId, {
+          attachmentUrl: url,
+          updatedAt: now,
+        }).catch((error) => {
+          console.error("[Store] Failed to sync attachment to Supabase:", error);
+        });
       },
 
       deleteExpense: (id) => {
@@ -295,6 +373,11 @@ export const useRunningTabStore = create<RunningTabState>()(
         set((state) => ({
           expenses: state.expenses.filter((e) => e.id !== id),
         }));
+
+        // Sync to Supabase for cross-device sync
+        deleteExpenseFromSupabase(id).catch((error) => {
+          console.error("[Store] Failed to sync expense deletion to Supabase:", error);
+        });
       },
 
       clearCompletedExpenses: () => {

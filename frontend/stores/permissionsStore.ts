@@ -7,6 +7,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { AppPermissions } from "@/types/runningTab";
 import { useOwnerStore } from "./ownerStore";
+import { upsertPermission } from "@/lib/supabase/queries/permissions";
 
 const PERMISSIONS_STORAGE_KEY = "permissions-storage";
 
@@ -77,88 +78,120 @@ export const usePermissionsStore = create<PermissionsState>()(
 
       setCanCompleteTasks: (ownerId, value) => {
         const now = new Date().toISOString();
+        let permissionToSync: AppPermissions | null = null;
+
         set((state) => {
           const existing = state.permissions[ownerId];
           if (existing) {
+            permissionToSync = {
+              ...existing,
+              canCompleteTasks: value,
+              updatedAt: now,
+            };
             return {
               permissions: {
                 ...state.permissions,
-                [ownerId]: {
-                  ...existing,
-                  canCompleteTasks: value,
-                  updatedAt: now,
-                },
+                [ownerId]: permissionToSync,
               },
             };
           }
           // Create new permissions if they don't exist
+          permissionToSync = {
+            id: generateId(),
+            ownerId,
+            canCompleteTasks: value,
+            canApproveExpenses: false,
+            updatedAt: now,
+          };
           return {
             permissions: {
               ...state.permissions,
-              [ownerId]: {
-                id: generateId(),
-                ownerId,
-                canCompleteTasks: value,
-                canApproveExpenses: false,
-                updatedAt: now,
-              },
+              [ownerId]: permissionToSync,
             },
           };
         });
+
+        // Sync to Supabase for cross-device sync
+        if (permissionToSync) {
+          upsertPermission(permissionToSync).catch((error) => {
+            console.error("[Store] Failed to sync permission to Supabase:", error);
+          });
+        }
       },
 
       setCanApproveExpenses: (ownerId, value) => {
         const now = new Date().toISOString();
+        let permissionToSync: AppPermissions | null = null;
+
         set((state) => {
           const existing = state.permissions[ownerId];
           if (existing) {
+            permissionToSync = {
+              ...existing,
+              canApproveExpenses: value,
+              updatedAt: now,
+            };
             return {
               permissions: {
                 ...state.permissions,
-                [ownerId]: {
-                  ...existing,
-                  canApproveExpenses: value,
-                  updatedAt: now,
-                },
+                [ownerId]: permissionToSync,
               },
             };
           }
           // Create new permissions if they don't exist
+          permissionToSync = {
+            id: generateId(),
+            ownerId,
+            canCompleteTasks: false,
+            canApproveExpenses: value,
+            updatedAt: now,
+          };
           return {
             permissions: {
               ...state.permissions,
-              [ownerId]: {
-                id: generateId(),
-                ownerId,
-                canCompleteTasks: false,
-                canApproveExpenses: value,
-                updatedAt: now,
-              },
+              [ownerId]: permissionToSync,
             },
           };
         });
+
+        // Sync to Supabase for cross-device sync
+        if (permissionToSync) {
+          upsertPermission(permissionToSync).catch((error) => {
+            console.error("[Store] Failed to sync permission to Supabase:", error);
+          });
+        }
       },
 
       initializePermissions: (ownerId) => {
         const now = new Date().toISOString();
+        let permissionToSync: AppPermissions | null = null;
+
         set((state) => {
           // Don't overwrite existing permissions
           if (state.permissions[ownerId]) {
             return state;
           }
+          permissionToSync = {
+            id: generateId(),
+            ownerId,
+            canCompleteTasks: false,
+            canApproveExpenses: false,
+            updatedAt: now,
+          };
           return {
             permissions: {
               ...state.permissions,
-              [ownerId]: {
-                id: generateId(),
-                ownerId,
-                canCompleteTasks: false,
-                canApproveExpenses: false,
-                updatedAt: now,
-              },
+              [ownerId]: permissionToSync,
             },
           };
         });
+
+        // Sync to Supabase for cross-device sync (only if new permission was created)
+        if (permissionToSync) {
+          upsertPermission(permissionToSync).catch((error) => {
+            console.error("[Store] Failed to sync permission to Supabase:", error);
+          });
+        }
       },
     }),
     {

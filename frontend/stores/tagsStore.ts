@@ -6,6 +6,11 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Tag } from "@/types/dashboard";
 import { TAG_COLORS } from "@/types/dashboard";
+import {
+  createTag as createTagInSupabase,
+  deleteTag as deleteTagFromSupabase,
+  updateTag as updateTagInSupabase,
+} from "@/lib/supabase/queries/tags";
 
 interface TagsState {
   tags: Tag[];
@@ -58,6 +63,11 @@ export const useTagsStore = create<TagsState>()(
         set((state) => ({
           tags: [...state.tags, { id, name, color: tagColor }],
         }));
+
+        // Sync to Supabase for cross-device sync
+        createTagInSupabase({ id, name, color: tagColor, is_default: false }).catch((error) => {
+          console.error("[Store] Failed to sync new tag to Supabase:", error);
+        });
       },
 
       removeTag: (id) => {
@@ -69,12 +79,22 @@ export const useTagsStore = create<TagsState>()(
         set((state) => ({
           tags: state.tags.filter((t) => t.id !== id),
         }));
+
+        // Sync to Supabase for cross-device sync
+        deleteTagFromSupabase(id).catch((error) => {
+          console.error("[Store] Failed to sync tag deletion to Supabase:", error);
+        });
       },
 
       updateTag: (id, updates) => {
         set((state) => ({
           tags: state.tags.map((t) => (t.id === id ? { ...t, ...updates } : t)),
         }));
+
+        // Sync to Supabase for cross-device sync
+        updateTagInSupabase(id, { name: updates.name, color: updates.color }).catch((error) => {
+          console.error("[Store] Failed to sync tag update to Supabase:", error);
+        });
       },
 
       getTagById: (id) => {

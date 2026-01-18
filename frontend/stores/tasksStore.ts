@@ -6,6 +6,11 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Task, TaskPriority } from "@/types/tasks";
+import {
+  upsertTasks,
+  updateTask,
+  deleteTask as deleteTaskFromSupabase,
+} from "@/lib/supabase/queries/tasks";
 
 const TASKS_STORAGE_KEY = "tasks-storage";
 
@@ -64,6 +69,11 @@ export const useTasksStore = create<TasksState>()(
           tasks: [newTask, ...state.tasks],
         }));
 
+        // Sync to Supabase for cross-device sync
+        upsertTasks([newTask]).catch((error) => {
+          console.error("[Store] Failed to sync new task to Supabase:", error);
+        });
+
         return id;
       },
 
@@ -82,6 +92,16 @@ export const useTasksStore = create<TasksState>()(
               : task
           ),
         }));
+
+        // Sync to Supabase for cross-device sync
+        updateTask(id, {
+          status: "completed",
+          completedBy,
+          completedAt: now,
+          updatedAt: now,
+        }).catch((error) => {
+          console.error("[Store] Failed to sync task completion to Supabase:", error);
+        });
       },
 
       uncompleteTask: (id) => {
@@ -99,12 +119,27 @@ export const useTasksStore = create<TasksState>()(
               : task
           ),
         }));
+
+        // Sync to Supabase for cross-device sync
+        updateTask(id, {
+          status: "pending",
+          completedBy: null,
+          completedAt: null,
+          updatedAt: now,
+        }).catch((error) => {
+          console.error("[Store] Failed to sync task uncompletion to Supabase:", error);
+        });
       },
 
       deleteTask: (id) => {
         set((state) => ({
           tasks: state.tasks.filter((task) => task.id !== id),
         }));
+
+        // Sync to Supabase for cross-device sync
+        deleteTaskFromSupabase(id).catch((error) => {
+          console.error("[Store] Failed to sync task deletion to Supabase:", error);
+        });
       },
 
       getPendingTasks: () => {

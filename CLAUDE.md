@@ -722,4 +722,14 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 ---
 
+## Debugging
+
+- Use chrome-devtools MCP for browser debugging, not playwright
+- To start Chrome with debugging enabled:
+  ```bash
+  /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9222
+  ```
+
+---
+
 **Remember:** Start simple, ship fast, iterate based on usage.
