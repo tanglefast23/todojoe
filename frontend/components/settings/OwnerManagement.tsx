@@ -34,7 +34,6 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useOwnerStore } from "@/stores/ownerStore";
-import { usePortfolioStore } from "@/stores/portfolioStore";
 
 export function OwnerManagement() {
   const {
@@ -50,10 +49,6 @@ export function OwnerManagement() {
     lockAllOwners,
     checkRateLimit,
   } = useOwnerStore();
-
-  const portfolios = usePortfolioStore((state) => state.portfolios);
-  const addOwnerToPortfolio = usePortfolioStore((state) => state.addOwnerToPortfolio);
-  const removeOwnerFromPortfolio = usePortfolioStore((state) => state.removeOwnerFromPortfolio);
 
   // Add owner dialog state
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -200,20 +195,6 @@ export function OwnerManagement() {
     setUnlockOwnerTarget(null);
   }, [unlockOwnerTarget, unlockPassword, unlockOwner, checkRateLimit]);
 
-  // Count portfolios assigned to each owner
-  const getOwnerPortfolioCount = useCallback((ownerId: string) => {
-    return portfolios.filter((p) => p.ownerIds?.includes(ownerId)).length;
-  }, [portfolios]);
-
-  // Toggle portfolio assignment for an owner
-  const togglePortfolioAssignment = useCallback((portfolioId: string, ownerId: string, isAssigned: boolean) => {
-    if (isAssigned) {
-      removeOwnerFromPortfolio(portfolioId, ownerId);
-    } else {
-      addOwnerToPortfolio(portfolioId, ownerId);
-    }
-  }, [addOwnerToPortfolio, removeOwnerFromPortfolio]);
-
   return (
     <Card>
       <CardHeader>
@@ -222,7 +203,7 @@ export function OwnerManagement() {
           Owner Profiles
         </CardTitle>
         <CardDescription>
-          Manage owner profiles for portfolio security. Each owner has a password that unlocks all their assigned portfolios.
+          Manage owner profiles for the app. Each owner has a password to protect their session.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -230,229 +211,151 @@ export function OwnerManagement() {
         <div className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
           <p className="font-medium text-foreground">Security Note</p>
           <p>
-            This is convenience security for shared devices. Portfolios remain accessible when the owner&apos;s password is entered.
+            This is convenience security for shared devices.
             Unlock state clears when the browser is fully closed.
           </p>
         </div>
 
-        {/* Owner List with Portfolio Access Grid */}
+        {/* Owner List */}
         {owners.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Lock className="h-12 w-12 mx-auto mb-3 opacity-50" />
             <p>No owner profiles yet</p>
-            <p className="text-sm">Create an owner to protect portfolios with a password</p>
+            <p className="text-sm">Create an owner to set up password protection</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {/* Portfolio Header Row */}
-            {portfolios.length > 0 && (
-              <div className="flex items-end gap-3 pl-[180px] pr-[200px]">
-                {portfolios.map((portfolio) => (
-                  <div
-                    key={portfolio.id}
-                    className="flex-1 min-w-[80px] max-w-[120px] text-center"
-                  >
-                    <p className="text-xs text-muted-foreground font-medium truncate px-1" title={portfolio.name}>
-                      {portfolio.name}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
+          <div className="space-y-2">
+            {owners.map((owner) => {
+              const isUnlocked = isOwnerUnlocked(owner.id);
 
-            {/* Owner Rows */}
-            <div className="space-y-2">
-              {owners.map((owner) => {
-                const isUnlocked = isOwnerUnlocked(owner.id);
-                const portfolioCount = getOwnerPortfolioCount(owner.id);
-
-                return (
-                  <div
-                    key={owner.id}
-                    className={cn(
-                      "rounded-xl border transition-all duration-200",
-                      isUnlocked ? "bg-green-500/5 border-green-500/20" : "bg-muted/20 border-border/50"
-                    )}
-                  >
-                    <div className="flex items-center gap-3 p-4">
-                      {/* Owner Info */}
-                      <div className="flex items-center gap-3 w-[160px] shrink-0">
-                        {owner.isMaster ? (
-                          <ShieldCheck className="h-5 w-5 text-amber-500" />
-                        ) : isUnlocked ? (
-                          <LockOpen className="h-5 w-5 text-green-500" />
+              return (
+                <div
+                  key={owner.id}
+                  className={cn(
+                    "rounded-xl border transition-all duration-200 p-4",
+                    isUnlocked ? "bg-green-500/5 border-green-500/20" : "bg-muted/20 border-border/50"
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    {/* Owner Info */}
+                    <div className="flex items-center gap-3">
+                      {owner.isMaster ? (
+                        <ShieldCheck className="h-5 w-5 text-amber-500" />
+                      ) : isUnlocked ? (
+                        <LockOpen className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <Lock className="h-5 w-5 text-muted-foreground" />
+                      )}
+                      <div>
+                        {editingOwner?.id === owner.id ? (
+                          <Input
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleSaveEditName()}
+                            onBlur={handleSaveEditName}
+                            autoFocus
+                            className="h-7 w-40"
+                          />
                         ) : (
-                          <Lock className="h-5 w-5 text-muted-foreground" />
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">{owner.name}</span>
+                            {owner.isMaster && (
+                              <span className="text-[10px] bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-full font-medium">
+                                Master
+                              </span>
+                            )}
+                          </div>
                         )}
-                        <div className="min-w-0 flex-1">
-                          {editingOwner?.id === owner.id ? (
-                            <Input
-                              value={editName}
-                              onChange={(e) => setEditName(e.target.value)}
-                              onKeyDown={(e) => e.key === "Enter" && handleSaveEditName()}
-                              onBlur={handleSaveEditName}
-                              autoFocus
-                              className="h-7 w-full"
-                            />
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold truncate">{owner.name}</span>
-                              {owner.isMaster && (
-                                <span className="text-[10px] bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-full font-medium">
-                                  Master
-                                </span>
-                              )}
-                            </div>
-                          )}
-                          <p className="text-xs text-muted-foreground">
-                            {portfolioCount} portfolio{portfolioCount !== 1 ? "s" : ""}
-                          </p>
-                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {isUnlocked ? "Unlocked" : "Locked"}
+                        </p>
                       </div>
+                    </div>
 
-                      {/* Portfolio Access Indicators */}
-                      <div className="flex items-center gap-3 flex-1">
-                        {portfolios.map((portfolio) => {
-                          const hasAccess = portfolio.ownerIds?.includes(owner.id) || false;
-                          return (
-                            <div
-                              key={portfolio.id}
-                              className="flex-1 min-w-[80px] max-w-[120px] flex justify-center"
-                            >
-                              <button
-                                onClick={() => togglePortfolioAssignment(portfolio.id, owner.id, hasAccess)}
-                                className={cn(
-                                  "w-6 h-6 rounded-full border-2 transition-all duration-200 flex items-center justify-center",
-                                  hasAccess
-                                    ? "bg-emerald-500 border-emerald-500 shadow-lg shadow-emerald-500/30"
-                                    : "bg-transparent border-muted-foreground/30 hover:border-muted-foreground/50"
-                                )}
-                                title={hasAccess ? `Remove ${owner.name}'s access to ${portfolio.name}` : `Give ${owner.name} access to ${portfolio.name}`}
-                              >
-                                {hasAccess && (
-                                  <svg
-                                    className="w-3 h-3 text-white"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                    strokeWidth={3}
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      d="M5 13l4 4L19 7"
-                                    />
-                                  </svg>
-                                )}
-                              </button>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex items-center gap-1 shrink-0">
-                        {/* Lock/Unlock Button */}
-                        {isUnlocked ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => lockOwner(owner.id)}
-                            title="Lock"
-                            className="h-8 w-8 p-0"
-                          >
-                            <Lock className="h-4 w-4" />
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setUnlockOwnerTarget({ id: owner.id, name: owner.name });
-                              setUnlockPassword("");
-                              setUnlockError(null);
-                            }}
-                            title="Unlock"
-                            className="h-8 w-8 p-0"
-                          >
-                            <LockOpen className="h-4 w-4" />
-                          </Button>
-                        )}
-
-                        {/* Master Toggle */}
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-1">
+                      {/* Lock/Unlock Button */}
+                      {isUnlocked ? (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setOwnerMaster(owner.id, !owner.isMaster)}
-                          title={owner.isMaster ? "Remove master access" : "Grant master access"}
-                          className={cn("h-8 w-8 p-0", owner.isMaster && "text-amber-500")}
-                        >
-                          {owner.isMaster ? (
-                            <ShieldCheck className="h-4 w-4" />
-                          ) : (
-                            <Shield className="h-4 w-4" />
-                          )}
-                        </Button>
-
-                        {/* Edit Name */}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setEditingOwner({ id: owner.id, name: owner.name });
-                            setEditName(owner.name);
-                          }}
-                          title="Edit name"
-                          className="h-8 w-8 p-0"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-
-                        {/* Change Password */}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setChangePasswordOwner({ id: owner.id, name: owner.name })}
-                          title="Change password"
+                          onClick={() => lockOwner(owner.id)}
+                          title="Lock"
                           className="h-8 w-8 p-0"
                         >
                           <Lock className="h-4 w-4" />
                         </Button>
-
-                        {/* Delete */}
+                      ) : (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setDeleteConfirmOwner({ id: owner.id, name: owner.name })}
-                          title="Delete owner"
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                          onClick={() => {
+                            setUnlockOwnerTarget({ id: owner.id, name: owner.name });
+                            setUnlockPassword("");
+                            setUnlockError(null);
+                          }}
+                          title="Unlock"
+                          className="h-8 w-8 p-0"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <LockOpen className="h-4 w-4" />
                         </Button>
-                      </div>
+                      )}
+
+                      {/* Master Toggle */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setOwnerMaster(owner.id, !owner.isMaster)}
+                        title={owner.isMaster ? "Remove master access" : "Grant master access"}
+                        className={cn("h-8 w-8 p-0", owner.isMaster && "text-amber-500")}
+                      >
+                        {owner.isMaster ? (
+                          <ShieldCheck className="h-4 w-4" />
+                        ) : (
+                          <Shield className="h-4 w-4" />
+                        )}
+                      </Button>
+
+                      {/* Edit Name */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditingOwner({ id: owner.id, name: owner.name });
+                          setEditName(owner.name);
+                        }}
+                        title="Edit name"
+                        className="h-8 w-8 p-0"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+
+                      {/* Change Password */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setChangePasswordOwner({ id: owner.id, name: owner.name })}
+                        title="Change password"
+                        className="h-8 w-8 p-0"
+                      >
+                        <Lock className="h-4 w-4" />
+                      </Button>
+
+                      {/* Delete */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeleteConfirmOwner({ id: owner.id, name: owner.name })}
+                        title="Delete owner"
+                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-
-            {/* Legend */}
-            {portfolios.length > 0 && (
-              <div className="flex items-center gap-4 pt-2 text-xs text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center">
-                    <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <span>Has access</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/30" />
-                  <span>No access</span>
-                </div>
-              </div>
-            )}
+              );
+            })}
           </div>
         )}
 
@@ -486,7 +389,7 @@ export function OwnerManagement() {
             <DialogHeader>
               <DialogTitle>Add Owner Profile</DialogTitle>
               <DialogDescription>
-                Create a new owner to protect portfolios with a password.
+                Create a new owner with a password.
               </DialogDescription>
             </DialogHeader>
 
@@ -539,7 +442,7 @@ export function OwnerManagement() {
                 <div className="space-y-0.5">
                   <Label htmlFor="owner-master">Master Access</Label>
                   <p className="text-xs text-muted-foreground">
-                    Can view ALL portfolios when unlocked
+                    Can manage all users and permissions
                   </p>
                 </div>
                 <Switch
@@ -665,7 +568,7 @@ export function OwnerManagement() {
               <DialogTitle>Delete Owner</DialogTitle>
               <DialogDescription>
                 Are you sure you want to delete &ldquo;{deleteConfirmOwner?.name}&rdquo;?
-                Portfolios assigned to this owner will become public (no password required).
+                This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -695,7 +598,7 @@ export function OwnerManagement() {
             <DialogHeader>
               <DialogTitle>Unlock {unlockOwnerTarget?.name}</DialogTitle>
               <DialogDescription>
-                Enter the password to unlock this owner&apos;s portfolios.
+                Enter the password to unlock this owner&apos;s session.
               </DialogDescription>
             </DialogHeader>
 

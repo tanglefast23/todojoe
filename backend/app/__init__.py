@@ -1,1 +1,0 @@
-"""Investment Tracker API backend."""

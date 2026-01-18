@@ -2,21 +2,9 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
-import { useBfcacheRehydration } from "@/hooks/useBfcacheRehydration";
 
 interface QueryProviderProps {
   children: ReactNode;
-}
-
-/**
- * Inner component that handles bfcache rehydration
- * Must be inside QueryClientProvider to access queryClient
- */
-function BfcacheHandler({ children }: { children: ReactNode }) {
-  // Handle iOS Safari and mobile browser back-forward cache
-  // This ensures Zustand stores are rehydrated when page is restored from bfcache
-  useBfcacheRehydration();
-  return <>{children}</>;
 }
 
 export function QueryProvider({ children }: QueryProviderProps) {
@@ -36,7 +24,7 @@ export function QueryProvider({ children }: QueryProviderProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BfcacheHandler>{children}</BfcacheHandler>
+      {children}
     </QueryClientProvider>
   );
 }

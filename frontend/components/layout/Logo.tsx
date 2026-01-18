@@ -14,7 +14,7 @@ const sizes = {
   lg: { icon: 40, text: "text-2xl" },
 };
 
-/** Moonfolio logo - crescent moon with upward rocket trail */
+/** JV Todo logo - checkmark icon */
 export function Logo({ className, showText = true, size = "md" }: LogoProps) {
   const { icon, text } = sizes[size];
 
@@ -30,43 +30,37 @@ export function Logo({ className, showText = true, size = "md" }: LogoProps) {
       >
         {/* Gradient definitions */}
         <defs>
-          <linearGradient id="moonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#fbbf24" />
-            <stop offset="100%" stopColor="#f59e0b" />
-          </linearGradient>
-          <linearGradient id="rocketGradient" x1="0%" y1="100%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#22c55e" />
-            <stop offset="100%" stopColor="#4ade80" />
+          <linearGradient id="checkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#3b82f6" />
+            <stop offset="100%" stopColor="#8b5cf6" />
           </linearGradient>
         </defs>
 
-        {/* Crescent moon */}
-        <path
-          d="M20 4C11.163 4 4 11.163 4 20s7.163 16 16 16c1.381 0 2.727-.175 4.01-.505C18.035 33.51 14 28.284 14 22c0-6.284 4.035-11.51 10.01-13.495C22.727 4.175 21.381 4 20 4z"
-          fill="url(#moonGradient)"
+        {/* Rounded square background */}
+        <rect
+          x="4"
+          y="4"
+          width="32"
+          height="32"
+          rx="8"
+          fill="url(#checkGradient)"
         />
 
-        {/* Rocket trail / chart line going up */}
+        {/* Checkmark */}
         <path
-          d="M18 32L24 24L28 26L36 8"
-          stroke="url(#rocketGradient)"
+          d="M12 20L18 26L28 14"
+          stroke="white"
           strokeWidth="3"
           strokeLinecap="round"
           strokeLinejoin="round"
+          fill="none"
         />
-
-        {/* Rocket head / arrow tip */}
-        <circle cx="36" cy="8" r="3" fill="#4ade80" />
-
-        {/* Small stars */}
-        <circle cx="30" cy="14" r="1.5" fill="#fbbf24" opacity="0.8" />
-        <circle cx="34" cy="20" r="1" fill="#fbbf24" opacity="0.6" />
       </svg>
 
       {showText && (
         <span className={cn("font-bold tracking-tight truncate", text)}>
-          <span className="text-amber-400">Moon</span>
-          <span className="text-emerald-400">folio</span>
+          <span className="text-blue-500">JV</span>
+          <span className="text-purple-500"> Todo</span>
         </span>
       )}
     </div>

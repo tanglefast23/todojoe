@@ -8,18 +8,11 @@ import { persist } from "zustand/middleware";
 import type { Owner } from "@/types/owner";
 import { OWNER_STORAGE_KEY, UNLOCK_STATE_KEY } from "@/types/owner";
 import { hashPassword, verifyPassword, needsHashUpgrade } from "@/lib/crypto";
-import { COMBINED_PORTFOLIO_ID } from "@/types/portfolio";
 
-// Helper to reset portfolio view on login/logout (security: prevent data leakage)
+// No-op function - portfolio functionality has been removed
 function resetPortfolioView(): void {
-  if (typeof window === "undefined") return;
-  try {
-    // Dynamically import to avoid circular dependency
-    const { usePortfolioStore } = require("./portfolioStore");
-    usePortfolioStore.getState().setActivePortfolio(COMBINED_PORTFOLIO_ID);
-  } catch {
-    // Store may not be initialized yet, ignore
-  }
+  // This function was previously used to reset portfolio view on login/logout
+  // It's kept as a no-op to maintain function call sites
 }
 
 // Special ID for guest users (no password, only sees public portfolios)
@@ -239,12 +232,17 @@ export const useOwnerStore = create<OwnerState>()(
       addOwner: async (name, password, isMaster = false) => {
         const id = generateId();
         const passwordHash = await hashPassword(password);
+
+        // First user is automatically master/admin
+        const isFirstUser = get().owners.length === 0;
+        const shouldBeMaster = isMaster || isFirstUser;
+
         const newOwner: Owner = {
           id,
           name,
           passwordHash,
           createdAt: new Date().toISOString(),
-          isMaster,
+          isMaster: shouldBeMaster,
         };
 
         set((state) => ({
@@ -503,29 +501,9 @@ export const useOwnerStore = create<OwnerState>()(
             });
           }
 
-          // Also update ownerIds in portfolioStore if there are mappings
+          // Update session storage if there are mappings
           if (ownerIdMap.size > 0 && typeof window !== "undefined") {
             try {
-              // Update portfolio ownerIds references
-              const portfolioStorage = localStorage.getItem("portfolio-storage");
-              if (portfolioStorage) {
-                const portfolioData = JSON.parse(portfolioStorage);
-                if (portfolioData.state?.portfolios) {
-                  portfolioData.state.portfolios = portfolioData.state.portfolios.map(
-                    (p: { ownerIds?: string[] }) => {
-                      if (p.ownerIds) {
-                        return {
-                          ...p,
-                          ownerIds: p.ownerIds.map((oid) => ownerIdMap.get(oid) || oid),
-                        };
-                      }
-                      return p;
-                    }
-                  );
-                  localStorage.setItem("portfolio-storage", JSON.stringify(portfolioData));
-                }
-              }
-
               // Update sessionStorage active-owner-id so user stays logged in
               const activeId = sessionStorage.getItem(ACTIVE_OWNER_KEY);
               if (activeId && ownerIdMap.has(activeId)) {
@@ -540,7 +518,7 @@ export const useOwnerStore = create<OwnerState>()(
                 sessionStorage.setItem(UNLOCK_STATE_KEY, JSON.stringify(newUnlockedIds));
               }
             } catch (e) {
-              console.error("[Migration] Failed to update portfolio ownerIds:", e);
+              console.error("[Migration] Failed to update session storage:", e);
             }
           }
 

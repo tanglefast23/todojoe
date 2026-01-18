@@ -10,16 +10,15 @@ import { playClickSound } from "@/lib/audio";
 
 // Mapping between desktop routes and mobile views
 const ROUTE_TO_MOBILE_VIEW: Record<string, ActiveView> = {
-  "/portfolio": "home",
-  "/dashboard": "watchlist",
-  "/quick-overview": "add",
-  "/planning": "add",
+  "/tasks": "home",
+  "/running-tab": "watchlist",
+  "/settings": "add",
 };
 
 const MOBILE_VIEW_TO_ROUTE: Record<ActiveView, string> = {
-  home: "/portfolio",
-  watchlist: "/dashboard",
-  add: "/quick-overview",
+  home: "/tasks",
+  watchlist: "/running-tab",
+  add: "/settings",
 };
 
 interface MobileToggleProps {
@@ -56,7 +55,7 @@ export const MobileToggle = memo(function MobileToggle({
 
     if (mobileMode === "mobile") {
       // Switching from mobile to desktop: navigate to equivalent route
-      const targetRoute = MOBILE_VIEW_TO_ROUTE[activeView] || "/portfolio";
+      const targetRoute = MOBILE_VIEW_TO_ROUTE[activeView] || "/tasks";
       setMobileMode("desktop");
       router.push(targetRoute);
     } else {
@@ -64,9 +63,9 @@ export const MobileToggle = memo(function MobileToggle({
       const targetView = ROUTE_TO_MOBILE_VIEW[pathname] || "home";
       setActiveView(targetView);
       setMobileMode("mobile");
-      // Navigate to dashboard which renders MobileApp in mobile mode
-      if (pathname !== "/dashboard" && pathname !== "/portfolio") {
-        router.push("/dashboard");
+      // Navigate to tasks which is the main page in mobile mode
+      if (pathname !== "/tasks") {
+        router.push("/tasks");
       }
     }
   }, [mobileMode, activeView, pathname, router, setMobileMode, setActiveView]);

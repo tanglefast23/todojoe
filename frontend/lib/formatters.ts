@@ -132,3 +132,12 @@ export function formatRelativeTime(dateString: string): string {
   }
   return formatDate(dateString);
 }
+
+export function formatVND(value: number): string {
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+}

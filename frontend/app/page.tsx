@@ -17,12 +17,12 @@ export default function Home() {
   useEffect(() => {
     // Only check after mount to avoid hydration issues
     if (isMounted && isLoggedIn()) {
-      router.replace("/portfolio");
+      router.replace("/tasks");
     }
   }, [isMounted, isLoggedIn, router]);
 
   const handleLoginSuccess = () => {
-    router.push("/portfolio");
+    router.push("/tasks");
   };
 
   // Show nothing during SSR to avoid hydration mismatch

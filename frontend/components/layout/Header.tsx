@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, Moon, RefreshCw, Sun, User, ShieldCheck, Settings, Briefcase, Eye, Table2, Calculator } from "lucide-react";
+import { LogOut, Moon, RefreshCw, Sun, User, ShieldCheck, Settings, Table2, Calculator } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 
@@ -17,7 +17,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CurrencyToggle } from "@/components/ui/currency-toggle";
 import { MobileToggle } from "@/components/ui/mobile-toggle";
 import { useOwnerStore } from "@/stores/ownerStore";
 import { useShallow } from "zustand/react/shallow";
@@ -26,10 +25,9 @@ import { cn } from "@/lib/utils";
 
 // Navigation items for the header
 const navItems = [
-  { title: "Portfolio", href: "/portfolio", icon: Briefcase },
-  { title: "Watchlist", href: "/dashboard", icon: Eye },
-  { title: "Quick Entry", href: "/quick-overview", icon: Table2 },
-  { title: "Upcoming Orders", href: "/planning", icon: Calculator },
+  { title: "Tasks", href: "/tasks", icon: Table2 },
+  { title: "Running Tab", href: "/running-tab", icon: Calculator },
+  { title: "Settings", href: "/settings", icon: Settings },
 ];
 
 // Profile pictures for known users (case-insensitive match)
@@ -132,7 +130,7 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       {/* Left: Logo */}
       <div className="flex items-center">
-        <Link href="/portfolio">
+        <Link href="/tasks">
           <Logo size="md" />
         </Link>
       </div>
@@ -159,20 +157,8 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
         })}
       </nav>
 
-      {/* Right: Settings + Controls */}
+      {/* Right: Controls */}
       <div className="flex items-center gap-2">
-        {/* Settings Link */}
-        <Link href="/settings">
-          <Button
-            variant={pathname === "/settings" ? "secondary" : "ghost"}
-            size="icon"
-            title="Settings"
-          >
-            <Settings className="h-5 w-5" />
-            <span className="sr-only">Settings</span>
-          </Button>
-        </Link>
-
         {/* Refresh Button - using native title to avoid Radix tooltip cascade issues */}
         {/* Use isMounted to defer isRefreshing state and prevent hydration mismatch */}
         {onRefresh && (
@@ -190,9 +176,6 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
             <span className="sr-only">Refresh data</span>
           </Button>
         )}
-
-        {/* Currency Toggle */}
-        <CurrencyToggle size="sm" />
 
         {/* Mobile/Desktop Toggle */}
         <MobileToggle size="sm" />

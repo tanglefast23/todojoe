@@ -4,13 +4,11 @@ import { useState, useEffect, memo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Briefcase,
-  Eye,
+  CheckSquare,
+  Wallet,
   Settings,
   Menu,
   X,
-  Table2,
-  Calculator,
   ChevronLeft,
   ChevronRight,
   type LucideIcon,
@@ -32,24 +30,14 @@ interface NavItemData {
 
 const navItems: NavItemData[] = [
   {
-    title: "Portfolio",
-    href: "/portfolio",
-    icon: Briefcase,
+    title: "Tasks",
+    href: "/tasks",
+    icon: CheckSquare,
   },
   {
-    title: "Quick Entry",
-    href: "/quick-overview",
-    icon: Table2,
-  },
-  {
-    title: "Upcoming Orders",
-    href: "/planning",
-    icon: Calculator,
-  },
-  {
-    title: "Watchlist",
-    href: "/dashboard",
-    icon: Eye,
+    title: "Running Tab",
+    href: "/running-tab",
+    icon: Wallet,
   },
 ];
 

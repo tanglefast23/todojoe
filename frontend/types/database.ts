@@ -478,6 +478,157 @@ export interface Database {
           created_at?: string;
         };
       };
+      tasks: {
+        Row: {
+          id: string;
+          title: string;
+          priority: "regular" | "urgent";
+          created_by: string | null;
+          created_at: string;
+          completed_by: string | null;
+          completed_at: string | null;
+          status: "pending" | "completed";
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          priority?: "regular" | "urgent";
+          created_by?: string | null;
+          created_at?: string;
+          completed_by?: string | null;
+          completed_at?: string | null;
+          status?: "pending" | "completed";
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          priority?: "regular" | "urgent";
+          created_by?: string | null;
+          created_at?: string;
+          completed_by?: string | null;
+          completed_at?: string | null;
+          status?: "pending" | "completed";
+          updated_at?: string;
+        };
+      };
+      running_tab: {
+        Row: {
+          id: string;
+          initial_balance: number;
+          current_balance: number;
+          initialized_by: string | null;
+          initialized_at: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          initial_balance?: number;
+          current_balance?: number;
+          initialized_by?: string | null;
+          initialized_at?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          initial_balance?: number;
+          current_balance?: number;
+          initialized_by?: string | null;
+          initialized_at?: string | null;
+          updated_at?: string;
+        };
+      };
+      expenses: {
+        Row: {
+          id: string;
+          name: string;
+          amount: number;
+          created_by: string | null;
+          created_at: string;
+          approved_by: string | null;
+          approved_at: string | null;
+          status: "pending" | "approved" | "rejected";
+          attachment_url: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          amount: number;
+          created_by?: string | null;
+          created_at?: string;
+          approved_by?: string | null;
+          approved_at?: string | null;
+          status?: "pending" | "approved" | "rejected";
+          attachment_url?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          amount?: number;
+          created_by?: string | null;
+          created_at?: string;
+          approved_by?: string | null;
+          approved_at?: string | null;
+          status?: "pending" | "approved" | "rejected";
+          attachment_url?: string | null;
+          updated_at?: string;
+        };
+      };
+      tab_history: {
+        Row: {
+          id: string;
+          type: "initial" | "add" | "expense_approved" | "expense_rejected";
+          amount: number;
+          description: string | null;
+          related_expense_id: string | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          type: "initial" | "add" | "expense_approved" | "expense_rejected";
+          amount: number;
+          description?: string | null;
+          related_expense_id?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          type?: "initial" | "add" | "expense_approved" | "expense_rejected";
+          amount?: number;
+          description?: string | null;
+          related_expense_id?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+        };
+      };
+      app_permissions: {
+        Row: {
+          id: string;
+          owner_id: string;
+          can_complete_tasks: boolean;
+          can_approve_expenses: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_id: string;
+          can_complete_tasks?: boolean;
+          can_approve_expenses?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_id?: string;
+          can_complete_tasks?: boolean;
+          can_approve_expenses?: boolean;
+          updated_at?: string;
+        };
+      };
     };
   };
 }
@@ -499,6 +650,11 @@ export type TagGrouping = Database["public"]["Tables"]["tag_groupings"]["Row"];
 export type CostBasisOverride = Database["public"]["Tables"]["cost_basis_overrides"]["Row"];
 export type SellPlanProgress = Database["public"]["Tables"]["sell_plan_progress"]["Row"];
 export type AllocationSnapshot = Database["public"]["Tables"]["allocation_snapshots"]["Row"];
+export type TaskRow = Database["public"]["Tables"]["tasks"]["Row"];
+export type RunningTabRow = Database["public"]["Tables"]["running_tab"]["Row"];
+export type ExpenseRow = Database["public"]["Tables"]["expenses"]["Row"];
+export type TabHistoryRow = Database["public"]["Tables"]["tab_history"]["Row"];
+export type AppPermissionsRow = Database["public"]["Tables"]["app_permissions"]["Row"];
 
 // Portfolio with nested accounts
 export type PortfolioWithAccounts = Portfolio & {
