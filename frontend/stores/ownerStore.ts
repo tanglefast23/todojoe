@@ -231,11 +231,16 @@ export const useOwnerStore = create<OwnerState>()(
 
       addOwner: async (name, password, isMaster = false) => {
         const id = generateId();
-        const passwordHash = await hashPassword(password);
 
         // First user is automatically master/admin
         const isFirstUser = get().owners.length === 0;
         const shouldBeMaster = isMaster || isFirstUser;
+
+        // Only hash password if provided and user is master (admins require passwords)
+        // Non-admin accounts can be passwordless
+        const passwordHash = (password && (shouldBeMaster || password.trim()))
+          ? await hashPassword(password)
+          : "";
 
         const newOwner: Owner = {
           id,
@@ -323,37 +328,42 @@ export const useOwnerStore = create<OwnerState>()(
         const owner = get().owners.find((o) => o.id === id);
         if (!owner) return false;
 
-        // Check rate limit before attempting login
-        const lockStatus = isOwnerLockedOut(id);
-        if (lockStatus.locked) {
-          console.warn(`[ownerStore] Login blocked: account locked for ${Math.ceil(lockStatus.remainingMs / 1000)}s`);
-          return false;
-        }
+        // Non-admin accounts without passwords can login without password
+        const isPasswordless = !owner.isMaster && (!owner.passwordHash || owner.passwordHash === "");
 
-        const isValid = await verifyPassword(password, owner.passwordHash);
-        if (!isValid) {
-          // Record failed attempt
-          const result = recordFailedAttempt(id);
-          if (result.locked) {
-            console.warn(`[ownerStore] Too many failed attempts. Account locked for 1 minute.`);
-          } else {
-            console.warn(`[ownerStore] Login failed. ${result.attemptsRemaining} attempts remaining.`);
+        if (!isPasswordless) {
+          // Check rate limit before attempting login (only for password-protected accounts)
+          const lockStatus = isOwnerLockedOut(id);
+          if (lockStatus.locked) {
+            console.warn(`[ownerStore] Login blocked: account locked for ${Math.ceil(lockStatus.remainingMs / 1000)}s`);
+            return false;
           }
-          return false;
-        }
 
-        // Clear rate limit on successful login
-        clearRateLimit(id);
+          const isValid = await verifyPassword(password, owner.passwordHash);
+          if (!isValid) {
+            // Record failed attempt
+            const result = recordFailedAttempt(id);
+            if (result.locked) {
+              console.warn(`[ownerStore] Too many failed attempts. Account locked for 1 minute.`);
+            } else {
+              console.warn(`[ownerStore] Login failed. ${result.attemptsRemaining} attempts remaining.`);
+            }
+            return false;
+          }
 
-        // Upgrade legacy SHA-256 hash to bcrypt if needed
-        if (needsHashUpgrade(owner.passwordHash)) {
-          const newHash = await hashPassword(password);
-          set((state) => ({
-            owners: state.owners.map((o) =>
-              o.id === id ? { ...o, passwordHash: newHash } : o
-            ),
-          }));
-          console.log(`[ownerStore] Upgraded password hash to bcrypt for owner ${id}`);
+          // Clear rate limit on successful login
+          clearRateLimit(id);
+
+          // Upgrade legacy SHA-256 hash to bcrypt if needed
+          if (needsHashUpgrade(owner.passwordHash)) {
+            const newHash = await hashPassword(password);
+            set((state) => ({
+              owners: state.owners.map((o) =>
+                o.id === id ? { ...o, passwordHash: newHash } : o
+              ),
+            }));
+            console.log(`[ownerStore] Upgraded password hash to bcrypt for owner ${id}`);
+          }
         }
 
         // Reset portfolio view BEFORE changing user (security: prevent data leakage)

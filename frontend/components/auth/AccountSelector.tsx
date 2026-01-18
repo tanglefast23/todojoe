@@ -106,12 +106,24 @@ export function AccountSelector({ onLoginSuccess }: AccountSelectorProps) {
     return a.name.localeCompare(b.name);
   });
 
-  const handleOwnerClick = useCallback((owner: Owner) => {
+  const handleOwnerClick = useCallback(async (owner: Owner) => {
     playSelectionChime();
+
+    // Non-admin accounts: login directly without password
+    if (!owner.isMaster) {
+      const success = await login(owner.id, "");
+      if (success) {
+        playLoginSuccess();
+        onLoginSuccess();
+      }
+      return;
+    }
+
+    // Admin accounts: show password dialog
     setSelectedOwner(owner);
     setPassword("");
     setError(null);
-  }, []);
+  }, [login, onLoginSuccess]);
 
   const handlePasswordSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,31 +191,23 @@ export function AccountSelector({ onLoginSuccess }: AccountSelectorProps) {
       return;
     }
 
-    if (!newPassword.trim()) {
-      setCreateError("Please enter a password");
-      return;
-    }
-
-    if (newPassword.length < 4) {
-      setCreateError("Password must be at least 4 characters");
-      return;
-    }
-
     setIsCreating(true);
     setCreateError(null);
 
     try {
       // Create new account - NEVER as master (master accounts already exist in Supabase)
-      const newId = await addOwner(newName.trim(), newPassword, false);
-      // Auto-login as the new user
-      await login(newId, newPassword);
+      // Non-admin accounts don't need passwords - just tap to login
+      const newId = await addOwner(newName.trim(), "", false);
+      // Auto-login as the new user (no password needed for non-admin)
+      await login(newId, "");
+      playLoginSuccess();
       onLoginSuccess();
     } catch {
       setCreateError("Failed to create account. Please try again.");
     } finally {
       setIsCreating(false);
     }
-  }, [newName, newPassword, addOwner, login, onLoginSuccess]);
+  }, [newName, addOwner, login, onLoginSuccess]);
 
   // Right-click handler
   const handleContextMenu = useCallback((e: React.MouseEvent, owner: Owner) => {
@@ -542,7 +546,7 @@ export function AccountSelector({ onLoginSuccess }: AccountSelectorProps) {
               <span>Create New Account</span>
             </DialogTitle>
             <DialogDescription>
-              Enter a name and password for your new account.
+              Enter your name to create an account.
             </DialogDescription>
           </DialogHeader>
 
@@ -561,31 +565,6 @@ export function AccountSelector({ onLoginSuccess }: AccountSelectorProps) {
                   disabled={isCreating}
                   className={cn(createError && !newName.trim() && "border-destructive")}
                 />
-              </div>
-              <div className="relative">
-                <Input
-                  type={showNewPassword ? "text" : "password"}
-                  value={newPassword}
-                  onChange={(e) => {
-                    setNewPassword(e.target.value);
-                    setCreateError(null);
-                  }}
-                  placeholder="Choose a password"
-                  disabled={isCreating}
-                  className={cn(createError && !newPassword.trim() && "border-destructive")}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  tabIndex={-1}
-                >
-                  {showNewPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
               </div>
               {createError && (
                 <p className="text-sm text-destructive">{createError}</p>

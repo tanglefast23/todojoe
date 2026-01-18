@@ -28,23 +28,23 @@ export interface SyncStateRefs {
  * @param delay - Delay in milliseconds (default 1000ms)
  * @returns Debounced function with flush() method
  */
-export function debounce<T extends (...args: Parameters<T>) => void>(
-  fn: T,
+export function debounce<TArgs extends unknown[]>(
+  fn: (...args: TArgs) => void,
   delay: number = 1000
-): T & { flush: () => void; cancel: () => void } {
+): ((...args: TArgs) => void) & { flush: () => void; cancel: () => void } {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  let lastArgs: Parameters<T> | null = null;
+  let lastArgs: TArgs | null = null;
 
   const flush = () => {
     if (timeoutId) {
       clearTimeout(timeoutId);
       timeoutId = null;
     }
-    if (lastArgs) {
-      const args = lastArgs;
+    if (lastArgs !== null) {
+      const args: TArgs = lastArgs;
       lastArgs = null;
       pendingFlushCallbacks.delete(flush);
-      fn(...args);
+      fn.apply(null, args);
     }
   };
 
@@ -57,7 +57,7 @@ export function debounce<T extends (...args: Parameters<T>) => void>(
     pendingFlushCallbacks.delete(flush);
   };
 
-  const debounced = ((...args: Parameters<T>) => {
+  const debounced = ((...args: TArgs) => {
     lastArgs = args;
 
     if (timeoutId) {
@@ -69,14 +69,14 @@ export function debounce<T extends (...args: Parameters<T>) => void>(
 
     timeoutId = setTimeout(() => {
       timeoutId = null;
-      if (lastArgs) {
-        const currentArgs = lastArgs;
+      if (lastArgs !== null) {
+        const currentArgs: TArgs = lastArgs;
         lastArgs = null;
         pendingFlushCallbacks.delete(flush);
-        fn(...currentArgs);
+        fn.apply(null, currentArgs);
       }
     }, delay);
-  }) as T & { flush: () => void; cancel: () => void };
+  }) as ((...args: TArgs) => void) & { flush: () => void; cancel: () => void };
 
   debounced.flush = flush;
   debounced.cancel = cancel;
