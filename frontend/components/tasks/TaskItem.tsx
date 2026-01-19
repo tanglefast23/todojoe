@@ -87,7 +87,7 @@ export function TaskItem({
   return (
     <div
       className={cn(
-        "relative flex items-center gap-3 p-4 rounded-xl border-2 transition-all",
+        "relative flex flex-col gap-2 p-4 rounded-xl border-2 transition-all",
         getCardStyle(),
         isCompleted && "opacity-70",
         showDeleteConfirm && "ring-2 ring-destructive"
@@ -113,37 +113,13 @@ export function TaskItem({
         </button>
       )}
 
-      <Checkbox
-        checked={isCompleted}
-        onCheckedChange={handleCheckChange}
-        disabled={!canComplete}
-        className={cn(
-          "h-5 w-5 border-2",
-          isCompleted
-            ? "border-emerald-500 data-[state=checked]:bg-emerald-500"
-            : task.priority === "urgent"
-              ? "border-orange-400"
-              : "border-cyan-400"
-        )}
-      />
-
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className={cn("font-medium truncate", isCompleted && "line-through")}>
-            {task.title}
-          </span>
-          {task.priority === "urgent" && (
-            <Badge className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 shadow-sm">
-              Urgent
-            </Badge>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+      {/* Top row: Creator info and attachment */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {creatorName && (
             <div className="flex items-center gap-1">
               <CreatorAvatar name={creatorName} size="sm" />
-              <span>Created {formatDistanceToNow(new Date(task.createdAt), { addSuffix: true })}</span>
+              <span>{formatDistanceToNow(new Date(task.createdAt), { addSuffix: true })}</span>
             </div>
           )}
 
@@ -155,52 +131,82 @@ export function TaskItem({
             </div>
           )}
         </div>
+
+        {/* Attachment Section */}
+        {!showDeleteConfirm && (
+          <div className="flex items-center gap-2">
+            {/* Show thumbnail if attachment exists */}
+            {task.attachmentUrl && (
+              <div className="relative group">
+                <a
+                  href={task.attachmentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="block"
+                >
+                  <img
+                    src={task.attachmentUrl}
+                    alt="Task attachment"
+                    className="h-10 w-10 rounded-lg object-cover border border-border/50 hover:border-pink-400 transition-colors"
+                  />
+                </a>
+                {/* Delete X for master users */}
+                {isMaster && onClearAttachment && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onClearAttachment(task.id);
+                    }}
+                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Remove attachment"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Show upload button for master users if no attachment */}
+            {isMaster && !task.attachmentUrl && onAttachment && (
+              <TaskAttachmentUpload
+                taskId={task.id}
+                onUpload={(url) => onAttachment(task.id, url)}
+              />
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Attachment Section */}
-      {!showDeleteConfirm && (
-        <div className="flex items-center gap-2">
-          {/* Show thumbnail if attachment exists */}
-          {task.attachmentUrl && (
-            <div className="relative group">
-              <a
-                href={task.attachmentUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="block"
-              >
-                <img
-                  src={task.attachmentUrl}
-                  alt="Task attachment"
-                  className="h-10 w-10 rounded-lg object-cover border border-border/50 hover:border-pink-400 transition-colors"
-                />
-              </a>
-              {/* Delete X for master users */}
-              {isMaster && onClearAttachment && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onClearAttachment(task.id);
-                  }}
-                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Remove attachment"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-            </div>
+      {/* Main content row: Checkbox and task description */}
+      <div className="flex items-start gap-3">
+        <Checkbox
+          checked={isCompleted}
+          onCheckedChange={handleCheckChange}
+          disabled={!canComplete}
+          className={cn(
+            "h-5 w-5 border-2 mt-0.5 flex-shrink-0",
+            isCompleted
+              ? "border-emerald-500 data-[state=checked]:bg-emerald-500"
+              : task.priority === "urgent"
+                ? "border-orange-400"
+                : "border-cyan-400"
           )}
+        />
 
-          {/* Show upload button for master users if no attachment */}
-          {isMaster && !task.attachmentUrl && onAttachment && (
-            <TaskAttachmentUpload
-              taskId={task.id}
-              onUpload={(url) => onAttachment(task.id, url)}
-            />
-          )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start gap-2">
+            <span className={cn("font-medium", isCompleted && "line-through")}>
+              {task.title}
+            </span>
+            {task.priority === "urgent" && (
+              <Badge className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 shadow-sm flex-shrink-0">
+                Urgent
+              </Badge>
+            )}
+          </div>
         </div>
-      )}
+      </div>
 
       {showDeleteConfirm && (
         <div className="flex gap-2">
