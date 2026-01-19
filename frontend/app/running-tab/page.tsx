@@ -65,6 +65,9 @@ export default function RunningTabPage() {
   // Clear all modal state (admin only)
   const [clearAllModalOpen, setClearAllModalOpen] = useState(false);
 
+  // Top-up confirmation dialog state
+  const [topUpConfirmOpen, setTopUpConfirmOpen] = useState(false);
+
   // Prefilled expense name from shortcuts
   const [prefilledExpenseName, setPrefilledExpenseName] = useState("");
 
@@ -217,7 +220,7 @@ export default function RunningTabPage() {
                   />
                   <Button
                     className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm px-4 h-10"
-                    onClick={() => handleTopUp(5000000, "Kia Top Up")}
+                    onClick={() => setTopUpConfirmOpen(true)}
                   >
                     +5M
                   </Button>
@@ -333,6 +336,37 @@ export default function RunningTabPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Top-Up Confirmation Dialog */}
+      <Dialog open={topUpConfirmOpen} onOpenChange={setTopUpConfirmOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirm Top Up</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to request a top up of 5,000,000 VND? This will need to be approved by a master account.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setTopUpConfirmOpen(false)}
+            >
+              No
+            </Button>
+            <Button
+              type="button"
+              className="bg-emerald-600 hover:bg-emerald-700"
+              onClick={() => {
+                addExpense("Kia Top Up", 5000000, activeOwnerId);
+                setTopUpConfirmOpen(false);
+              }}
+            >
+              Yes
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
