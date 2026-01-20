@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { X, Calendar, Clock } from "lucide-react";
+import { X, Clock } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CreatorAvatar } from "@/components/tasks/CreatorAvatar";
 import { cn } from "@/lib/utils";
 import type { ScheduledEvent } from "@/types/scheduled-events";
-import { format, formatDistanceToNow, isPast, isToday, isTomorrow } from "date-fns";
+import { format, formatDistanceToNow, isPast, isToday } from "date-fns";
 
 interface ScheduledEventItemProps {
   event: ScheduledEvent;
@@ -65,13 +65,6 @@ export function ScheduledEventItem({
     if (!isCompleted) return;
     e.preventDefault();
     setShowDeleteConfirm(true);
-  };
-
-  // Get date label
-  const getDateLabel = () => {
-    if (isToday(scheduledDate)) return "Today";
-    if (isTomorrow(scheduledDate)) return "Tomorrow";
-    return format(scheduledDate, "EEE, MMM d");
   };
 
   // Determine card style based on completion and timing
@@ -166,13 +159,6 @@ export function ScheduledEventItem({
 
       {/* Scheduled time row */}
       <div className="flex items-center gap-4 text-sm pl-8">
-        <div className={cn(
-          "flex items-center gap-1.5",
-          isCompleted ? "text-muted-foreground" : isOverdue ? "text-red-400" : "text-violet-400"
-        )}>
-          <Calendar className="h-4 w-4" />
-          <span className="font-medium">{getDateLabel()}</span>
-        </div>
         <div className={cn(
           "flex items-center gap-1.5",
           isCompleted ? "text-muted-foreground" : isOverdue ? "text-red-400" : "text-violet-400"
