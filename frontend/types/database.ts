@@ -662,6 +662,41 @@ export interface Database {
           updated_at?: string;
         };
       };
+      scheduled_events: {
+        Row: {
+          id: string;
+          title: string;
+          scheduled_at: string;
+          created_by: string | null;
+          created_at: string;
+          completed_by: string | null;
+          completed_at: string | null;
+          status: "pending" | "completed";
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          scheduled_at: string;
+          created_by?: string | null;
+          created_at?: string;
+          completed_by?: string | null;
+          completed_at?: string | null;
+          status?: "pending" | "completed";
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          scheduled_at?: string;
+          created_by?: string | null;
+          created_at?: string;
+          completed_by?: string | null;
+          completed_at?: string | null;
+          status?: "pending" | "completed";
+          updated_at?: string;
+        };
+      };
     };
   };
 }
@@ -688,6 +723,7 @@ export type RunningTabRow = Database["public"]["Tables"]["running_tab"]["Row"];
 export type ExpenseRow = Database["public"]["Tables"]["expenses"]["Row"];
 export type TabHistoryRow = Database["public"]["Tables"]["tab_history"]["Row"];
 export type AppPermissionsRow = Database["public"]["Tables"]["app_permissions"]["Row"];
+export type ScheduledEventRow = Database["public"]["Tables"]["scheduled_events"]["Row"];
 
 // Portfolio with nested accounts
 export type PortfolioWithAccounts = Portfolio & {

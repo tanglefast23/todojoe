@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, RefreshCw, User, ShieldCheck, Settings, Table2, DollarSign, PenLine } from "lucide-react";
+import { LogOut, RefreshCw, User, ShieldCheck, Settings, Table2, DollarSign, PenLine, CalendarDays } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { title: "Entry", href: "/entry", icon: PenLine, masterOnly: true },
   { title: "Tasks", href: "/tasks", icon: Table2 },
+  { title: "Calendar", href: "/calendar", icon: CalendarDays },
   { title: "Running Tab", href: "/running-tab", icon: DollarSign },
 ];
 

@@ -3,7 +3,7 @@
 import { memo, useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Table2, Calculator, PenLine } from "lucide-react";
+import { Table2, Calculator, PenLine, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { playClickSound } from "@/lib/audio";
 import { useOwnerStore } from "@/stores/ownerStore";
@@ -30,8 +30,9 @@ export const MobileBottomNav = memo(function MobileBottomNav() {
       items.push({ title: "Entry", href: "/entry", icon: PenLine });
     }
 
-    // Tasks and Tab - for all users
+    // Tasks, Calendar and Tab - for all users
     items.push({ title: "Tasks", href: "/tasks", icon: Table2 });
+    items.push({ title: "Calendar", href: "/calendar", icon: CalendarDays });
     items.push({ title: "Tab", href: "/running-tab", icon: Calculator });
 
     return items;

@@ -4,8 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { AddTaskForm } from "@/components/tasks/AddTaskForm";
+import { ScheduleTaskForm } from "@/components/tasks/ScheduleTaskForm";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useTasksStore } from "@/stores/tasksStore";
+import { useScheduledEventsStore } from "@/stores/scheduledEventsStore";
 import { useOwnerStore } from "@/stores/ownerStore";
 import type { TaskPriority } from "@/types/tasks";
 
@@ -17,6 +19,9 @@ export default function EntryPage() {
 
   // Tasks state
   const addTask = useTasksStore((state) => state.addTask);
+
+  // Scheduled events state
+  const addEvent = useScheduledEventsStore((state) => state.addEvent);
 
   // Owner state
   const getActiveOwnerId = useOwnerStore((state) => state.getActiveOwnerId);
@@ -43,6 +48,12 @@ export default function EntryPage() {
     if (!activeOwnerId) return;
     addTask(title, priority, activeOwnerId);
   }, [activeOwnerId, addTask]);
+
+  // Handle scheduling a new event
+  const handleScheduleEvent = useCallback((title: string, scheduledAt: string) => {
+    if (!activeOwnerId) return;
+    addEvent(title, scheduledAt, activeOwnerId);
+  }, [activeOwnerId, addEvent]);
 
   // Show loading state while checking authentication
   if (isAuthLoading || !isAuthenticated) {
@@ -73,6 +84,12 @@ export default function EntryPage() {
           {/* Add Task Form - Master only */}
           <AddTaskForm
             onAddTask={handleAddTask}
+            disabled={!isMounted || !activeOwnerId}
+          />
+
+          {/* Schedule Event Form - Master only */}
+          <ScheduleTaskForm
+            onScheduleTask={handleScheduleEvent}
             disabled={!isMounted || !activeOwnerId}
           />
         </div>

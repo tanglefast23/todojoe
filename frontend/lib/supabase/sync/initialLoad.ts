@@ -17,16 +17,19 @@ import {
 import { fetchRunningTab, upsertTab } from "@/lib/supabase/queries/runningTab";
 import { fetchAllExpenses, upsertExpenses } from "@/lib/supabase/queries/expenses";
 import { fetchTabHistory, upsertHistory } from "@/lib/supabase/queries/tabHistory";
+import { fetchAllScheduledEvents, upsertScheduledEvents } from "@/lib/supabase/queries/scheduled-events";
 
 import { useTasksStore } from "@/stores/tasksStore";
 import { useTagsStore } from "@/stores/tagsStore";
 import { useOwnerStore } from "@/stores/ownerStore"; // Syncs to todo_owners table
 import { usePermissionsStore } from "@/stores/permissionsStore";
 import { useRunningTabStore } from "@/stores/runningTabStore";
+import { useScheduledEventsStore } from "@/stores/scheduledEventsStore";
 
 import { retryWithBackoff } from "./utils";
 
 import type { Task } from "@/types/tasks";
+import type { ScheduledEvent } from "@/types/scheduled-events";
 import type { Tag } from "@/types/dashboard";
 import type { Owner } from "@/types/owner";
 import type { AppPermissions, RunningTab, Expense, TabHistoryEntry } from "@/types/runningTab";
@@ -108,6 +111,7 @@ export async function performInitialLoad(): Promise<void> {
     cloudRunningTab,
     cloudExpenses,
     cloudTabHistory,
+    cloudScheduledEvents,
   ] = await Promise.all([
     retryWithBackoff(() => fetchAllTasks(), 3, "fetchAllTasks"),
     retryWithBackoff(() => fetchTags(), 3, "fetchTags"),
@@ -116,6 +120,7 @@ export async function performInitialLoad(): Promise<void> {
     retryWithBackoff(() => fetchRunningTab(), 3, "fetchRunningTab"),
     retryWithBackoff(() => fetchAllExpenses(), 3, "fetchAllExpenses"),
     retryWithBackoff(() => fetchTabHistory(), 3, "fetchTabHistory"),
+    retryWithBackoff(() => fetchAllScheduledEvents(), 3, "fetchAllScheduledEvents"),
   ]);
 
   // Convert database rows to app types
@@ -130,6 +135,7 @@ export async function performInitialLoad(): Promise<void> {
   const localTab = useRunningTabStore.getState().tab;
   const localExpenses = useRunningTabStore.getState().expenses;
   const localHistory = useRunningTabStore.getState().history;
+  const localScheduledEvents = useScheduledEventsStore.getState().events;
 
   // Sync Tasks
   await syncDataType<Task[]>({
@@ -198,6 +204,17 @@ export async function performInitialLoad(): Promise<void> {
     hasLocalData: (data) => Array.isArray(data) && data.length > 0,
     updateLocal: (data) => useRunningTabStore.getState().setHistory(data),
     pushToCloud: (data) => upsertHistory(data),
+  });
+
+  // Sync Scheduled Events
+  await syncDataType<ScheduledEvent[]>({
+    name: "scheduledEvents",
+    cloudData: cloudScheduledEvents,
+    localData: localScheduledEvents,
+    hasCloudData: (data) => Array.isArray(data) && data.length > 0,
+    hasLocalData: (data) => Array.isArray(data) && data.length > 0,
+    updateLocal: (data) => useScheduledEventsStore.getState().setEvents(data),
+    pushToCloud: (data) => upsertScheduledEvents(data),
   });
 
   console.log("[Sync] Initial load complete");
