@@ -100,24 +100,59 @@ export function useSupabaseSync(): void {
 
   // Re-fetch data when tab becomes visible (user switches back to app or device)
   // This enables cross-device sync without requiring manual refresh
+  // Uses multiple event types for better mobile compatibility (iOS Safari especially)
   useEffect(() => {
-    const handleVisibilityChange = async () => {
-      if (document.visibilityState === "visible" && initialLoadComplete.current) {
-        console.log("[Sync] Tab visible - refreshing data from cloud...");
-        isInitialLoad.current = true;
-        try {
-          await performInitialLoad();
-        } catch (error) {
-          console.error("[Sync] Visibility refresh failed:", error);
-        } finally {
-          isInitialLoad.current = false;
-        }
+    let lastSyncTime = 0;
+    const MIN_SYNC_INTERVAL = 5000; // Don't sync more than once per 5 seconds
+
+    const refreshFromCloud = async (source: string) => {
+      const now = Date.now();
+      if (now - lastSyncTime < MIN_SYNC_INTERVAL) {
+        console.log(`[Sync] Skipping ${source} refresh (too soon)`);
+        return;
+      }
+      if (!initialLoadComplete.current || isInitialLoad.current) {
+        return;
+      }
+
+      console.log(`[Sync] ${source} - refreshing data from cloud...`);
+      lastSyncTime = now;
+      isInitialLoad.current = true;
+      try {
+        await performInitialLoad();
+      } catch (error) {
+        console.error(`[Sync] ${source} refresh failed:`, error);
+      } finally {
+        isInitialLoad.current = false;
       }
     };
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        refreshFromCloud("Tab visible");
+      }
+    };
+
+    // pageshow fires when page is restored from back-forward cache (common on iOS)
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        refreshFromCloud("Page restored from bfcache");
+      }
+    };
+
+    // focus event as fallback for iOS Safari where visibilitychange is unreliable
+    const handleFocus = () => {
+      refreshFromCloud("Window focus");
+    };
+
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pageshow", handlePageShow);
+    window.addEventListener("focus", handleFocus);
+
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pageshow", handlePageShow);
+      window.removeEventListener("focus", handleFocus);
     };
   }, []);
 
