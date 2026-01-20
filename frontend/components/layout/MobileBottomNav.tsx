@@ -21,22 +21,13 @@ export const MobileBottomNav = memo(function MobileBottomNav() {
 
   const isMaster = isMounted ? isMasterLoggedIn() : false;
 
-  // Build nav items based on user role
-  const navItems = useMemo(() => {
-    const items = [];
-
-    // Entry tab - only for master users
-    if (isMaster) {
-      items.push({ title: "Entry", href: "/entry", icon: PenLine });
-    }
-
-    // Tasks, Calendar and Tab - for all users
-    items.push({ title: "Tasks", href: "/tasks", icon: Table2 });
-    items.push({ title: "Calendar", href: "/calendar", icon: CalendarDays });
-    items.push({ title: "Tab", href: "/running-tab", icon: Calculator });
-
-    return items;
-  }, [isMaster]);
+  // Navigation items - all users get Entry now (non-master only sees calendar events)
+  const navItems = useMemo(() => [
+    { title: "Entry", href: "/entry", icon: PenLine },
+    { title: "Tasks", href: "/tasks", icon: Table2 },
+    { title: "Calendar", href: "/calendar", icon: CalendarDays },
+    { title: "Tab", href: "/running-tab", icon: Calculator },
+  ], []);
 
   const handleNavClick = (href: string) => {
     if (pathname !== href) {

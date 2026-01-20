@@ -15,6 +15,7 @@ import {
 interface ScheduledEventListProps {
   events: ScheduledEvent[];
   getOwnerName: (ownerId: string | null) => string | undefined;
+  isOwnerMaster: (ownerId: string | null) => boolean;
   onComplete: (id: string) => void;
   onUncomplete: (id: string) => void;
   onDelete: (id: string) => void;
@@ -59,6 +60,7 @@ function groupEventsByDay(events: ScheduledEvent[], dateField: "scheduledAt" | "
 export function ScheduledEventList({
   events,
   getOwnerName,
+  isOwnerMaster,
   onComplete,
   onUncomplete,
   onDelete,
@@ -112,6 +114,7 @@ export function ScheduledEventList({
                     key={event.id}
                     event={event}
                     creatorName={getOwnerName(event.createdBy)}
+                    isCreatorMaster={isOwnerMaster(event.createdBy)}
                     completerName={getOwnerName(event.completedBy)}
                     onComplete={onComplete}
                     onUncomplete={onUncomplete}
@@ -145,6 +148,7 @@ export function ScheduledEventList({
                     key={event.id}
                     event={event}
                     creatorName={getOwnerName(event.createdBy)}
+                    isCreatorMaster={isOwnerMaster(event.createdBy)}
                     completerName={getOwnerName(event.completedBy)}
                     onComplete={onComplete}
                     onUncomplete={onUncomplete}

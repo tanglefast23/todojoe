@@ -38,6 +38,13 @@ export default function CalendarPage() {
     return owner?.name;
   }, [owners]);
 
+  // Check if owner is master by ID
+  const isOwnerMaster = useCallback((ownerId: string | null): boolean => {
+    if (!ownerId) return false;
+    const owner = owners.find((o) => o.id === ownerId);
+    return owner?.isMaster ?? false;
+  }, [owners]);
+
   // Handle completing an event
   const handleComplete = useCallback((id: string) => {
     if (!activeOwnerId) return;
@@ -75,6 +82,7 @@ export default function CalendarPage() {
           <ScheduledEventList
             events={events}
             getOwnerName={getOwnerName}
+            isOwnerMaster={isOwnerMaster}
             onComplete={handleComplete}
             onUncomplete={handleUncomplete}
             onDelete={handleDelete}

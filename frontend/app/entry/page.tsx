@@ -36,12 +36,6 @@ export default function EntryPage() {
   const activeOwnerId = isMounted ? getActiveOwnerId() : null;
   const isMaster = isMounted ? isMasterLoggedIn() : false;
 
-  // Redirect non-master users to tasks page
-  useEffect(() => {
-    if (isMounted && !isMaster) {
-      router.replace("/tasks");
-    }
-  }, [isMounted, isMaster, router]);
 
   // Handle adding a new task
   const handleAddTask = useCallback((title: string, priority: TaskPriority) => {
@@ -64,8 +58,8 @@ export default function EntryPage() {
     );
   }
 
-  // Show loading while checking master status
-  if (!isMounted || !isMaster) {
+  // Show loading while mounting
+  if (!isMounted) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -82,12 +76,14 @@ export default function EntryPage() {
           <h1 className="text-2xl font-bold">Entry</h1>
 
           {/* Add Task Form - Master only */}
-          <AddTaskForm
-            onAddTask={handleAddTask}
-            disabled={!isMounted || !activeOwnerId}
-          />
+          {isMaster && (
+            <AddTaskForm
+              onAddTask={handleAddTask}
+              disabled={!isMounted || !activeOwnerId}
+            />
+          )}
 
-          {/* Schedule Event Form - Master only */}
+          {/* Schedule Event Form - All users */}
           <ScheduleTaskForm
             onScheduleTask={handleScheduleEvent}
             disabled={!isMounted || !activeOwnerId}

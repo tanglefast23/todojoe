@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 
 // Navigation items for the header (Settings moved to right side as icon)
 const navItems = [
-  { title: "Entry", href: "/entry", icon: PenLine, masterOnly: true },
+  { title: "Entry", href: "/entry", icon: PenLine },
   { title: "Tasks", href: "/tasks", icon: Table2 },
   { title: "Calendar", href: "/calendar", icon: CalendarDays },
   { title: "Running Tab", href: "/running-tab", icon: DollarSign },
@@ -132,9 +132,7 @@ export function Header() {
         <Link href="/tasks" className="mr-2">
           <Logo size="md" />
         </Link>
-        {navItems
-          .filter((item) => !item.masterOnly || isMaster)
-          .map((item) => {
+        {navItems.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
