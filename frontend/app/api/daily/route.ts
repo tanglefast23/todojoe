@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 export interface DailyData {
   crypto: {
@@ -29,9 +28,9 @@ export interface DailyData {
 }
 
 export async function GET() {
-  if (!GROQ_API_KEY) {
+  if (!GEMINI_API_KEY) {
     return NextResponse.json(
-      { error: "Groq API key not configured" },
+      { error: "Gemini API key not configured" },
       { status: 500 }
     );
   }
@@ -43,55 +42,70 @@ export async function GET() {
     day: "numeric",
   });
 
-  const prompt = `Today is ${today}. Give me a daily briefing in JSON format:
+  // Concise prompt for Gemini with search grounding
+  const prompt = `Today is ${today}. Search for current data and return a JSON daily briefing:
 
-1. Crypto (BTC, ETH, HYPE, ZEC): current price USD & 24h % change
-2. Stocks [COIN,META,AMD,AAPL,MSFT,AVGO,CRCL,HOOD,OKLO,SMR,ETHA,IBIT,BRK-B,GOOG,TSM,AMZN,TSLA,MU,NVDA,COPX,HBM,ERO,URA,IREN,MSTR,SIJL,NBIS,CRWV]: only top 3 gainers & top 3 losers with %
-3. Ho Chi Minh City weather today (temp, condition, brief forecast)
-4. Top 2 Vietnam/HCMC news headlines
-5. Top 2 global news headlines
-6. Top 2 pop culture news headlines
+1. Current crypto prices & 24h change: Bitcoin (BTC), Ethereum (ETH), Hyperliquid (HYPE), Zcash (ZEC)
+2. From these stocks, find only the top 3 gainers and top 3 losers today with their % change: COIN, META, AMD, AAPL, MSFT, AVGO, CRCL, HOOD, OKLO, SMR, ETHA, IBIT, BRK-B, GOOG, TSM, AMZN, TSLA, MU, NVDA, COPX, HBM, ERO, URA, IREN, MSTR, SOXL, NBIS, CRWV
+3. Ho Chi Minh City weather right now (temp in Celsius, condition, brief forecast)
+4. Top 2 Vietnam/Ho Chi Minh City news headlines today
+5. Top 2 global/world news headlines today
+6. Top 2 entertainment/pop culture news headlines today
 
-Return ONLY valid JSON, no markdown:
+Return ONLY valid JSON in this exact format, no other text:
 {"crypto":[{"symbol":"BTC","name":"Bitcoin","price":"$XX,XXX","change":"+X.X%","isPositive":true}],"stocks":{"gainers":[{"symbol":"XXX","change":"+X.X%"}],"losers":[{"symbol":"XXX","change":"-X.X%"}]},"weather":{"temp":"XX°C","condition":"Sunny","forecast":"Brief forecast"},"news":{"vietnam":["headline1","headline2"],"global":["headline1","headline2"],"popCulture":["headline1","headline2"]}}`;
 
   try {
-    const response = await fetch(GROQ_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a financial and news assistant. Provide realistic current market data and news. Return only valid JSON, no explanations.",
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: prompt }],
+            },
+          ],
+          tools: [
+            {
+              google_search_retrieval: {},
+            },
+          ],
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 2000,
           },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.3,
-        max_tokens: 1500,
-      }),
-    });
+        }),
+      }
+    );
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error?.message || "Failed to fetch daily data");
+      console.error("[Daily API] Gemini error:", error);
+      throw new Error(error.error?.message || "Failed to fetch from Gemini");
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content?.trim();
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
     if (!content) {
-      throw new Error("No response from Groq");
+      throw new Error("No response from Gemini");
     }
 
-    // Parse JSON response
+    // Parse JSON response (remove any markdown formatting)
     const jsonStr = content.replace(/```json\n?|\n?```/g, "").trim();
-    const dailyData: DailyData = JSON.parse(jsonStr);
+
+    let dailyData: DailyData;
+    try {
+      dailyData = JSON.parse(jsonStr);
+    } catch (parseErr) {
+      console.error("[Daily API] JSON parse error. Raw content:", content);
+      throw new Error("Failed to parse response as JSON");
+    }
+
     dailyData.generatedAt = new Date().toISOString();
 
     return NextResponse.json(dailyData);
