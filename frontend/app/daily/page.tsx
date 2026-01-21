@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import {
-  RefreshCw,
   TrendingUp,
   Newspaper,
   Globe,
@@ -240,28 +239,6 @@ export default function DailyPage() {
 
       <main className="flex-1 p-4 pb-24">
         <div className="max-w-lg mx-auto space-y-4">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">Daily Briefing</h1>
-              {lastUpdated && (
-                <p className="text-sm text-muted-foreground">
-                  {fromCache ? "Cached from" : "Updated"} {lastUpdated}
-                </p>
-              )}
-            </div>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => fetchDaily(true)}
-              disabled={loading}
-              className="rounded-full"
-              title="Force refresh"
-            >
-              <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-            </Button>
-          </div>
-
           {/* Loading State */}
           {loading && !data && (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -435,6 +412,9 @@ export default function DailyPage() {
               {/* Disclaimer */}
               <p className="text-xs text-center text-muted-foreground pt-2">
                 Market data from CoinGecko & Yahoo Finance • News via Gemini Search • Refreshes daily at 8 AM
+                {lastUpdated && (
+                  <span> • {fromCache ? "Cached from" : "Updated"} {lastUpdated}</span>
+                )}
               </p>
             </div>
           )}
