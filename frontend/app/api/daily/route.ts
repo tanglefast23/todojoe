@@ -110,7 +110,7 @@ Return ONLY valid JSON in this exact format, no other text:
         ],
         tools: [
           {
-            google_search_retrieval: {},
+            google_search: {},
           },
         ],
         generationConfig: {

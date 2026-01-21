@@ -35,8 +35,9 @@ interface SettingsState {
   setFontSize: (size: FontSize) => void;
   increaseFontSize: () => void;
   decreaseFontSize: () => void;
+  cycleFontSize: () => void;
   // Setter for Supabase sync - completely replaces settings state
-  setSettings: (settings: Partial<Omit<SettingsState, "setAutoRefresh" | "setRefreshInterval" | "setMetricsMode" | "setCurrency" | "setMobileMode" | "setActiveView" | "setFontSize" | "increaseFontSize" | "decreaseFontSize" | "setSettings">>) => void;
+  setSettings: (settings: Partial<Omit<SettingsState, "setAutoRefresh" | "setRefreshInterval" | "setMetricsMode" | "setCurrency" | "setMobileMode" | "setActiveView" | "setFontSize" | "increaseFontSize" | "decreaseFontSize" | "cycleFontSize" | "setSettings">>) => void;
 }
 
 const FONT_SIZE_ORDER: FontSize[] = ["small", "medium", "large", "xlarge"];
@@ -73,6 +74,11 @@ export const useSettingsStore = create<SettingsState>()(
         if (currentIndex > 0) {
           set({ fontSize: FONT_SIZE_ORDER[currentIndex - 1] });
         }
+      },
+      cycleFontSize: () => {
+        const currentIndex = FONT_SIZE_ORDER.indexOf(get().fontSize);
+        const nextIndex = (currentIndex + 1) % FONT_SIZE_ORDER.length;
+        set({ fontSize: FONT_SIZE_ORDER[nextIndex] });
       },
       setSettings: (settings) => set(settings),
     }),

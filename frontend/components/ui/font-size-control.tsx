@@ -1,7 +1,5 @@
 "use client";
 
-import { Minus, Plus } from "lucide-react";
-import { Button } from "./button";
 import { useSettingsStore, type FontSize } from "@/stores/settingsStore";
 import { cn } from "@/lib/utils";
 
@@ -17,43 +15,22 @@ const FONT_SIZE_LABELS: Record<FontSize, string> = {
 };
 
 export function FontSizeControl({ className }: FontSizeControlProps) {
-  const { fontSize, increaseFontSize, decreaseFontSize } = useSettingsStore();
-
-  const isSmallest = fontSize === "small";
-  const isLargest = fontSize === "xlarge";
+  const { fontSize, cycleFontSize } = useSettingsStore();
 
   return (
-    <div className={cn("flex items-center gap-1", className)}>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        onClick={decreaseFontSize}
-        disabled={isSmallest}
-        title="Decrease font size"
-        className="h-8 w-8"
-      >
-        <Minus className="h-4 w-4" />
-        <span className="sr-only">Decrease font size</span>
-      </Button>
-
-      <span
-        className="min-w-[2rem] text-center text-xs font-medium text-muted-foreground"
-        title={`Font size: ${fontSize}`}
-      >
-        {FONT_SIZE_LABELS[fontSize]}
-      </span>
-
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        onClick={increaseFontSize}
-        disabled={isLargest}
-        title="Increase font size"
-        className="h-8 w-8"
-      >
-        <Plus className="h-4 w-4" />
-        <span className="sr-only">Increase font size</span>
-      </Button>
-    </div>
+    <button
+      onClick={cycleFontSize}
+      className={cn(
+        "flex items-center justify-center",
+        "h-8 w-8 rounded-md",
+        "text-sm font-medium text-muted-foreground",
+        "hover:bg-accent hover:text-accent-foreground",
+        "transition-colors",
+        className
+      )}
+      title={`Font size: ${fontSize} (tap to change)`}
+    >
+      {FONT_SIZE_LABELS[fontSize]}
+    </button>
   );
 }
