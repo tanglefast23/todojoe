@@ -1,74 +1,69 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { RefreshCw } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { ScheduledEventList } from "@/components/calendar/ScheduledEventList";
-import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useScheduledEventsStore } from "@/stores/scheduledEventsStore";
-import { useOwnerStore } from "@/stores/ownerStore";
+import { Button } from "@/components/ui/button";
+import type { ScheduledEvent } from "@/types/scheduled-events";
 
 export default function CalendarPage() {
-  // Redirect to login if not authenticated
-  const { isLoading: isAuthLoading, isAuthenticated } = useAuthGuard();
-
-  // Scheduled events state
-  const events = useScheduledEventsStore((state) => state.events);
+  // Local scheduled events state
+  const localEvents = useScheduledEventsStore((state) => state.events);
   const completeEvent = useScheduledEventsStore((state) => state.completeEvent);
   const uncompleteEvent = useScheduledEventsStore((state) => state.uncompleteEvent);
   const deleteEvent = useScheduledEventsStore((state) => state.deleteEvent);
 
-  // Owner state
-  const owners = useOwnerStore((state) => state.owners);
-  const getActiveOwnerId = useOwnerStore((state) => state.getActiveOwnerId);
-  const isMasterLoggedIn = useOwnerStore((state) => state.isMasterLoggedIn);
+  // Google Calendar events state
+  const [googleEvents, setGoogleEvents] = useState<ScheduledEvent[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Hydration-safe
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => {
-    setIsMounted(true);
+  // Fetch Google Calendar events
+  const fetchGoogleEvents = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/google/calendar/events");
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to fetch calendar events");
+      }
+      const data = await response.json();
+      setGoogleEvents(data.events || []);
+    } catch (err) {
+      console.error("Error fetching Google Calendar events:", err);
+      setError(err instanceof Error ? err.message : "Failed to fetch events");
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  const activeOwnerId = isMounted ? getActiveOwnerId() : null;
-  const isMaster = isMounted ? isMasterLoggedIn() : false;
+  // Fetch on mount
+  useEffect(() => {
+    fetchGoogleEvents();
+  }, [fetchGoogleEvents]);
 
-  // Get owner name by ID
-  const getOwnerName = useCallback((ownerId: string | null): string | undefined => {
-    if (!ownerId) return undefined;
-    const owner = owners.find((o) => o.id === ownerId);
-    return owner?.name;
-  }, [owners]);
-
-  // Check if owner is master by ID
-  const isOwnerMaster = useCallback((ownerId: string | null): boolean => {
-    if (!ownerId) return false;
-    const owner = owners.find((o) => o.id === ownerId);
-    return owner?.isMaster ?? false;
-  }, [owners]);
+  // Combine local and Google events, sorted by date
+  const allEvents = [...localEvents, ...googleEvents].sort(
+    (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
+  );
 
   // Handle completing an event
   const handleComplete = useCallback((id: string) => {
-    if (!activeOwnerId) return;
-    completeEvent(id, activeOwnerId);
-  }, [activeOwnerId, completeEvent]);
+    completeEvent(id);
+  }, [completeEvent]);
 
   // Handle uncompleting an event
   const handleUncomplete = useCallback((id: string) => {
     uncompleteEvent(id);
   }, [uncompleteEvent]);
 
-  // Handle deleting an event
+  // Handle deleting an event (only for local events)
   const handleDelete = useCallback((id: string) => {
     deleteEvent(id);
   }, [deleteEvent]);
-
-  // Show loading state while checking authentication
-  if (isAuthLoading || !isAuthenticated) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -76,19 +71,32 @@ export default function CalendarPage() {
 
       <main className="flex-1 p-6">
         <div className="max-w-3xl mx-auto space-y-6">
-          <h1 className="text-2xl font-bold">Calendar</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold">Calendar</h1>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchGoogleEvents}
+              disabled={isLoading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
+              {isLoading ? "Syncing..." : "Sync Google Calendar"}
+            </Button>
+          </div>
+
+          {error && (
+            <div className="p-4 rounded-lg bg-destructive/10 text-destructive text-sm">
+              {error}
+            </div>
+          )}
 
           {/* Scheduled Event List */}
           <ScheduledEventList
-            events={events}
-            getOwnerName={getOwnerName}
-            isOwnerMaster={isOwnerMaster}
+            events={allEvents}
             onComplete={handleComplete}
             onUncomplete={handleUncomplete}
             onDelete={handleDelete}
             canComplete={true}
-            isMaster={isMaster}
-            activeOwnerId={activeOwnerId}
           />
         </div>
       </main>

@@ -1,18 +1,18 @@
 export type ScheduledEventStatus = 'pending' | 'completed';
+export type ScheduledEventSource = 'local' | 'google';
 
 export interface ScheduledEvent {
   id: string;
   title: string;
+  description?: string | null;
   scheduledAt: string; // ISO timestamp for when the event is scheduled
-  createdBy: string | null;
+  endAt?: string | null; // ISO timestamp for when the event ends
   createdAt: string;
-  completedBy: string | null;
   completedAt: string | null;
   status: ScheduledEventStatus;
+  source: ScheduledEventSource;
+  googleEventId?: string | null;
+  googleCalendarId?: string | null;
+  lastSyncedAt?: string | null;
   updatedAt: string;
-}
-
-export interface ScheduledEventWithOwner extends ScheduledEvent {
-  creatorName?: string;
-  completerName?: string;
 }

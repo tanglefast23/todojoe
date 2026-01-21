@@ -32,8 +32,8 @@ interface ScheduledEventsState {
   setEvents: (events: ScheduledEvent[]) => void;
 
   // Event CRUD
-  addEvent: (title: string, scheduledAt: string, createdBy: string | null) => string;
-  completeEvent: (id: string, completedBy: string | null) => void;
+  addEvent: (title: string, scheduledAt: string) => string;
+  completeEvent: (id: string, completedBy?: string | null) => void;
   uncompleteEvent: (id: string) => void;
   deleteEvent: (id: string) => void;
 
@@ -51,18 +51,17 @@ export const useScheduledEventsStore = create<ScheduledEventsState>()(
 
       setEvents: (events) => set({ events }),
 
-      addEvent: (title, scheduledAt, createdBy) => {
+      addEvent: (title, scheduledAt) => {
         const id = generateId();
         const now = new Date().toISOString();
         const newEvent: ScheduledEvent = {
           id,
           title,
           scheduledAt,
-          createdBy,
           createdAt: now,
-          completedBy: null,
           completedAt: null,
           status: "pending",
+          source: "local",
           updatedAt: now,
         };
 
@@ -80,7 +79,7 @@ export const useScheduledEventsStore = create<ScheduledEventsState>()(
         return id;
       },
 
-      completeEvent: (id, completedBy) => {
+      completeEvent: (id) => {
         const now = new Date().toISOString();
         set((state) => ({
           events: state.events.map((event) =>
@@ -88,7 +87,6 @@ export const useScheduledEventsStore = create<ScheduledEventsState>()(
               ? {
                   ...event,
                   status: "completed" as const,
-                  completedBy,
                   completedAt: now,
                   updatedAt: now,
                 }
@@ -99,7 +97,6 @@ export const useScheduledEventsStore = create<ScheduledEventsState>()(
         // Sync to Supabase for cross-device sync
         updateScheduledEvent(id, {
           status: "completed",
-          completedBy,
           completedAt: now,
           updatedAt: now,
         }).catch((error) => {
@@ -115,7 +112,6 @@ export const useScheduledEventsStore = create<ScheduledEventsState>()(
               ? {
                   ...event,
                   status: "pending" as const,
-                  completedBy: null,
                   completedAt: null,
                   updatedAt: now,
                 }
@@ -126,7 +122,6 @@ export const useScheduledEventsStore = create<ScheduledEventsState>()(
         // Sync to Supabase for cross-device sync
         updateScheduledEvent(id, {
           status: "pending",
-          completedBy: null,
           completedAt: null,
           updatedAt: now,
         }).catch((error) => {

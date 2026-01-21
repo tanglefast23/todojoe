@@ -14,12 +14,16 @@ function rowToScheduledEvent(row: ScheduledEventRow): ScheduledEvent {
   return {
     id: row.id,
     title: row.title,
+    description: row.description,
     scheduledAt: row.scheduled_at,
-    createdBy: row.created_by,
+    endAt: row.end_at,
     createdAt: row.created_at,
-    completedBy: row.completed_by,
     completedAt: row.completed_at,
-    status: row.status,
+    status: row.status as ScheduledEvent["status"],
+    source: (row.source || "local") as ScheduledEvent["source"],
+    googleEventId: row.google_event_id,
+    googleCalendarId: row.google_calendar_id,
+    lastSyncedAt: row.last_synced_at,
     updatedAt: row.updated_at,
   };
 }
@@ -29,12 +33,16 @@ function scheduledEventToInsert(event: Omit<ScheduledEvent, "id"> & { id?: strin
   return {
     id: event.id,
     title: event.title,
+    description: event.description,
     scheduled_at: event.scheduledAt,
-    created_by: event.createdBy,
+    end_at: event.endAt,
     created_at: event.createdAt,
-    completed_by: event.completedBy,
     completed_at: event.completedAt,
     status: event.status,
+    source: event.source || "local",
+    google_event_id: event.googleEventId,
+    google_calendar_id: event.googleCalendarId,
+    last_synced_at: event.lastSyncedAt,
     updated_at: event.updatedAt,
   };
 }
@@ -42,12 +50,16 @@ function scheduledEventToInsert(event: Omit<ScheduledEvent, "id"> & { id?: strin
 function scheduledEventToUpdate(event: Partial<ScheduledEvent>): ScheduledEventUpdate {
   const update: ScheduledEventUpdate = {};
   if (event.title !== undefined) update.title = event.title;
+  if (event.description !== undefined) update.description = event.description;
   if (event.scheduledAt !== undefined) update.scheduled_at = event.scheduledAt;
-  if (event.createdBy !== undefined) update.created_by = event.createdBy;
+  if (event.endAt !== undefined) update.end_at = event.endAt;
   if (event.createdAt !== undefined) update.created_at = event.createdAt;
-  if (event.completedBy !== undefined) update.completed_by = event.completedBy;
   if (event.completedAt !== undefined) update.completed_at = event.completedAt;
   if (event.status !== undefined) update.status = event.status;
+  if (event.source !== undefined) update.source = event.source;
+  if (event.googleEventId !== undefined) update.google_event_id = event.googleEventId;
+  if (event.googleCalendarId !== undefined) update.google_calendar_id = event.googleCalendarId;
+  if (event.lastSyncedAt !== undefined) update.last_synced_at = event.lastSyncedAt;
   if (event.updatedAt !== undefined) update.updated_at = event.updatedAt;
   return update;
 }

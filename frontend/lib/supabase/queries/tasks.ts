@@ -14,12 +14,10 @@ function rowToTask(row: TaskRow): Task {
   return {
     id: row.id,
     title: row.title,
-    priority: row.priority,
-    createdBy: row.created_by,
+    priority: row.priority as Task["priority"],
     createdAt: row.created_at,
-    completedBy: row.completed_by,
     completedAt: row.completed_at,
-    status: row.status,
+    status: row.status as Task["status"],
     attachmentUrl: row.attachment_url,
     updatedAt: row.updated_at,
   };
@@ -31,9 +29,7 @@ function taskToInsert(task: Omit<Task, "id"> & { id?: string }): TaskInsert {
     id: task.id,
     title: task.title,
     priority: task.priority,
-    created_by: task.createdBy,
     created_at: task.createdAt,
-    completed_by: task.completedBy,
     completed_at: task.completedAt,
     status: task.status,
     attachment_url: task.attachmentUrl,
@@ -45,9 +41,7 @@ function taskToUpdate(task: Partial<Task>): TaskUpdate {
   const update: TaskUpdate = {};
   if (task.title !== undefined) update.title = task.title;
   if (task.priority !== undefined) update.priority = task.priority;
-  if (task.createdBy !== undefined) update.created_by = task.createdBy;
   if (task.createdAt !== undefined) update.created_at = task.createdAt;
-  if (task.completedBy !== undefined) update.completed_by = task.completedBy;
   if (task.completedAt !== undefined) update.completed_at = task.completedAt;
   if (task.status !== undefined) update.status = task.status;
   if (task.attachmentUrl !== undefined) update.attachment_url = task.attachmentUrl;

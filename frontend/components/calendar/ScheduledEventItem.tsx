@@ -3,16 +3,12 @@
 import { useState } from "react";
 import { X, Clock } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CreatorAvatar } from "@/components/tasks/CreatorAvatar";
 import { cn } from "@/lib/utils";
 import type { ScheduledEvent } from "@/types/scheduled-events";
 import { format, formatDistanceToNow, isPast, isToday } from "date-fns";
 
 interface ScheduledEventItemProps {
   event: ScheduledEvent;
-  creatorName?: string;
-  isCreatorMaster?: boolean;
-  completerName?: string;
   onComplete: (id: string) => void;
   onUncomplete: (id: string) => void;
   onDelete: (id: string) => void;
@@ -22,14 +18,11 @@ interface ScheduledEventItemProps {
 
 export function ScheduledEventItem({
   event,
-  creatorName,
-  isCreatorMaster = true,
-  completerName,
   onComplete,
   onUncomplete,
   onDelete,
   canComplete,
-  canDelete = false,
+  canDelete = true,
 }: ScheduledEventItemProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const isCompleted = event.status === "completed";
@@ -69,8 +62,7 @@ export function ScheduledEventItem({
     setShowDeleteConfirm(true);
   };
 
-  // Determine card style based on completion, timing, and creator type
-  // Master events = purple/violet, Non-master events = blue
+  // Determine card style based on completion and timing
   const getCardStyle = () => {
     if (isCompleted) {
       return "bg-gradient-to-r from-emerald-500/10 to-green-500/10 border-emerald-500/30";
@@ -81,11 +73,8 @@ export function ScheduledEventItem({
     if (isToday(scheduledDate)) {
       return "bg-gradient-to-r from-amber-500/15 to-yellow-500/15 border-amber-400/40 hover:border-amber-400/60";
     }
-    // Non-master events are blue, master events are purple
-    if (isCreatorMaster) {
-      return "bg-gradient-to-r from-violet-500/10 to-purple-500/10 border-violet-400/30 hover:border-violet-400/50";
-    }
-    return "bg-gradient-to-r from-blue-500/10 to-sky-500/10 border-blue-400/30 hover:border-blue-400/50";
+    // Default purple style
+    return "bg-gradient-to-r from-violet-500/10 to-purple-500/10 border-violet-400/30 hover:border-violet-400/50";
   };
 
   return (
@@ -117,22 +106,14 @@ export function ScheduledEventItem({
         </button>
       )}
 
-      {/* Top row: Creator info and scheduled time */}
+      {/* Top row: Created time */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {creatorName && (
-            <div className="flex items-center gap-1">
-              <CreatorAvatar name={creatorName} size="sm" />
-              <span>Created {formatDistanceToNow(new Date(event.createdAt), { addSuffix: true })}</span>
-            </div>
-          )}
-
-          {isCompleted && completerName && event.completedAt && (
-            <div className="flex items-center gap-1 ml-2">
-              <span>&#8226;</span>
-              <CreatorAvatar name={completerName} size="sm" />
-              <span>Completed {formatDistanceToNow(new Date(event.completedAt), { addSuffix: true })}</span>
-            </div>
+          <span>Created {formatDistanceToNow(new Date(event.createdAt), { addSuffix: true })}</span>
+          {isCompleted && event.completedAt && (
+            <span className="ml-2">
+              &#8226; Completed {formatDistanceToNow(new Date(event.completedAt), { addSuffix: true })}
+            </span>
           )}
         </div>
       </div>
@@ -151,9 +132,7 @@ export function ScheduledEventItem({
                 ? "border-red-400"
                 : isToday(scheduledDate)
                   ? "border-amber-400"
-                  : isCreatorMaster
-                    ? "border-violet-400"
-                    : "border-blue-400"
+                  : "border-violet-400"
           )}
         />
 
@@ -174,9 +153,7 @@ export function ScheduledEventItem({
             ? "text-muted-foreground"
             : isOverdue
               ? "text-red-400"
-              : isCreatorMaster
-                ? "text-violet-400"
-                : "text-blue-400"
+              : "text-violet-400"
         )}>
           <Clock className="h-4 w-4" />
           <span className="font-medium">{format(scheduledDate, "h:mm a")}</span>

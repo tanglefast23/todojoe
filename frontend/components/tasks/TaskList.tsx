@@ -6,7 +6,6 @@ import type { Task } from "@/types/tasks";
 
 interface TaskListProps {
   tasks: Task[];
-  getOwnerName: (ownerId: string | null) => string | undefined;
   onComplete: (id: string) => void;
   onUncomplete: (id: string) => void;
   onDelete: (id: string) => void;
@@ -14,20 +13,17 @@ interface TaskListProps {
   onClearAttachment?: (taskId: string) => void;
   canComplete: boolean;
   canDelete?: boolean;
-  isMaster?: boolean;
 }
 
 export function TaskList({
   tasks,
-  getOwnerName,
   onComplete,
   onUncomplete,
   onDelete,
   onAttachment,
   onClearAttachment,
   canComplete,
-  canDelete = false,
-  isMaster = false,
+  canDelete = true,
 }: TaskListProps) {
   // Separate tasks by status and priority
   const { normalTasks, urgentTasks, completedTasks } = useMemo(() => {
@@ -85,8 +81,6 @@ export function TaskList({
                   <TaskItem
                     key={task.id}
                     task={task}
-                    creatorName={getOwnerName(task.createdBy)}
-                    completerName={undefined}
                     onComplete={onComplete}
                     onUncomplete={onUncomplete}
                     onDelete={onDelete}
@@ -94,7 +88,6 @@ export function TaskList({
                     onClearAttachment={onClearAttachment}
                     canComplete={canComplete}
                     canDelete={canDelete}
-                    isMaster={isMaster}
                   />
                 ))}
               </div>
@@ -114,8 +107,6 @@ export function TaskList({
                   <TaskItem
                     key={task.id}
                     task={task}
-                    creatorName={getOwnerName(task.createdBy)}
-                    completerName={undefined}
                     onComplete={onComplete}
                     onUncomplete={onUncomplete}
                     onDelete={onDelete}
@@ -123,7 +114,6 @@ export function TaskList({
                     onClearAttachment={onClearAttachment}
                     canComplete={canComplete}
                     canDelete={canDelete}
-                    isMaster={isMaster}
                   />
                 ))}
               </div>
@@ -150,8 +140,6 @@ export function TaskList({
               <TaskItem
                 key={task.id}
                 task={task}
-                creatorName={getOwnerName(task.createdBy)}
-                completerName={getOwnerName(task.completedBy)}
                 onComplete={onComplete}
                 onUncomplete={onUncomplete}
                 onDelete={onDelete}
@@ -159,7 +147,6 @@ export function TaskList({
                 onClearAttachment={onClearAttachment}
                 canComplete={canComplete}
                 canDelete={canDelete}
-                isMaster={isMaster}
               />
             ))}
           </div>

@@ -9,26 +9,16 @@
  * - On page unload: flushes all pending syncs
  */
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 
 // Stores
 import { useTasksStore } from "@/stores/tasksStore";
-import { useTagsStore } from "@/stores/tagsStore";
-import { useOwnerStore } from "@/stores/ownerStore";
-import { usePermissionsStore } from "@/stores/permissionsStore";
-import { useRunningTabStore } from "@/stores/runningTabStore";
 import { useScheduledEventsStore } from "@/stores/scheduledEventsStore";
 
 // Sync functions
 import {
   performInitialLoad,
   createSyncTasksToSupabase,
-  createSyncTagsToSupabase,
-  createSyncOwnersToSupabase,
-  createSyncPermissionsToSupabase,
-  createSyncRunningTabToSupabase,
-  createSyncExpensesToSupabase,
-  createSyncTabHistoryToSupabase,
   createSyncScheduledEventsToSupabase,
   flushAllPendingSyncs,
   type SyncStateRefs,
@@ -52,22 +42,10 @@ export function useSupabaseSync(): void {
 
   // Create debounced sync functions (memoized to avoid recreating on each render)
   const syncTasks = useRef(createSyncTasksToSupabase(refs));
-  const syncTags = useRef(createSyncTagsToSupabase(refs));
-  const syncOwners = useRef(createSyncOwnersToSupabase(refs));
-  const syncPermissions = useRef(createSyncPermissionsToSupabase(refs));
-  const syncRunningTab = useRef(createSyncRunningTabToSupabase(refs));
-  const syncExpenses = useRef(createSyncExpensesToSupabase(refs));
-  const syncTabHistory = useRef(createSyncTabHistoryToSupabase(refs));
   const syncScheduledEvents = useRef(createSyncScheduledEventsToSupabase(refs));
 
   // Subscribe to store changes
   const tasks = useTasksStore((state) => state.tasks);
-  const tags = useTagsStore((state) => state.tags);
-  const owners = useOwnerStore((state) => state.owners);
-  const permissions = usePermissionsStore((state) => state.permissions);
-  const tab = useRunningTabStore((state) => state.tab);
-  const expenses = useRunningTabStore((state) => state.expenses);
-  const history = useRunningTabStore((state) => state.history);
   const scheduledEvents = useScheduledEventsStore((state) => state.events);
 
   // Perform initial load on mount
@@ -163,44 +141,6 @@ export function useSupabaseSync(): void {
   //   if (!initialLoadComplete.current) return;
   //   syncTasks.current(tasks);
   // }, [tasks]);
-
-  // Sync tags when they change
-  useEffect(() => {
-    if (!initialLoadComplete.current) return;
-    syncTags.current(tags);
-  }, [tags]);
-
-  // Sync owners when they change
-  useEffect(() => {
-    if (!initialLoadComplete.current) return;
-    syncOwners.current(owners);
-  }, [owners]);
-
-  // Sync permissions when they change
-  useEffect(() => {
-    if (!initialLoadComplete.current) return;
-    syncPermissions.current(permissions);
-  }, [permissions]);
-
-  // Sync running tab when it changes
-  useEffect(() => {
-    if (!initialLoadComplete.current || !tab) return;
-    syncRunningTab.current(tab);
-  }, [tab]);
-
-  // Expenses sync disabled - individual actions (add, approve, reject, delete, clear)
-  // now sync directly to Supabase. Bulk sync was causing deleted items to reappear
-  // because upsertExpenses doesn't delete removed items.
-  // useEffect(() => {
-  //   if (!initialLoadComplete.current) return;
-  //   syncExpenses.current(expenses);
-  // }, [expenses]);
-
-  // Sync tab history when it changes
-  useEffect(() => {
-    if (!initialLoadComplete.current) return;
-    syncTabHistory.current(history);
-  }, [history]);
 
   // Sync scheduled events when they change
   // Note: Individual actions (add, complete, delete) also sync directly to Supabase.

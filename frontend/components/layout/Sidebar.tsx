@@ -5,7 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   CheckSquare,
-  Wallet,
+  Calendar,
+  Mail,
   Settings,
   Menu,
   X,
@@ -30,14 +31,19 @@ interface NavItemData {
 
 const navItems: NavItemData[] = [
   {
+    title: "Calendar",
+    href: "/calendar",
+    icon: Calendar,
+  },
+  {
     title: "Tasks",
     href: "/tasks",
     icon: CheckSquare,
   },
   {
-    title: "Running Tab",
-    href: "/running-tab",
-    icon: Wallet,
+    title: "Gmail",
+    href: "/gmail",
+    icon: Mail,
   },
 ];
 
@@ -82,8 +88,7 @@ export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const { isCollapsed, toggleCollapsed } = useSidebar();
 
-  // Hide sidebar on login page
-  const isLoginPage = pathname === "/";
+  // No longer hiding sidebar on root since it redirects to calendar
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
@@ -91,19 +96,16 @@ export function Sidebar() {
   }, [pathname]);
 
   // Close sidebar on escape key
-  // NOTE: All hooks must be called before any conditional returns (Rules of Hooks)
   useEffect(() => {
-    if (isLoginPage) return; // Skip effect on login page
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") setIsOpen(false);
     };
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
-  }, [isLoginPage]);
+  }, []);
 
   // Prevent body scroll when mobile sidebar is open
   useEffect(() => {
-    if (isLoginPage) return; // Skip effect on login page
     if (isOpen) {
       document.body.style.overflow = "hidden";
     } else {
@@ -112,12 +114,7 @@ export function Sidebar() {
     return () => {
       document.body.style.overflow = "";
     };
-  }, [isOpen, isLoginPage]);
-
-  // Don't render sidebar on login page (after all hooks are called)
-  if (isLoginPage) {
-    return null;
-  }
+  }, [isOpen]);
 
   // Inline SidebarContent - kept inside component as it uses local state (isCollapsed, setIsOpen)
   // but we've hoisted NavItem outside which is the heavier component

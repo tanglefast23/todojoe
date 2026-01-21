@@ -1,64 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Download, Upload, Trash2 } from "lucide-react";
 
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { useTagsStore } from "@/stores/tagsStore";
 import { useTasksStore } from "@/stores/tasksStore";
-import { useRunningTabStore } from "@/stores/runningTabStore";
-import { usePermissionsStore } from "@/stores/permissionsStore";
-import { useOwnerStore } from "@/stores/ownerStore";
-import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { OwnerManagement } from "@/components/settings/OwnerManagement";
-import { PermissionsSettings } from "@/components/settings/PermissionsSettings";
+import { useScheduledEventsStore } from "@/stores/scheduledEventsStore";
 
 export default function SettingsPage() {
-  // Redirect to login if not authenticated
-  const { isLoading: isAuthLoading, isAuthenticated } = useAuthGuard();
-
-  const tagsStore = useTagsStore();
   const tasksStore = useTasksStore();
-  const runningTabStore = useRunningTabStore();
-  const permissionsStore = usePermissionsStore();
-  const isMasterLoggedIn = useOwnerStore((state) => state.isMasterLoggedIn);
+  const scheduledEventsStore = useScheduledEventsStore();
 
-  // Hydration-safe check for master status
-  const [isMounted, setIsMounted] = useState(false);
   const [clearDataOpen, setClearDataOpen] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  const showOwnerManagement = isMounted && isMasterLoggedIn();
-
-  // Show loading state while checking authentication
-  if (isAuthLoading || !isAuthenticated) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
-  }
-
   const handleExport = () => {
-    // Export all task-related data
+    // Export all data
     const data = {
       version: "1.0.0",
       exportedAt: new Date().toISOString(),
       tasks: tasksStore.tasks,
-      runningTab: {
-        tab: runningTabStore.tab,
-        expenses: runningTabStore.expenses,
-        history: runningTabStore.history,
-      },
-      permissions: permissionsStore.permissions,
-      tags: tagsStore.tags,
+      scheduledEvents: scheduledEventsStore.events,
     };
 
     const blob = new Blob([JSON.stringify(data, null, 2)], {
@@ -97,27 +62,9 @@ export default function SettingsPage() {
           tasksStore.setTasks(data.tasks);
         }
 
-        // Import running tab data
-        if (data.runningTab) {
-          if (data.runningTab.tab) {
-            runningTabStore.setTab(data.runningTab.tab);
-          }
-          if (data.runningTab.expenses) {
-            runningTabStore.setExpenses(data.runningTab.expenses);
-          }
-          if (data.runningTab.history) {
-            runningTabStore.setHistory(data.runningTab.history);
-          }
-        }
-
-        // Import permissions
-        if (data.permissions) {
-          permissionsStore.setPermissions(data.permissions);
-        }
-
-        // Import tags
-        if (data.tags) {
-          tagsStore.setTags(data.tags);
+        // Import scheduled events
+        if (data.scheduledEvents) {
+          scheduledEventsStore.setEvents(data.scheduledEvents);
         }
 
         alert("Data imported successfully! Page will reload to apply changes.");
@@ -140,20 +87,10 @@ export default function SettingsPage() {
     try {
       // Clear local stores
       tasksStore.setTasks([]);
-      runningTabStore.setTab(null);
-      runningTabStore.setExpenses([]);
-      runningTabStore.setHistory([]);
-      permissionsStore.setPermissions({});
-      tagsStore.setTags([]);
+      scheduledEventsStore.setEvents([]);
 
-      // Clear localStorage (preserving owner accounts)
-      const keysToPreserve = ["owner-storage", "active-owner-id"];
-      const allKeys = Object.keys(localStorage);
-      allKeys.forEach(key => {
-        if (!keysToPreserve.includes(key)) {
-          localStorage.removeItem(key);
-        }
-      });
+      // Clear localStorage
+      localStorage.clear();
 
       // Clear sessionStorage
       sessionStorage.clear();
@@ -167,60 +104,58 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col min-h-screen">
       <Header />
 
-      <div className="flex-1 space-y-6 p-6">
-        {/* Data Management */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Data Management</CardTitle>
-            <CardDescription>
-              Export or import your tasks and expenses data as JSON backup
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-4">
-              <Button onClick={handleExport} variant="outline">
-                <Download className="mr-2 h-4 w-4" />
-                Export Data
+      <main className="flex-1 p-6">
+        <div className="max-w-3xl mx-auto space-y-6">
+          <h1 className="text-2xl font-bold">Settings</h1>
+
+          {/* Data Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Data Management</CardTitle>
+              <CardDescription>
+                Export or import your tasks and calendar events as JSON backup
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-4">
+                <Button onClick={handleExport} variant="outline">
+                  <Download className="mr-2 h-4 w-4" />
+                  Export Data
+                </Button>
+                <Button onClick={handleImport} variant="outline">
+                  <Upload className="mr-2 h-4 w-4" />
+                  Import Data
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Danger Zone */}
+          <Card className="border-destructive">
+            <CardHeader>
+              <CardTitle className="text-destructive">Danger Zone</CardTitle>
+              <CardDescription>
+                Irreversible actions - proceed with caution
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="destructive" onClick={handleClearAllData} disabled={isClearing}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                {isClearing ? "Clearing..." : "Clear All Data"}
               </Button>
-              <Button onClick={handleImport} variant="outline">
-                <Upload className="mr-2 h-4 w-4" />
-                Import Data
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* User Accounts & Permissions - visible to all, editable by admins */}
-        <PermissionsSettings />
-
-        {/* Owner Profiles - Master Only */}
-        {showOwnerManagement && <OwnerManagement />}
-
-        {/* Danger Zone */}
-        <Card className="border-destructive">
-          <CardHeader>
-            <CardTitle className="text-destructive">Danger Zone</CardTitle>
-            <CardDescription>
-              Irreversible actions - proceed with caution
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button variant="destructive" onClick={handleClearAllData} disabled={isClearing}>
-              <Trash2 className="mr-2 h-4 w-4" />
-              {isClearing ? "Clearing..." : "Clear All Data"}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
 
       <ConfirmDialog
         open={clearDataOpen}
         onOpenChange={setClearDataOpen}
         title="Clear All Data"
-        description="Are you sure you want to clear all data? This will permanently delete all tasks, expenses, and settings. Your account profile will be preserved. This action cannot be undone."
+        description="Are you sure you want to clear all data? This will permanently delete all tasks and calendar events. This action cannot be undone."
         confirmLabel="Clear All Data"
         cancelLabel="Cancel"
         onConfirm={confirmClearAllData}

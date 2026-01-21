@@ -14,14 +14,10 @@ import {
 
 interface ScheduledEventListProps {
   events: ScheduledEvent[];
-  getOwnerName: (ownerId: string | null) => string | undefined;
-  isOwnerMaster: (ownerId: string | null) => boolean;
   onComplete: (id: string) => void;
   onUncomplete: (id: string) => void;
   onDelete: (id: string) => void;
   canComplete: boolean;
-  isMaster: boolean;
-  activeOwnerId: string | null;
 }
 
 interface EventsByDay {
@@ -60,14 +56,10 @@ function groupEventsByDay(events: ScheduledEvent[], dateField: "scheduledAt" | "
 
 export function ScheduledEventList({
   events,
-  getOwnerName,
-  isOwnerMaster,
   onComplete,
   onUncomplete,
   onDelete,
   canComplete,
-  isMaster,
-  activeOwnerId,
 }: ScheduledEventListProps) {
   // Separate, sort, and group events by day
   const { pendingByDay, completedByDay } = useMemo(() => {
@@ -115,14 +107,11 @@ export function ScheduledEventList({
                   <ScheduledEventItem
                     key={event.id}
                     event={event}
-                    creatorName={getOwnerName(event.createdBy)}
-                    isCreatorMaster={isOwnerMaster(event.createdBy)}
-                    completerName={getOwnerName(event.completedBy)}
                     onComplete={onComplete}
                     onUncomplete={onUncomplete}
                     onDelete={onDelete}
                     canComplete={canComplete}
-                    canDelete={isMaster || event.createdBy === activeOwnerId}
+                    canDelete={true}
                   />
                 ))}
               </div>
@@ -149,14 +138,11 @@ export function ScheduledEventList({
                   <ScheduledEventItem
                     key={event.id}
                     event={event}
-                    creatorName={getOwnerName(event.createdBy)}
-                    isCreatorMaster={isOwnerMaster(event.createdBy)}
-                    completerName={getOwnerName(event.completedBy)}
                     onComplete={onComplete}
                     onUncomplete={onUncomplete}
                     onDelete={onDelete}
                     canComplete={canComplete}
-                    canDelete={isMaster || event.createdBy === activeOwnerId}
+                    canDelete={true}
                   />
                 ))}
               </div>

@@ -19,12 +19,6 @@ export {
 // Sync functions
 export {
   createSyncTasksToSupabase,
-  createSyncTagsToSupabase,
-  createSyncOwnersToSupabase,
-  createSyncPermissionsToSupabase,
-  createSyncRunningTabToSupabase,
-  createSyncExpensesToSupabase,
-  createSyncTabHistoryToSupabase,
   createSyncScheduledEventsToSupabase,
 } from "./syncFunctions";
 

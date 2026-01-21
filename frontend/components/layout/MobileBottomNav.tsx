@@ -1,33 +1,24 @@
 "use client";
 
-import { memo, useState, useEffect, useMemo } from "react";
+import { memo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Table2, Calculator, PenLine, CalendarDays } from "lucide-react";
+import { CheckSquare, CalendarDays, Mail, Settings, PlusCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { playClickSound } from "@/lib/audio";
-import { useOwnerStore } from "@/stores/ownerStore";
+
+// Navigation items for mobile bottom nav
+const navItems = [
+  { title: "Entry", href: "/entry", icon: PlusCircle },
+  { title: "Calendar", href: "/calendar", icon: CalendarDays },
+  { title: "Tasks", href: "/tasks", icon: CheckSquare },
+  { title: "Gmail", href: "/gmail", icon: Mail },
+  { title: "Settings", href: "/settings", icon: Settings },
+];
 
 /** Mobile bottom navigation bar for TODO app */
 export const MobileBottomNav = memo(function MobileBottomNav() {
   const pathname = usePathname();
-  const isMasterLoggedIn = useOwnerStore((state) => state.isMasterLoggedIn);
-
-  // Hydration-safe
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  const isMaster = isMounted ? isMasterLoggedIn() : false;
-
-  // Navigation items - all users get Entry now (non-master only sees calendar events)
-  const navItems = useMemo(() => [
-    { title: "Entry", href: "/entry", icon: PenLine },
-    { title: "Tasks", href: "/tasks", icon: Table2 },
-    { title: "Calendar", href: "/calendar", icon: CalendarDays },
-    { title: "Tab", href: "/running-tab", icon: Calculator },
-  ], []);
 
   const handleNavClick = (href: string) => {
     if (pathname !== href) {

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { CreatorAvatar } from "./CreatorAvatar";
 import { TaskAttachmentUpload } from "./TaskAttachmentUpload";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/types/tasks";
@@ -12,8 +11,6 @@ import { formatDistanceToNow } from "date-fns";
 
 interface TaskItemProps {
   task: Task;
-  creatorName?: string;
-  completerName?: string;
   onComplete: (id: string) => void;
   onUncomplete: (id: string) => void;
   onDelete: (id: string) => void;
@@ -21,21 +18,17 @@ interface TaskItemProps {
   onClearAttachment?: (taskId: string) => void;
   canComplete: boolean;
   canDelete?: boolean;
-  isMaster?: boolean;
 }
 
 export function TaskItem({
   task,
-  creatorName,
-  completerName,
   onComplete,
   onUncomplete,
   onDelete,
   onAttachment,
   onClearAttachment,
   canComplete,
-  canDelete = false,
-  isMaster = false,
+  canDelete = true,
 }: TaskItemProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const isCompleted = task.status === "completed";
@@ -113,22 +106,14 @@ export function TaskItem({
         </button>
       )}
 
-      {/* Top row: Creator info and attachment */}
+      {/* Top row: Time info and attachment */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {creatorName && (
-            <div className="flex items-center gap-1">
-              <CreatorAvatar name={creatorName} size="sm" />
-              <span>{formatDistanceToNow(new Date(task.createdAt), { addSuffix: true })}</span>
-            </div>
-          )}
-
-          {isCompleted && completerName && task.completedAt && (
-            <div className="flex items-center gap-1 ml-2">
-              <span>&#8226;</span>
-              <CreatorAvatar name={completerName} size="sm" />
-              <span>Completed {formatDistanceToNow(new Date(task.completedAt), { addSuffix: true })}</span>
-            </div>
+          <span>{formatDistanceToNow(new Date(task.createdAt), { addSuffix: true })}</span>
+          {isCompleted && task.completedAt && (
+            <span className="ml-2">
+              &#8226; Completed {formatDistanceToNow(new Date(task.completedAt), { addSuffix: true })}
+            </span>
           )}
         </div>
 
@@ -151,8 +136,8 @@ export function TaskItem({
                     className="h-10 w-10 rounded-lg object-cover border border-border/50 hover:border-pink-400 transition-colors"
                   />
                 </a>
-                {/* Delete X for master users */}
-                {isMaster && onClearAttachment && (
+                {/* Delete X for attachment */}
+                {onClearAttachment && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -167,8 +152,8 @@ export function TaskItem({
               </div>
             )}
 
-            {/* Show upload button for master users if no attachment */}
-            {isMaster && !task.attachmentUrl && onAttachment && (
+            {/* Show upload button if no attachment */}
+            {!task.attachmentUrl && onAttachment && (
               <TaskAttachmentUpload
                 taskId={task.id}
                 onUpload={(url) => onAttachment(task.id, url)}

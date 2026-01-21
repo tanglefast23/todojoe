@@ -33,8 +33,8 @@ interface TasksState {
   setTasks: (tasks: Task[]) => void;
 
   // Task CRUD
-  addTask: (title: string, priority: TaskPriority, createdBy: string | null) => string;
-  completeTask: (id: string, completedBy: string | null) => void;
+  addTask: (title: string, priority: TaskPriority) => string;
+  completeTask: (id: string, completedBy?: string | null) => void;
   uncompleteTask: (id: string) => void;
   deleteTask: (id: string) => void;
 
@@ -55,16 +55,14 @@ export const useTasksStore = create<TasksState>()(
 
       setTasks: (tasks) => set({ tasks }),
 
-      addTask: (title, priority, createdBy) => {
+      addTask: (title, priority) => {
         const id = generateId();
         const now = new Date().toISOString();
         const newTask: Task = {
           id,
           title,
           priority,
-          createdBy,
           createdAt: now,
-          completedBy: null,
           completedAt: null,
           status: "pending",
           attachmentUrl: null,
@@ -83,7 +81,7 @@ export const useTasksStore = create<TasksState>()(
         return id;
       },
 
-      completeTask: (id, completedBy) => {
+      completeTask: (id) => {
         const now = new Date().toISOString();
         set((state) => ({
           tasks: state.tasks.map((task) =>
@@ -91,7 +89,6 @@ export const useTasksStore = create<TasksState>()(
               ? {
                   ...task,
                   status: "completed" as const,
-                  completedBy,
                   completedAt: now,
                   updatedAt: now,
                 }
@@ -102,7 +99,6 @@ export const useTasksStore = create<TasksState>()(
         // Sync to Supabase for cross-device sync
         updateTask(id, {
           status: "completed",
-          completedBy,
           completedAt: now,
           updatedAt: now,
         }).catch((error) => {
@@ -118,7 +114,6 @@ export const useTasksStore = create<TasksState>()(
               ? {
                   ...task,
                   status: "pending" as const,
-                  completedBy: null,
                   completedAt: null,
                   updatedAt: now,
                 }
@@ -129,7 +124,6 @@ export const useTasksStore = create<TasksState>()(
         // Sync to Supabase for cross-device sync
         updateTask(id, {
           status: "pending",
-          completedBy: null,
           completedAt: null,
           updatedAt: now,
         }).catch((error) => {

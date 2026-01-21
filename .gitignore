@@ -31,3 +31,4 @@ venv/
 .next/
 dist/
 build/
+frontend/token.json

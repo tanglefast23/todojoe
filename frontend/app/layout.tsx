@@ -23,8 +23,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Thanh To Do",
-  description: "Manage tasks and track expenses together",
+  title: "JV To Do",
+  description: "Manage tasks, calendar, and emails",
 };
 
 export default function RootLayout({

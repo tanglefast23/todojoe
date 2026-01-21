@@ -8,7 +8,7 @@ interface LogoProps {
   size?: "sm" | "md" | "lg";
 }
 
-/** Thanh Khong To Do logo - minimalist notebook icon */
+/** JV To Do logo - minimalist notebook icon */
 export function Logo({ className, showText = true, size = "md" }: LogoProps) {
   // Responsive icon sizes
   const iconSizes = {
@@ -98,7 +98,7 @@ export function Logo({ className, showText = true, size = "md" }: LogoProps) {
             fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
           }}
         >
-          Thanh To Do
+          JV To Do
         </span>
       )}
     </div>
