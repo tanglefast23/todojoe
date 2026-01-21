@@ -3,12 +3,13 @@
 import { memo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CheckSquare, CalendarDays, Mail, PlusCircle } from "lucide-react";
+import { CheckSquare, CalendarDays, Mail, PlusCircle, Sunrise } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { playClickSound } from "@/lib/audio";
 
 // Navigation items for mobile bottom nav
 const navItems = [
+  { title: "Daily", href: "/daily", icon: Sunrise },
   { title: "Entry", href: "/entry", icon: PlusCircle },
   { title: "Calendar", href: "/calendar", icon: CalendarDays },
   { title: "Tasks", href: "/tasks", icon: CheckSquare },
