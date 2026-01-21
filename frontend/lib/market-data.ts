@@ -6,7 +6,10 @@
  * - Yahoo Finance API (stock prices)
  */
 
-import yahooFinance from "yahoo-finance2";
+import YahooFinance from "yahoo-finance2";
+
+// Initialize Yahoo Finance client (required in v3)
+const yahooFinance = new YahooFinance();
 
 // Crypto symbol to CoinGecko ID mapping
 const CRYPTO_IDS: Record<string, string> = {
