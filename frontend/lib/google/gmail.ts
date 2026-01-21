@@ -225,3 +225,17 @@ export async function markAsRead(gmailId: string): Promise<void> {
     },
   });
 }
+
+/**
+ * Archive email (remove from inbox but keep in All Mail)
+ */
+export async function archiveEmail(gmailId: string): Promise<void> {
+  const gmail = await getGmailClient();
+  await gmail.users.messages.modify({
+    userId: "me",
+    id: gmailId,
+    requestBody: {
+      removeLabelIds: ["INBOX"],
+    },
+  });
+}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Header } from "@/components/layout/Header";
-import { Mail, RefreshCw, Trash2, ChevronRight, AlertCircle, Inbox } from "lucide-react";
+import { Mail, RefreshCw, Trash2, Archive, ChevronRight, AlertCircle, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -67,6 +67,27 @@ export default function GmailPage() {
       }
     } catch (err) {
       console.error("Failed to delete email:", err);
+    }
+  }, [selectedEmail]);
+
+  // Archive email
+  const archiveEmail = useCallback(async (gmailId: string) => {
+    try {
+      const response = await fetch(`/api/google/gmail/message/${gmailId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "archive" }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to archive email");
+      }
+      // Remove from local state (archived emails leave inbox)
+      setEmails((prev) => prev.filter((e) => e.gmailId !== gmailId));
+      if (selectedEmail?.gmailId === gmailId) {
+        setSelectedEmail(null);
+      }
+    } catch (err) {
+      console.error("Failed to archive email:", err);
     }
   }, [selectedEmail]);
 
@@ -150,17 +171,29 @@ export default function GmailPage() {
                   )}
                   onClick={() => fetchEmailDetail(email.gmailId)}
                 >
-                  {/* Delete button */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteEmail(email.gmailId);
-                    }}
-                    className="absolute top-3 right-3 w-8 h-8 rounded-full bg-red-500/80 hover:bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Move to trash"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {/* Action buttons */}
+                  <div className="absolute top-3 right-3 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteEmail(email.gmailId);
+                      }}
+                      className="w-8 h-8 rounded-full bg-red-500/80 hover:bg-red-500 text-white flex items-center justify-center"
+                      title="Move to trash"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        archiveEmail(email.gmailId);
+                      }}
+                      className="w-8 h-8 rounded-full bg-amber-500/80 hover:bg-amber-500 text-white flex items-center justify-center"
+                      title="Archive"
+                    >
+                      <Archive className="w-4 h-4" />
+                    </button>
+                  </div>
 
                   <div className="flex items-start gap-3 pr-10">
                     {/* Unread indicator dot */}
@@ -227,6 +260,17 @@ export default function GmailPage() {
                     >
                       <Trash2 className="h-4 w-4 mr-1" />
                       Delete
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        archiveEmail(selectedEmail.gmailId);
+                        setSelectedEmail(null);
+                      }}
+                    >
+                      <Archive className="h-4 w-4 mr-1" />
+                      Archive
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => setSelectedEmail(null)}>
                       Close
