@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { queryGroq, isGroqConfigured } from "@/lib/groq";
+import { queryGroq, extractSearchTerms, isGroqConfigured } from "@/lib/groq";
 import { getCalendarEvents } from "@/lib/google/calendar";
-import { getPrimaryInboxEmails } from "@/lib/google/gmail";
+import { getPrimaryInboxEmails, searchEmails } from "@/lib/google/gmail";
 import { isGoogleConfigured } from "@/lib/google/auth";
 
 export async function POST(request: NextRequest) {
@@ -29,17 +29,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch calendar events and emails in parallel
-    const [calendarEvents, emails] = await Promise.all([
-      getCalendarEvents("primary", 3).catch((err) => {
-        console.error("Failed to fetch calendar events:", err);
+    // First, extract search terms from the query using AI
+    const searchTerms = await extractSearchTerms(query);
+    console.log("[Search API] Extracted search terms:", searchTerms);
+
+    // Fetch calendar events
+    const calendarEvents = await getCalendarEvents("primary", 3).catch((err) => {
+      console.error("Failed to fetch calendar events:", err);
+      return [];
+    });
+
+    // Fetch emails - either search or get recent
+    let emails;
+    if (searchTerms && searchTerms.length > 0) {
+      // Search Gmail with extracted terms
+      const gmailQuery = searchTerms.join(" OR ");
+      console.log("[Search API] Gmail search query:", gmailQuery);
+      emails = await searchEmails(gmailQuery, 50).catch((err) => {
+        console.error("Failed to search emails:", err);
         return [];
-      }),
-      getPrimaryInboxEmails(30).catch((err) => {
+      });
+    } else {
+      // Fall back to recent emails if no search terms
+      emails = await getPrimaryInboxEmails(30).catch((err) => {
         console.error("Failed to fetch emails:", err);
         return [];
-      }),
-    ]);
+      });
+    }
+
+    console.log(`[Search API] Found ${emails.length} emails`);
 
     // Query Groq with the context
     const response = await queryGroq(

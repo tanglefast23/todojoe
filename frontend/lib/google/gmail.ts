@@ -239,3 +239,59 @@ export async function archiveEmail(gmailId: string): Promise<void> {
     },
   });
 }
+
+/**
+ * Search emails across entire mailbox
+ * Uses Gmail's search syntax (same as the Gmail search bar)
+ */
+export async function searchEmails(query: string, maxResults: number = 50): Promise<GmailMessage[]> {
+  const gmail = await getGmailClient();
+
+  // Use Gmail's search query parameter
+  const listResponse = await gmail.users.messages.list({
+    userId: "me",
+    q: query,
+    maxResults,
+  });
+
+  const messages = listResponse.data.messages || [];
+  if (messages.length === 0) {
+    return [];
+  }
+
+  // Fetch details for each message
+  const emailPromises = messages.map(async (msg) => {
+    if (!msg.id) return null;
+
+    const detail = await gmail.users.messages.get({
+      userId: "me",
+      id: msg.id,
+      format: "metadata",
+      metadataHeaders: ["From", "Subject", "Date"],
+    });
+
+    const headers = detail.data.payload?.headers;
+    const fromHeader = getHeader(headers, "From") || "";
+    const { email: fromEmail, name: fromName } = parseEmailAddress(fromHeader);
+
+    return {
+      id: crypto.randomUUID(),
+      gmailId: msg.id,
+      threadId: msg.threadId || "",
+      subject: getHeader(headers, "Subject"),
+      snippet: detail.data.snippet || null,
+      bodyPreview: detail.data.snippet ? getFirstSentences(detail.data.snippet) : null,
+      fromEmail,
+      fromName,
+      receivedAt: detail.data.internalDate
+        ? new Date(parseInt(detail.data.internalDate)).toISOString()
+        : new Date().toISOString(),
+      isUnread: detail.data.labelIds?.includes("UNREAD") || false,
+      labels: detail.data.labelIds || [],
+      cachedAt: new Date().toISOString(),
+    } satisfies GmailMessage;
+  });
+
+  const results = await Promise.all(emailPromises);
+  return results.filter((r): r is GmailMessage => r !== null);
+}

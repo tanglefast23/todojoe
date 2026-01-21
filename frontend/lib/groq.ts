@@ -94,3 +94,71 @@ ${emailContext || "No emails found."}`;
 export function isGroqConfigured(): boolean {
   return !!GROQ_API_KEY;
 }
+
+/**
+ * Extract search terms from a user query
+ * Uses a fast model to quickly identify names, topics, or keywords to search for
+ */
+export async function extractSearchTerms(query: string): Promise<string[]> {
+  if (!GROQ_API_KEY) {
+    return [];
+  }
+
+  const response = await fetch(GROQ_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: "llama-3.1-8b-instant", // Fast model for quick extraction
+      messages: [
+        {
+          role: "system",
+          content: `Extract search terms from the user's question that should be used to search their email inbox.
+Return ONLY a JSON array of search terms (names, companies, topics, keywords).
+If the query is general (like "what do I have this week" or "show recent emails"), return an empty array [].
+Examples:
+- "find emails from David Vu" → ["David Vu"]
+- "what did John Smith say about the project" → ["John Smith", "project"]
+- "any emails about Tesla earnings" → ["Tesla", "earnings"]
+- "show me flight confirmations" → ["flight", "confirmation", "booking"]
+- "what do I have this week" → []
+- "summarize my recent emails" → []
+Return ONLY the JSON array, no other text.`
+        },
+        { role: "user", content: query }
+      ],
+      temperature: 0,
+      max_tokens: 100,
+    }),
+  });
+
+  if (!response.ok) {
+    console.error("Failed to extract search terms");
+    return [];
+  }
+
+  const data: GroqResponse = await response.json();
+  const text = data.choices?.[0]?.message?.content?.trim();
+
+  if (!text) {
+    return [];
+  }
+
+  try {
+    // Parse the JSON array
+    const terms = JSON.parse(text);
+    if (Array.isArray(terms)) {
+      return terms.filter((t): t is string => typeof t === "string" && t.length > 0);
+    }
+  } catch {
+    // If parsing fails, try to extract quoted strings
+    const matches = text.match(/"([^"]+)"/g);
+    if (matches) {
+      return matches.map((m) => m.replace(/"/g, ""));
+    }
+  }
+
+  return [];
+}
