@@ -99,14 +99,23 @@ function getFirstSentences(text: string, count: number = 2): string {
 
 /**
  * Fetch unread emails from inbox
+ * @deprecated Use getPrimaryInboxEmails instead
  */
 export async function getUnreadEmails(maxResults: number = 20): Promise<GmailMessage[]> {
+  return getPrimaryInboxEmails(maxResults);
+}
+
+/**
+ * Fetch emails from Primary inbox (both read and unread)
+ */
+export async function getPrimaryInboxEmails(maxResults: number = 20): Promise<GmailMessage[]> {
   const gmail = await getGmailClient();
 
-  // List unread messages
+  // List messages from Primary inbox (both read and unread)
+  // category:primary filters for Primary tab only (excludes Promotions, Social, Updates, Forums)
   const listResponse = await gmail.users.messages.list({
     userId: "me",
-    q: "is:unread",
+    q: "category:primary",
     maxResults,
   });
 

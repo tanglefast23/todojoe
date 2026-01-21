@@ -14,6 +14,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as http from "http";
 import * as url from "url";
+import { exec } from "child_process";
 
 // Configuration
 const CREDENTIALS_PATH = process.env.GOOGLE_CREDENTIALS_PATH || "/Volumes/Samsung SSD/Claude Code Projects/credentials.json";
@@ -186,7 +187,6 @@ async function main() {
     console.log(`\n${authUrl}\n`);
 
     // Open browser (macOS)
-    const { exec } = require("child_process");
     exec(`open "${authUrl}"`);
   });
 }
