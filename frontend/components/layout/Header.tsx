@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { MobileToggle } from "@/components/ui/mobile-toggle";
+import { FontSizeControl } from "@/components/ui/font-size-control";
 import { Logo } from "./Logo";
 import { cn } from "@/lib/utils";
 
@@ -54,6 +55,9 @@ export function Header() {
 
       {/* Right: Controls */}
       <div className="flex-1 flex items-center justify-end gap-2">
+        {/* Font Size Control */}
+        <FontSizeControl />
+
         {/* Page Refresh Button */}
         <Button
           variant="ghost"

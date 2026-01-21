@@ -51,13 +51,16 @@ export function AddTaskForm({ onAddTask, disabled = false }: AddTaskFormProps) {
           ref={inputRef}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Add a new task..."
+          placeholder="Add a new task... (Enter = Normal, Tab = Urgent)"
           disabled={disabled}
           className="flex-1 rounded-full px-5 border-2 border-violet-400/30 focus:border-violet-400 focus-visible:ring-violet-400/30"
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
-              createTask("regular"); // Default to regular on Enter
+              createTask("regular"); // Enter = Normal task
+            } else if (e.key === "Tab" && title.trim()) {
+              e.preventDefault();
+              createTask("urgent"); // Tab = Urgent task
             }
           }}
         />

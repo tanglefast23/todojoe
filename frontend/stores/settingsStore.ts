@@ -8,6 +8,7 @@ import { persist } from "zustand/middleware";
 type MetricsMode = "simple" | "pro";
 type MobileMode = "auto" | "mobile" | "desktop";
 export type ActiveView = "home" | "add" | "watchlist";
+export type FontSize = "small" | "medium" | "large" | "xlarge";
 
 interface SettingsState {
   // Refresh settings
@@ -19,6 +20,7 @@ interface SettingsState {
   currency: string;
   mobileMode: MobileMode;
   activeView: ActiveView;
+  fontSize: FontSize;
 
   // Risk-free rate for Sharpe ratio (fixed at 4.5%)
   riskFreeRate: number;
@@ -30,13 +32,18 @@ interface SettingsState {
   setCurrency: (currency: string) => void;
   setMobileMode: (mode: MobileMode) => void;
   setActiveView: (view: ActiveView) => void;
+  setFontSize: (size: FontSize) => void;
+  increaseFontSize: () => void;
+  decreaseFontSize: () => void;
   // Setter for Supabase sync - completely replaces settings state
-  setSettings: (settings: Partial<Omit<SettingsState, "setAutoRefresh" | "setRefreshInterval" | "setMetricsMode" | "setCurrency" | "setMobileMode" | "setActiveView" | "setSettings">>) => void;
+  setSettings: (settings: Partial<Omit<SettingsState, "setAutoRefresh" | "setRefreshInterval" | "setMetricsMode" | "setCurrency" | "setMobileMode" | "setActiveView" | "setFontSize" | "increaseFontSize" | "decreaseFontSize" | "setSettings">>) => void;
 }
+
+const FONT_SIZE_ORDER: FontSize[] = ["small", "medium", "large", "xlarge"];
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       // Defaults
       autoRefreshEnabled: true,
       refreshIntervalSeconds: 30,
@@ -44,6 +51,7 @@ export const useSettingsStore = create<SettingsState>()(
       currency: "USD",
       mobileMode: "auto",
       activeView: "home",
+      fontSize: "medium",
       riskFreeRate: 4.5, // Fixed at 4.5% as per requirements
 
       // Actions
@@ -53,6 +61,19 @@ export const useSettingsStore = create<SettingsState>()(
       setCurrency: (currency) => set({ currency }),
       setMobileMode: (mode) => set({ mobileMode: mode }),
       setActiveView: (view) => set({ activeView: view }),
+      setFontSize: (size) => set({ fontSize: size }),
+      increaseFontSize: () => {
+        const currentIndex = FONT_SIZE_ORDER.indexOf(get().fontSize);
+        if (currentIndex < FONT_SIZE_ORDER.length - 1) {
+          set({ fontSize: FONT_SIZE_ORDER[currentIndex + 1] });
+        }
+      },
+      decreaseFontSize: () => {
+        const currentIndex = FONT_SIZE_ORDER.indexOf(get().fontSize);
+        if (currentIndex > 0) {
+          set({ fontSize: FONT_SIZE_ORDER[currentIndex - 1] });
+        }
+      },
       setSettings: (settings) => set(settings),
     }),
     {

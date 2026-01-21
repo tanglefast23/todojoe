@@ -103,10 +103,10 @@ function getFirstSentences(text: string, count: number = 2): string {
 export async function getUnreadEmails(maxResults: number = 20): Promise<GmailMessage[]> {
   const gmail = await getGmailClient();
 
-  // List unread messages
+  // List messages from Primary inbox (excludes Promotions, Social, Updates, Forums)
   const listResponse = await gmail.users.messages.list({
     userId: "me",
-    q: "is:unread",
+    q: "category:primary",
     maxResults,
   });
 

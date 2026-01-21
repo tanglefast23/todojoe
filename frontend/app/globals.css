@@ -159,8 +159,21 @@
   * {
     @apply border-border outline-ring/50;
   }
+  /* Font size scaling system */
   html {
-    font-size: 18px; /* Increased from default 16px */
+    font-size: 18px; /* Default medium */
+  }
+  html.font-small {
+    font-size: 14px;
+  }
+  html.font-medium {
+    font-size: 18px;
+  }
+  html.font-large {
+    font-size: 22px;
+  }
+  html.font-xlarge {
+    font-size: 26px;
   }
   body {
     @apply bg-background text-foreground;
