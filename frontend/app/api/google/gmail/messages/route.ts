@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getUnreadEmails } from "@/lib/google/gmail";
+import { getPrimaryInboxEmails } from "@/lib/google/gmail";
 import { isGoogleConfigured } from "@/lib/google/auth";
 
 export async function GET() {
@@ -12,7 +12,8 @@ export async function GET() {
       );
     }
 
-    const messages = await getUnreadEmails(20);
+    // Fetch emails from Primary inbox (both read and unread)
+    const messages = await getPrimaryInboxEmails(50);
     return NextResponse.json({ messages });
   } catch (error) {
     console.error("[Gmail API] Error fetching messages:", error);

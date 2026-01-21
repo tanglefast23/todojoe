@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Header } from "@/components/layout/Header";
-import { Mail, RefreshCw, Trash2, ChevronRight, AlertCircle, Inbox } from "lucide-react";
+import { Mail, RefreshCw, Trash2, Archive, ChevronRight, AlertCircle, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -15,7 +15,7 @@ export default function GmailPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch unread emails
+  // Fetch Primary inbox emails (both read and unread)
   const fetchEmails = useCallback(async (showRefreshing = false) => {
     if (showRefreshing) setIsRefreshing(true);
     else setIsLoading(true);
@@ -67,6 +67,27 @@ export default function GmailPage() {
       }
     } catch (err) {
       console.error("Failed to delete email:", err);
+    }
+  }, [selectedEmail]);
+
+  // Archive email
+  const archiveEmail = useCallback(async (gmailId: string) => {
+    try {
+      const response = await fetch(`/api/google/gmail/message/${gmailId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "archive" }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to archive email");
+      }
+      // Remove from local state (archived emails leave inbox)
+      setEmails((prev) => prev.filter((e) => e.gmailId !== gmailId));
+      if (selectedEmail?.gmailId === gmailId) {
+        setSelectedEmail(null);
+      }
+    } catch (err) {
+      console.error("Failed to archive email:", err);
     }
   }, [selectedEmail]);
 
@@ -129,8 +150,8 @@ export default function GmailPage() {
           {!isLoading && !error && emails.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Inbox className="h-12 w-12 mb-4 opacity-50" />
-              <p className="text-lg font-medium">No unread emails</p>
-              <p className="text-sm">Your inbox is all caught up!</p>
+              <p className="text-lg font-medium">No emails in Primary inbox</p>
+              <p className="text-sm">Your Primary inbox is empty.</p>
             </div>
           )}
 
@@ -142,35 +163,61 @@ export default function GmailPage() {
                   key={email.gmailId}
                   className={cn(
                     "group relative rounded-xl border-2 p-4 transition-all cursor-pointer",
-                    "bg-gradient-to-r from-blue-500/10 to-sky-500/10 border-blue-400/30",
+                    email.isUnread
+                      ? "bg-gradient-to-r from-blue-500/15 to-sky-500/15 border-blue-400/40"
+                      : "bg-card/50 border-border/50",
                     "hover:border-blue-400/50",
                     selectedEmail?.gmailId === email.gmailId && "ring-2 ring-blue-400"
                   )}
                   onClick={() => fetchEmailDetail(email.gmailId)}
                 >
-                  {/* Delete button */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteEmail(email.gmailId);
-                    }}
-                    className="absolute top-3 right-3 w-8 h-8 rounded-full bg-red-500/80 hover:bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Move to trash"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {/* Action buttons */}
+                  <div className="absolute top-3 right-3 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteEmail(email.gmailId);
+                      }}
+                      className="w-8 h-8 rounded-full bg-red-500/80 hover:bg-red-500 text-white flex items-center justify-center"
+                      title="Move to trash"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        archiveEmail(email.gmailId);
+                      }}
+                      className="w-8 h-8 rounded-full bg-amber-500/80 hover:bg-amber-500 text-white flex items-center justify-center"
+                      title="Archive"
+                    >
+                      <Archive className="w-4 h-4" />
+                    </button>
+                  </div>
 
                   <div className="flex items-start gap-3 pr-10">
+                    {/* Unread indicator dot */}
+                    {email.isUnread && (
+                      <div className="w-2 h-2 rounded-full bg-blue-400 mt-2 flex-shrink-0" />
+                    )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium truncate">
+                        <span className={cn(
+                          "truncate",
+                          email.isUnread ? "font-semibold" : "font-normal text-muted-foreground"
+                        )}>
                           {email.fromName || email.fromEmail || "Unknown sender"}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {formatDistanceToNow(new Date(email.receivedAt), { addSuffix: true })}
                         </span>
                       </div>
-                      <p className="font-semibold text-lg truncate">{email.subject || "(No subject)"}</p>
+                      <p className={cn(
+                        "text-lg truncate",
+                        email.isUnread ? "font-semibold" : "font-normal"
+                      )}>
+                        {email.subject || "(No subject)"}
+                      </p>
                       <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
                         {getPreview(email.snippet)}
                       </p>
@@ -213,6 +260,17 @@ export default function GmailPage() {
                     >
                       <Trash2 className="h-4 w-4 mr-1" />
                       Delete
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        archiveEmail(selectedEmail.gmailId);
+                        setSelectedEmail(null);
+                      }}
+                    >
+                      <Archive className="h-4 w-4 mr-1" />
+                      Archive
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => setSelectedEmail(null)}>
                       Close

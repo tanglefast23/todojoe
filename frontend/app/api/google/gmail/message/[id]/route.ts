@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getEmailById, trashEmail, markAsRead } from "@/lib/google/gmail";
+import { getEmailById, trashEmail, markAsRead, archiveEmail } from "@/lib/google/gmail";
 import { isGoogleConfigured } from "@/lib/google/auth";
 
 export async function GET(
@@ -57,6 +57,39 @@ export async function DELETE(
     console.error("[Gmail API] Error deleting email:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to delete email" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+
+    if (!isGoogleConfigured()) {
+      return NextResponse.json(
+        { error: "Google API not configured" },
+        { status: 401 }
+      );
+    }
+
+    if (body.action === "archive") {
+      await archiveEmail(id);
+      return NextResponse.json({ success: true });
+    }
+
+    return NextResponse.json(
+      { error: "Invalid action" },
+      { status: 400 }
+    );
+  } catch (error) {
+    console.error("[Gmail API] Error updating email:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to update email" },
       { status: 500 }
     );
   }
