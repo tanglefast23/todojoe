@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { queryGemini, isGeminiConfigured } from "@/lib/google/gemini";
+import { queryGroq, isGroqConfigured } from "@/lib/groq";
 import { getCalendarEvents } from "@/lib/google/calendar";
 import { getPrimaryInboxEmails } from "@/lib/google/gmail";
 import { isGoogleConfigured } from "@/lib/google/auth";
@@ -15,9 +15,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!isGeminiConfigured()) {
+    if (!isGroqConfigured()) {
       return NextResponse.json(
-        { error: "Gemini API not configured. Please add GEMINI_API_KEY to environment variables." },
+        { error: "Groq API not configured. Please add GROQ_API_KEY to environment variables." },
         { status: 401 }
       );
     }
@@ -41,8 +41,8 @@ export async function POST(request: NextRequest) {
       }),
     ]);
 
-    // Query Gemini with the context
-    const response = await queryGemini(
+    // Query Groq with the context
+    const response = await queryGroq(
       query,
       calendarEvents.map((e) => ({
         title: e.title,
