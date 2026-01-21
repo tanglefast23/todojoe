@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { Header } from "@/components/layout/Header";
-import { Search, Sparkles, Loader2, X, Trash2 } from "lucide-react";
+import { Search, Sparkles, Loader2, X, Trash2, ImagePlus, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSearchStore, type SearchResult } from "@/stores/searchStore";
 import { cn } from "@/lib/utils";
@@ -12,16 +12,55 @@ export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [image, setImage] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const results = useSearchStore((state) => state.results);
   const addResult = useSearchStore((state) => state.addResult);
   const deleteResult = useSearchStore((state) => state.deleteResult);
   const clearResults = useSearchStore((state) => state.clearResults);
 
+  // Handle image upload
+  const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (max 4MB for Groq)
+    if (file.size > 4 * 1024 * 1024) {
+      setError("Image must be less than 4MB");
+      return;
+    }
+
+    // Check file type
+    if (!file.type.startsWith("image/")) {
+      setError("Please upload an image file");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setImage(base64);
+      setImagePreview(base64);
+      setError(null);
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  // Remove image
+  const removeImage = useCallback(() => {
+    setImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, []);
+
   // Handle search
   const handleSearch = useCallback(async () => {
-    if (!query.trim()) return;
+    if (!query.trim() && !image) return;
 
     setIsLoading(true);
     setError(null);
@@ -30,7 +69,10 @@ export default function SearchPage() {
       const res = await fetch("/api/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: query.trim() }),
+        body: JSON.stringify({
+          query: query.trim() || "What is in this image?",
+          image: image || undefined,
+        }),
       });
 
       const data = await res.json();
@@ -39,15 +81,19 @@ export default function SearchPage() {
         throw new Error(data.error || "Search failed");
       }
 
-      // Save to store
-      addResult(query.trim(), data.response);
+      // Save to store (include image indicator in query if image was attached)
+      const displayQuery = image
+        ? `📷 ${query.trim() || "Analyze this image"}`
+        : query.trim();
+      addResult(displayQuery, data.response);
       setQuery("");
+      removeImage();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Search failed");
     } finally {
       setIsLoading(false);
     }
-  }, [query, addResult]);
+  }, [query, image, addResult, removeImage]);
 
   // Handle keyboard events
   const handleKeyDown = useCallback(
@@ -87,6 +133,23 @@ export default function SearchPage() {
 
           {/* Search Input */}
           <div className="bg-card border border-border rounded-xl p-4">
+            {/* Image Preview */}
+            {imagePreview && (
+              <div className="mb-3 relative inline-block">
+                <img
+                  src={imagePreview}
+                  alt="Upload preview"
+                  className="max-h-32 rounded-lg border border-border"
+                />
+                <button
+                  onClick={removeImage}
+                  className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
             <div className="flex items-center gap-3">
               <Sparkles className="h-5 w-5 text-violet-400 flex-shrink-0" />
               <input
@@ -95,7 +158,7 @@ export default function SearchPage() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask about your calendar or emails..."
+                placeholder={image ? "Describe what to do with this image..." : "Ask about your calendar or emails..."}
                 className="flex-1 bg-transparent text-lg outline-none placeholder:text-muted-foreground"
                 disabled={isLoading}
               />
@@ -107,9 +170,36 @@ export default function SearchPage() {
                   <X className="h-4 w-4 text-muted-foreground" />
                 </button>
               )}
+
+              {/* Image Upload Button */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
+                className={cn(
+                  "flex-shrink-0",
+                  image && "text-violet-400"
+                )}
+                title="Attach image"
+              >
+                {image ? (
+                  <ImageIcon className="h-5 w-5" />
+                ) : (
+                  <ImagePlus className="h-5 w-5" />
+                )}
+              </Button>
+
               <Button
                 onClick={handleSearch}
-                disabled={!query.trim() || isLoading}
+                disabled={(!query.trim() && !image) || isLoading}
                 className="bg-violet-600 hover:bg-violet-700"
               >
                 {isLoading ? (
@@ -129,7 +219,7 @@ export default function SearchPage() {
             )}
 
             {/* Suggestions */}
-            {!query && results.length === 0 && (
+            {!query && !image && results.length === 0 && (
               <div className="mt-4 pt-4 border-t border-border">
                 <p className="text-sm text-muted-foreground mb-2">Try asking:</p>
                 <div className="flex flex-wrap gap-2">
@@ -137,11 +227,18 @@ export default function SearchPage() {
                     "When is my next flight?",
                     "Show emails from today",
                     "What do I have this week?",
-                    "Any upcoming earnings?",
+                    "📷 Create event from this flyer",
                   ].map((suggestion) => (
                     <button
                       key={suggestion}
-                      onClick={() => setQuery(suggestion)}
+                      onClick={() => {
+                        if (suggestion.startsWith("📷")) {
+                          fileInputRef.current?.click();
+                          setQuery("Create a calendar event from this image");
+                        } else {
+                          setQuery(suggestion);
+                        }
+                      }}
                       className={cn(
                         "px-3 py-1.5 text-xs rounded-full",
                         "bg-muted hover:bg-muted/80 transition-colors"
@@ -159,7 +256,7 @@ export default function SearchPage() {
           {isLoading && (
             <div className="flex items-center justify-center py-8 text-muted-foreground">
               <Loader2 className="h-6 w-6 animate-spin mr-2" />
-              <span>Searching your calendar and emails...</span>
+              <span>{image ? "Analyzing image..." : "Searching your calendar and emails..."}</span>
             </div>
           )}
 
@@ -185,7 +282,7 @@ export default function SearchPage() {
               <Sparkles className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p className="text-lg font-medium">Ask me anything</p>
               <p className="text-sm">
-                Search your calendar events and emails using AI
+                Search your calendar and emails, or upload an image to extract event details
               </p>
             </div>
           )}

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { queryGroq, extractSearchTerms, isGroqConfigured } from "@/lib/groq";
+import { queryGroq, queryGroqVision, extractSearchTerms, isGroqConfigured } from "@/lib/groq";
 import { getCalendarEvents } from "@/lib/google/calendar";
 import { getPrimaryInboxEmails, searchEmails } from "@/lib/google/gmail";
 import { isGoogleConfigured } from "@/lib/google/auth";
 
 export async function POST(request: NextRequest) {
   try {
-    const { query } = await request.json();
+    const { query, image } = await request.json();
 
     if (!query || typeof query !== "string") {
       return NextResponse.json(
@@ -22,6 +22,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // If an image is provided, use the vision model
+    if (image && typeof image === "string") {
+      console.log("[Search API] Processing image with vision model");
+      const response = await queryGroqVision(query, image);
+      return NextResponse.json({ response });
+    }
+
+    // Text-only query - requires Google API for calendar/email context
     if (!isGoogleConfigured()) {
       return NextResponse.json(
         { error: "Google API not configured" },

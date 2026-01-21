@@ -96,6 +96,72 @@ export function isGroqConfigured(): boolean {
 }
 
 /**
+ * Query Groq Vision model with an image
+ * Used for analyzing images to extract event details, etc.
+ */
+export async function queryGroqVision(
+  query: string,
+  imageBase64: string
+): Promise<string> {
+  if (!GROQ_API_KEY) {
+    throw new Error("Groq API key not configured");
+  }
+
+  const systemPrompt = `You are a helpful assistant that analyzes images.
+When the user asks you to create a calendar event from an image, extract the following details:
+- Event title/name
+- Date (in YYYY-MM-DD format)
+- Time (in HH:MM format, 24-hour)
+- Location (if visible)
+- Description/details
+
+Format your response clearly. If you're extracting event details, present them in a structured way that's easy to read.
+Today's date is ${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}.`;
+
+  const response = await fetch(GROQ_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: "llama-3.2-11b-vision-preview",
+      messages: [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: query },
+            {
+              type: "image_url",
+              image_url: {
+                url: imageBase64,
+              },
+            },
+          ],
+        },
+      ],
+      temperature: 0.3,
+      max_tokens: 1024,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || "Failed to analyze image");
+  }
+
+  const data: GroqResponse = await response.json();
+  const text = data.choices?.[0]?.message?.content;
+
+  if (!text) {
+    throw new Error("No response from Groq Vision");
+  }
+
+  return text;
+}
+
+/**
  * Extract search terms from a user query
  * Uses a fast model to quickly identify names, topics, or keywords to search for
  */
