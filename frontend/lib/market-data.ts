@@ -105,50 +105,35 @@ export async function fetchCryptoPrices(
 
 /**
  * Fetch stock prices from Yahoo Finance
+ * Uses the same approach as Investment Tracker - fetch each symbol individually in parallel
  */
 export async function fetchStockPrices(
   symbols: string[]
 ): Promise<StockPrice[]> {
-  const results: StockPrice[] = [];
+  // Fetch all quotes in parallel - one at a time like Investment Tracker does
+  const quotes = await Promise.all(
+    symbols.map(async (symbol) => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const quote: any = await yahooFinance.quote(symbol.toUpperCase());
 
-  // Fetch quotes in parallel (Yahoo Finance handles batching internally)
-  try {
-    const quotes = await yahooFinance.quote(symbols);
+        if (!quote) return null;
 
-    // Handle both single quote and array of quotes
-    const quotesArray = Array.isArray(quotes) ? quotes : [quotes];
-
-    for (const quote of quotesArray) {
-      // Type guard to check if quote has the properties we need
-      if (
-        quote &&
-        typeof quote === "object" &&
-        "regularMarketPrice" in quote &&
-        "symbol" in quote
-      ) {
-        const q = quote as {
-          symbol: string;
-          regularMarketPrice?: number;
-          regularMarketChange?: number;
-          regularMarketChangePercent?: number;
+        return {
+          symbol: quote.symbol as string,
+          price: quote.regularMarketPrice || 0,
+          change: quote.regularMarketChange || 0,
+          changePercent: quote.regularMarketChangePercent || 0,
         };
-
-        if (q.regularMarketPrice !== undefined) {
-          results.push({
-            symbol: q.symbol,
-            price: q.regularMarketPrice,
-            change: q.regularMarketChange ?? 0,
-            changePercent: q.regularMarketChangePercent ?? 0,
-          });
-        }
+      } catch (error) {
+        console.error(`[Market Data] Failed to fetch quote for ${symbol}:`, error);
+        return null;
       }
-    }
-  } catch (error) {
-    console.error("[Market Data] Yahoo Finance fetch error:", error);
-    throw error;
-  }
+    })
+  );
 
-  return results;
+  // Filter out failed quotes
+  return quotes.filter((q): q is StockPrice => q !== null);
 }
 
 /**
