@@ -42,27 +42,26 @@ function googleEventToScheduledEvent(event: calendar_v3.Schema$Event, calendarId
 }
 
 /**
- * Fetch events from Google Calendar
+ * Fetch upcoming events from Google Calendar
  * @param calendarId - Calendar ID (default: "primary")
- * @param maxMonths - Number of months to fetch (default: 3)
+ * @param maxEvents - Maximum number of events to fetch (default: 15)
  */
 export async function getCalendarEvents(
   calendarId: string = "primary",
-  maxMonths: number = 3
+  maxEvents: number = 15
 ): Promise<ScheduledEvent[]> {
   const calendar = await getCalendarClient();
 
   const now = new Date();
-  const futureDate = new Date();
-  futureDate.setMonth(futureDate.getMonth() + maxMonths);
 
+  // Fetch next N events from now, no end date limit
+  // This is faster than date range queries because it stops after finding N events
   const response = await calendar.events.list({
     calendarId,
     timeMin: now.toISOString(),
-    timeMax: futureDate.toISOString(),
     singleEvents: true,
     orderBy: "startTime",
-    maxResults: 250,
+    maxResults: maxEvents,
   });
 
   const events = response.data.items || [];

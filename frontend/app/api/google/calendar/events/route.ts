@@ -13,9 +13,9 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const calendarId = searchParams.get("calendarId") || "primary";
-    const months = parseInt(searchParams.get("months") || "3", 10);
+    const maxEvents = parseInt(searchParams.get("maxEvents") || "15", 10);
 
-    const events = await getCalendarEvents(calendarId, months);
+    const events = await getCalendarEvents(calendarId, maxEvents);
     return NextResponse.json({ events });
   } catch (error) {
     console.error("[Calendar API] Error fetching events:", error);
