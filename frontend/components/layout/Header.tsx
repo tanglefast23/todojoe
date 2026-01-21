@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { RefreshCw, Settings, CalendarDays, CheckSquare, Mail, PlusCircle } from "lucide-react";
+import { RefreshCw, Settings, CalendarDays, CheckSquare, Mail, PlusCircle, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ const navItems = [
   { title: "Calendar", href: "/calendar", icon: CalendarDays },
   { title: "Tasks", href: "/tasks", icon: CheckSquare },
   { title: "Gmail", href: "/gmail", icon: Mail },
+  { title: "Search", href: "/search", icon: Sparkles },
 ];
 
 export function Header() {
