@@ -13,7 +13,7 @@ export async function GET() {
     }
 
     // Fetch emails from Primary inbox (both read and unread)
-    const messages = await getPrimaryInboxEmails(30);
+    const messages = await getPrimaryInboxEmails(50);
     return NextResponse.json({ messages });
   } catch (error) {
     console.error("[Gmail API] Error fetching messages:", error);
