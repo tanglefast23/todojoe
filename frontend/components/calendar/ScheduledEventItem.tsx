@@ -62,7 +62,10 @@ export function ScheduledEventItem({
     setShowDeleteConfirm(true);
   };
 
-  // Determine card style based on completion and timing
+  // Determine if this is a Google Calendar event or a local (app-created) event
+  const isGoogleEvent = event.source === "google";
+
+  // Determine card style based on completion, timing, and source
   const getCardStyle = () => {
     if (isCompleted) {
       return "bg-gradient-to-r from-emerald-500/10 to-green-500/10 border-emerald-500/30";
@@ -73,8 +76,28 @@ export function ScheduledEventItem({
     if (isToday(scheduledDate)) {
       return "bg-gradient-to-r from-amber-500/15 to-yellow-500/15 border-amber-400/40 hover:border-amber-400/60";
     }
-    // Default purple style
-    return "bg-gradient-to-r from-violet-500/10 to-purple-500/10 border-violet-400/30 hover:border-violet-400/50";
+    // Google Calendar events: Purple
+    if (isGoogleEvent) {
+      return "bg-gradient-to-r from-violet-500/10 to-purple-500/10 border-violet-400/30 hover:border-violet-400/50";
+    }
+    // Local (app-created) events: Blue
+    return "bg-gradient-to-r from-blue-500/10 to-sky-500/10 border-blue-400/30 hover:border-blue-400/50";
+  };
+
+  // Get accent color based on source
+  const getAccentColor = () => {
+    if (isCompleted) return "border-emerald-500";
+    if (isOverdue) return "border-red-400";
+    if (isToday(scheduledDate)) return "border-amber-400";
+    if (isGoogleEvent) return "border-violet-400";
+    return "border-blue-400";
+  };
+
+  const getTextAccentColor = () => {
+    if (isCompleted) return "text-muted-foreground";
+    if (isOverdue) return "text-red-400";
+    if (isGoogleEvent) return "text-violet-400";
+    return "text-blue-400";
   };
 
   return (
@@ -126,13 +149,8 @@ export function ScheduledEventItem({
           disabled={!canComplete}
           className={cn(
             "h-5 w-5 border-2 mt-0.5 flex-shrink-0",
-            isCompleted
-              ? "border-emerald-500 data-[state=checked]:bg-emerald-500"
-              : isOverdue
-                ? "border-red-400"
-                : isToday(scheduledDate)
-                  ? "border-amber-400"
-                  : "border-violet-400"
+            getAccentColor(),
+            isCompleted && "data-[state=checked]:bg-emerald-500"
           )}
         />
 
@@ -149,11 +167,7 @@ export function ScheduledEventItem({
       <div className="flex items-center gap-4 text-sm pl-8">
         <div className={cn(
           "flex items-center gap-1.5",
-          isCompleted
-            ? "text-muted-foreground"
-            : isOverdue
-              ? "text-red-400"
-              : "text-violet-400"
+          getTextAccentColor()
         )}>
           <Clock className="h-4 w-4" />
           <span className="font-medium">{format(scheduledDate, "h:mm a")}</span>
