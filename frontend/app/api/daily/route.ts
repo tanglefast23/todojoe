@@ -16,7 +16,7 @@ const STOCK_SYMBOLS = [
 ];
 
 // Commodity ETF symbols to track (mining/resources ETFs)
-const COMMODITY_SYMBOLS = ["SILJ", "URA", "COPX", "HBM"];
+const COMMODITY_SYMBOLS = ["SILJ"];
 
 // Crypto symbols to track
 const CRYPTO_SYMBOLS = ["BTC", "ETH", "HYPE", "ZEC"];
@@ -148,9 +148,6 @@ Return ONLY valid JSON in this exact format, no other text:
 // Commodity symbol to display name mapping
 const COMMODITY_NAMES: Record<string, string> = {
   SILJ: "Silver Miners",
-  URA: "Uranium",
-  COPX: "Copper Miners",
-  HBM: "Hudbay Minerals",
 };
 
 export async function GET() {
