@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { Header } from "@/components/layout/Header";
-import { Search, Sparkles, Loader2, X, Trash2, ImagePlus, Image as ImageIcon } from "lucide-react";
+import { Search, Sparkles, Loader2, X, Trash2, ImagePlus, Image as ImageIcon, CalendarPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSearchStore, type SearchResult } from "@/stores/searchStore";
 import { cn } from "@/lib/utils";
@@ -16,6 +16,7 @@ export default function SearchPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const calendarFileInputRef = useRef<HTMLInputElement>(null);
 
   const results = useSearchStore((state) => state.results);
   const addResult = useSearchStore((state) => state.addResult);
@@ -56,6 +57,39 @@ export default function SearchPage() {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+    if (calendarFileInputRef.current) {
+      calendarFileInputRef.current.value = "";
+    }
+  }, []);
+
+  // Handle calendar image upload - sets query and opens file picker
+  const handleCalendarImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (max 4MB)
+    if (file.size > 4 * 1024 * 1024) {
+      setError("Image must be less than 4MB");
+      return;
+    }
+
+    // Check file type
+    if (!file.type.startsWith("image/")) {
+      setError("Please upload an image file");
+      return;
+    }
+
+    // Set the query for calendar event creation (handles multiple events)
+    setQuery("Create all calendar events from this image");
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setImage(base64);
+      setImagePreview(base64);
+      setError(null);
+    };
+    reader.readAsDataURL(file);
   }, []);
 
   // Handle search
@@ -185,16 +219,37 @@ export default function SearchPage() {
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isLoading}
                 className={cn(
-                  "flex-shrink-0",
+                  "flex-shrink-0 min-w-[44px] min-h-[44px]",
                   image && "text-violet-400"
                 )}
                 title="Attach image"
+                aria-label="Attach image"
               >
                 {image ? (
                   <ImageIcon className="h-5 w-5" />
                 ) : (
                   <ImagePlus className="h-5 w-5" />
                 )}
+              </Button>
+
+              {/* Add to Calendar Button */}
+              <input
+                ref={calendarFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleCalendarImageUpload}
+                className="hidden"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => calendarFileInputRef.current?.click()}
+                disabled={isLoading}
+                className="flex-shrink-0 min-w-[44px] min-h-[44px] text-violet-400 hover:text-violet-300"
+                title="Add image to calendar"
+                aria-label="Add image to calendar"
+              >
+                <CalendarPlus className="h-5 w-5" />
               </Button>
 
               <Button

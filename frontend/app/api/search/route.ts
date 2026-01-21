@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { queryGroq, queryGroqVision, extractSearchTerms, isGroqConfigured } from "@/lib/groq";
-import { getCalendarEvents } from "@/lib/google/calendar";
+import { queryGroq, queryGeminiVision, extractSearchTerms, isGroqConfigured } from "@/lib/groq";
+import { getCalendarEvents, createCalendarEvent } from "@/lib/google/calendar";
 import { getPrimaryInboxEmails, searchEmails } from "@/lib/google/gmail";
 import { isGoogleConfigured } from "@/lib/google/auth";
+
+// Check if the query is asking to create a calendar event
+function isEventCreationRequest(query: string): boolean {
+  const lowerQuery = query.toLowerCase();
+  return (
+    (lowerQuery.includes("create") || lowerQuery.includes("make") || lowerQuery.includes("add")) &&
+    (lowerQuery.includes("event") || lowerQuery.includes("calendar"))
+  );
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,7 +34,95 @@ export async function POST(request: NextRequest) {
     // If an image is provided, use the vision model
     if (image && typeof image === "string") {
       console.log("[Search API] Processing image with vision model");
-      const response = await queryGroqVision(query, image);
+
+      // Check if user wants to create a calendar event
+      if (isEventCreationRequest(query)) {
+        console.log("[Search API] Event creation requested, extracting details as JSON");
+
+        // Get structured JSON from Gemini
+        const jsonResponse = await queryGeminiVision(query, image, true);
+        console.log("[Search API] Gemini JSON response:", jsonResponse);
+
+        try {
+          // Parse the JSON response - strip markdown code blocks if present
+          let cleanJson = jsonResponse.trim();
+          // Remove ```json ... ``` or ``` ... ``` wrappers
+          const codeBlockMatch = cleanJson.match(/```(?:json)?\s*([\s\S]*?)```/);
+          if (codeBlockMatch) {
+            cleanJson = codeBlockMatch[1].trim();
+          }
+          const parsed = JSON.parse(cleanJson);
+
+          // Handle both single object and array of events
+          const events = Array.isArray(parsed) ? parsed : [parsed];
+
+          if (events.length === 0) {
+            throw new Error("No events found in the image");
+          }
+
+          const createdEvents: string[] = [];
+          const failedEvents: string[] = [];
+
+          for (const eventData of events) {
+            try {
+              // Validate required fields
+              if (!eventData.title || !eventData.date || !eventData.time) {
+                failedEvents.push(`Missing details for: ${eventData.title || "Unknown event"}`);
+                continue;
+              }
+
+              // Construct the start time in ISO format
+              const startDateTime = new Date(`${eventData.date}T${eventData.time}:00`);
+              if (isNaN(startDateTime.getTime())) {
+                failedEvents.push(`Invalid date/time for: ${eventData.title}`);
+                continue;
+              }
+
+              // Create the calendar event
+              await createCalendarEvent(
+                eventData.title,
+                startDateTime.toISOString(),
+                undefined, // end time (will default to 1 hour)
+                [eventData.location, eventData.description].filter(Boolean).join("\n") || undefined
+              );
+
+              createdEvents.push(
+                `**${eventData.title}**\n` +
+                `📅 ${startDateTime.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}\n` +
+                `🕐 ${startDateTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}` +
+                (eventData.location ? `\n📍 ${eventData.location}` : "")
+              );
+            } catch (err) {
+              failedEvents.push(`Failed to create: ${eventData.title || "Unknown"}`);
+            }
+          }
+
+          console.log("[Search API] Created events:", createdEvents.length, "Failed:", failedEvents.length);
+
+          // Build response message
+          let response = "";
+          if (createdEvents.length > 0) {
+            response = `✅ **${createdEvents.length} calendar event${createdEvents.length > 1 ? "s" : ""} created!**\n\n`;
+            response += createdEvents.join("\n\n---\n\n");
+            response += "\n\nAll events have been added to your Google Calendar.";
+          }
+          if (failedEvents.length > 0) {
+            response += `\n\n⚠️ Could not create: ${failedEvents.join(", ")}`;
+          }
+
+          return NextResponse.json({ response });
+        } catch (parseError) {
+          console.error("[Search API] Failed to parse/create event:", parseError);
+          // Fall back to regular vision response
+          const response = await queryGeminiVision(query, image, false);
+          return NextResponse.json({
+            response: response + "\n\n⚠️ *I found the event details but couldn't automatically create the event. You can manually add it to your calendar.*"
+          });
+        }
+      }
+
+      // Regular image analysis (not event creation)
+      const response = await queryGeminiVision(query, image, false);
       return NextResponse.json({ response });
     }
 
