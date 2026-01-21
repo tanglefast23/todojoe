@@ -11,8 +11,8 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 // Stock symbols to track
 const STOCK_SYMBOLS = [
   "COIN", "META", "AMD", "AAPL", "MSFT", "AVGO", "CRCL", "HOOD", "OKLO", "SMR",
-  "ETHA", "IBIT", "BRK-B", "GOOG", "TSM", "AMZN", "TSLA", "MU", "NVDA",
-  "ERO", "IREN", "MSTR", "SOXL", "NBIS", "CRWV",
+  "BRK-B", "GOOG", "TSM", "AMZN", "TSLA", "MU", "NVDA",
+  "ERO", "IREN", "MSTR", "NBIS", "CRWV",
 ];
 
 // Commodity ETF symbols to track (mining/resources ETFs)
