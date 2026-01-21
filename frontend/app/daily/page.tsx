@@ -6,15 +6,14 @@ import { Button } from "@/components/ui/button";
 import {
   RefreshCw,
   TrendingUp,
-  Sun,
-  Cloud,
-  CloudRain,
   Newspaper,
   Globe,
   Sparkles,
   Bitcoin,
   Loader2,
   AlertCircle,
+  ExternalLink,
+  Gem,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -34,21 +33,30 @@ interface StockItem {
   change: string;
 }
 
+interface NewsItem {
+  headline: string;
+  url: string;
+  source?: string;
+}
+
+interface CommodityItem {
+  symbol: string;
+  name: string;
+  change: string;
+  isPositive: boolean;
+}
+
 interface DailyData {
   crypto: CryptoItem[];
   stocks: {
     gainers: StockItem[];
     losers: StockItem[];
   };
-  weather: {
-    temp: string;
-    condition: string;
-    forecast: string;
-  };
+  commodities: CommodityItem[];
   news: {
-    vietnam: string[];
-    global: string[];
-    popCulture: string[];
+    vietnam: NewsItem[];
+    global: NewsItem[];
+    popCulture: NewsItem[];
   };
   generatedAt: string;
 }
@@ -62,7 +70,7 @@ interface CachedData {
  * Check if we should fetch fresh data
  * Returns true if:
  * - No cache exists
- * - Cache is from before today's refresh hour (e.g., 9 AM)
+ * - Cache is from before today's refresh hour (e.g., 8 AM)
  */
 function shouldRefreshData(cached: CachedData | null): boolean {
   if (!cached) return true;
@@ -70,7 +78,7 @@ function shouldRefreshData(cached: CachedData | null): boolean {
   const now = new Date();
   const cachedTime = new Date(cached.cachedAt);
 
-  // Get today's refresh time (9 AM)
+  // Get today's refresh time (8 AM)
   const todayRefreshTime = new Date(now);
   todayRefreshTime.setHours(REFRESH_HOUR, 0, 0, 0);
 
@@ -104,6 +112,18 @@ function setCache(data: DailyData): void {
   } catch {
     // Ignore storage errors
   }
+}
+
+/**
+ * Normalize news data to handle both old string format and new NewsItem format
+ */
+function normalizeNewsItems(items: (string | NewsItem)[]): NewsItem[] {
+  return items.map((item) => {
+    if (typeof item === "string") {
+      return { headline: item, url: "" };
+    }
+    return item;
+  });
 }
 
 export default function DailyPage() {
@@ -175,15 +195,43 @@ export default function DailyPage() {
     fetchDaily();
   }, [fetchDaily]);
 
-  const getWeatherIcon = (condition: string) => {
-    const lower = condition.toLowerCase();
-    if (lower.includes("rain") || lower.includes("storm")) {
-      return <CloudRain className="h-8 w-8 text-blue-400" />;
+  const handleNewsClick = (url: string) => {
+    if (url) {
+      window.open(url, "_blank", "noopener,noreferrer");
     }
-    if (lower.includes("cloud") || lower.includes("overcast")) {
-      return <Cloud className="h-8 w-8 text-gray-400" />;
-    }
-    return <Sun className="h-8 w-8 text-yellow-400" />;
+  };
+
+  const renderNewsSection = (
+    items: (string | NewsItem)[],
+    borderColor: string
+  ) => {
+    const normalizedItems = normalizeNewsItems(items);
+    return (
+      <div className="space-y-3">
+        {normalizedItems.map((item, i) => (
+          <button
+            key={i}
+            onClick={() => handleNewsClick(item.url)}
+            disabled={!item.url}
+            className={cn(
+              "w-full text-left transition-colors",
+              item.url && "hover:bg-muted/50 cursor-pointer active:bg-muted",
+              !item.url && "cursor-default"
+            )}
+          >
+            <div className={cn("pl-3 border-l-2", borderColor)}>
+              <p className="text-sm leading-relaxed">{item.headline}</p>
+              {item.source && item.url && (
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  {item.source}
+                  <ExternalLink className="h-3 w-3" />
+                </p>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -227,7 +275,7 @@ export default function DailyPage() {
             <div className="flex flex-col items-center justify-center py-20 gap-4">
               <AlertCircle className="h-8 w-8 text-red-500" />
               <p className="text-red-400 text-center">{error}</p>
-              <Button onClick={fetchDaily} variant="outline">
+              <Button onClick={() => fetchDaily()} variant="outline">
                 Try Again
               </Button>
             </div>
@@ -326,26 +374,36 @@ export default function DailyPage() {
                 </div>
               </section>
 
-              {/* Weather Section */}
-              <section className="bg-gradient-to-br from-blue-500/20 to-violet-500/20 border border-border rounded-2xl p-4">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                      Ho Chi Minh City
-                    </p>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-bold">{data.weather.temp}</span>
-                      <span className="text-lg text-muted-foreground">
-                        {data.weather.condition}
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {data.weather.forecast}
-                    </p>
+              {/* Commodities Section */}
+              {data.commodities && data.commodities.length > 0 && (
+                <section className="bg-card border border-border rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Gem className="h-5 w-5 text-cyan-500" />
+                    <h2 className="font-semibold">Commodities</h2>
                   </div>
-                  {getWeatherIcon(data.weather.condition)}
-                </div>
-              </section>
+                  <div className="grid grid-cols-2 gap-3">
+                    {data.commodities.map((item) => (
+                      <div
+                        key={item.symbol}
+                        className="bg-muted/50 rounded-xl p-3 flex items-center justify-between"
+                      >
+                        <div>
+                          <span className="font-medium text-sm">{item.symbol}</span>
+                          <p className="text-xs text-muted-foreground">{item.name}</p>
+                        </div>
+                        <span
+                          className={cn(
+                            "text-sm font-semibold",
+                            item.isPositive ? "text-green-400" : "text-red-400"
+                          )}
+                        >
+                          {item.change}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
 
               {/* Vietnam News */}
               <section className="bg-card border border-border rounded-2xl p-4 space-y-3">
@@ -353,16 +411,7 @@ export default function DailyPage() {
                   <Newspaper className="h-5 w-5 text-amber-500" />
                   <h2 className="font-semibold">Vietnam News</h2>
                 </div>
-                <div className="space-y-2">
-                  {data.news.vietnam.map((headline, i) => (
-                    <p
-                      key={i}
-                      className="text-sm leading-relaxed pl-3 border-l-2 border-amber-500/50"
-                    >
-                      {headline}
-                    </p>
-                  ))}
-                </div>
+                {renderNewsSection(data.news.vietnam, "border-amber-500/50")}
               </section>
 
               {/* Global News */}
@@ -371,16 +420,7 @@ export default function DailyPage() {
                   <Globe className="h-5 w-5 text-blue-500" />
                   <h2 className="font-semibold">World News</h2>
                 </div>
-                <div className="space-y-2">
-                  {data.news.global.map((headline, i) => (
-                    <p
-                      key={i}
-                      className="text-sm leading-relaxed pl-3 border-l-2 border-blue-500/50"
-                    >
-                      {headline}
-                    </p>
-                  ))}
-                </div>
+                {renderNewsSection(data.news.global, "border-blue-500/50")}
               </section>
 
               {/* Pop Culture */}
@@ -389,21 +429,12 @@ export default function DailyPage() {
                   <Sparkles className="h-5 w-5 text-pink-500" />
                   <h2 className="font-semibold">Pop Culture</h2>
                 </div>
-                <div className="space-y-2">
-                  {data.news.popCulture.map((headline, i) => (
-                    <p
-                      key={i}
-                      className="text-sm leading-relaxed pl-3 border-l-2 border-pink-500/50"
-                    >
-                      {headline}
-                    </p>
-                  ))}
-                </div>
+                {renderNewsSection(data.news.popCulture, "border-pink-500/50")}
               </section>
 
               {/* Disclaimer */}
               <p className="text-xs text-center text-muted-foreground pt-2">
-                Powered by Gemini with Google Search • Refreshes daily at 8 AM
+                Market data from CoinGecko & Yahoo Finance • News via Gemini Search • Refreshes daily at 8 AM
               </p>
             </div>
           )}
