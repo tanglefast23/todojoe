@@ -1,7 +1,7 @@
 /**
  * Supabase Storage queries for attachments
  */
-import { getSupabaseClient } from "../client";
+import { getSupabaseClient, isSupabaseConfigured } from "../client";
 
 const BUCKET_NAME = "attachments";
 
@@ -12,6 +12,9 @@ const BUCKET_NAME = "attachments";
  * @returns The public URL of the uploaded file
  */
 export async function uploadAttachment(file: File, expenseId: string): Promise<string> {
+  if (!isSupabaseConfigured()) {
+    throw new Error("Supabase storage is not configured. Cannot upload attachments.");
+  }
   const supabase = getSupabaseClient();
 
   // Create a unique filename with timestamp to avoid collisions
@@ -44,6 +47,7 @@ export async function uploadAttachment(file: File, expenseId: string): Promise<s
  * @param url The public URL of the file to delete
  */
 export async function deleteAttachment(url: string): Promise<void> {
+  if (!isSupabaseConfigured()) return;
   const supabase = getSupabaseClient();
 
   // Extract the file path from the URL
@@ -71,6 +75,7 @@ export async function deleteAttachment(url: string): Promise<void> {
  * @param urls Array of public URLs to delete
  */
 export async function deleteAttachments(urls: string[]): Promise<void> {
+  if (!isSupabaseConfigured()) return;
   const supabase = getSupabaseClient();
 
   // Extract file paths from URLs

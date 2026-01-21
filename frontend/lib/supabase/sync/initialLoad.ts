@@ -14,6 +14,7 @@ import { useTasksStore } from "@/stores/tasksStore";
 import { useScheduledEventsStore } from "@/stores/scheduledEventsStore";
 
 import { retryWithBackoff } from "./utils";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
 
 import type { Task } from "@/types/tasks";
 import type { ScheduledEvent } from "@/types/scheduled-events";
@@ -27,6 +28,12 @@ import type { ScheduledEvent } from "@/types/scheduled-events";
  * - If both are empty: skip
  */
 export async function performInitialLoad(): Promise<void> {
+  // Safety check: skip if Supabase is not configured
+  if (!isSupabaseConfigured()) {
+    console.log("[Sync] Skipping initial load - Supabase not configured");
+    return;
+  }
+
   console.log("[Sync] Starting initial load from Supabase...");
 
   // Fetch all data from Supabase in parallel with retry logic

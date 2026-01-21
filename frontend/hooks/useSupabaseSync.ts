@@ -12,13 +12,14 @@
 import { useEffect, useRef } from "react";
 
 // Stores
-import { useTasksStore } from "@/stores/tasksStore";
 import { useScheduledEventsStore } from "@/stores/scheduledEventsStore";
+
+// Supabase client
+import { isSupabaseConfigured } from "@/lib/supabase/client";
 
 // Sync functions
 import {
   performInitialLoad,
-  createSyncTasksToSupabase,
   createSyncScheduledEventsToSupabase,
   flushAllPendingSyncs,
   type SyncStateRefs,
@@ -34,6 +35,9 @@ export function useSupabaseSync(): void {
   const isSyncing = useRef(false);
   const initialLoadComplete = useRef(false);
 
+  // Check if Supabase is configured - skip all sync if not
+  const supabaseEnabled = isSupabaseConfigured();
+
   // Create refs object for sync functions
   const refs: SyncStateRefs = {
     isInitialLoad,
@@ -41,15 +45,21 @@ export function useSupabaseSync(): void {
   };
 
   // Create debounced sync functions (memoized to avoid recreating on each render)
-  const syncTasks = useRef(createSyncTasksToSupabase(refs));
+  // Note: Tasks sync is disabled - individual actions sync directly to Supabase
   const syncScheduledEvents = useRef(createSyncScheduledEventsToSupabase(refs));
 
   // Subscribe to store changes
-  const tasks = useTasksStore((state) => state.tasks);
   const scheduledEvents = useScheduledEventsStore((state) => state.events);
 
-  // Perform initial load on mount
+  // Perform initial load on mount (only if Supabase is configured)
   useEffect(() => {
+    if (!supabaseEnabled) {
+      // Mark as complete so the app can function without Supabase
+      isInitialLoad.current = false;
+      initialLoadComplete.current = true;
+      return;
+    }
+
     const doInitialLoad = async () => {
       try {
         await performInitialLoad();
@@ -62,7 +72,7 @@ export function useSupabaseSync(): void {
     };
 
     doInitialLoad();
-  }, []);
+  }, [supabaseEnabled]);
 
   // Setup beforeunload handler to flush pending syncs
   useEffect(() => {
@@ -80,6 +90,9 @@ export function useSupabaseSync(): void {
   // This enables cross-device sync without requiring manual refresh
   // Uses multiple event types for better mobile compatibility (iOS Safari especially)
   useEffect(() => {
+    // Skip visibility sync if Supabase is not configured
+    if (!supabaseEnabled) return;
+
     let lastSyncTime = 0;
     const MIN_SYNC_INTERVAL = 5000; // Don't sync more than once per 5 seconds
 
@@ -132,7 +145,7 @@ export function useSupabaseSync(): void {
       window.removeEventListener("pageshow", handlePageShow);
       window.removeEventListener("focus", handleFocus);
     };
-  }, []);
+  }, [supabaseEnabled]);
 
   // Tasks sync disabled - individual actions (add, delete, complete, uncomplete)
   // now sync directly to Supabase. Bulk sync was causing deleted tasks to reappear
@@ -146,7 +159,7 @@ export function useSupabaseSync(): void {
   // Note: Individual actions (add, complete, delete) also sync directly to Supabase.
   // This provides retry logic and ensures changes aren't lost if individual syncs fail.
   useEffect(() => {
-    if (!initialLoadComplete.current) return;
+    if (!supabaseEnabled || !initialLoadComplete.current) return;
     syncScheduledEvents.current(scheduledEvents);
-  }, [scheduledEvents]);
+  }, [scheduledEvents, supabaseEnabled]);
 }

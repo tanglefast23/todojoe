@@ -6,6 +6,7 @@
  */
 
 import { SyncStateRefs, debounce, retryWithBackoff } from "./utils";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
 
 // Query imports
 import { upsertTasks } from "@/lib/supabase/queries/tasks";
@@ -21,6 +22,7 @@ import type { ScheduledEvent } from "@/types/scheduled-events";
  */
 export function createSyncTasksToSupabase(refs: SyncStateRefs) {
   return debounce(async (tasks: Task[]) => {
+    if (!isSupabaseConfigured()) return;
     if (refs.isSyncing.current || refs.isInitialLoad.current) return;
     refs.isSyncing.current = true;
     try {
@@ -38,6 +40,7 @@ export function createSyncTasksToSupabase(refs: SyncStateRefs) {
  */
 export function createSyncScheduledEventsToSupabase(refs: SyncStateRefs) {
   return debounce(async (events: ScheduledEvent[]) => {
+    if (!isSupabaseConfigured()) return;
     if (refs.isSyncing.current || refs.isInitialLoad.current) return;
     refs.isSyncing.current = true;
     try {

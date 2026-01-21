@@ -7,6 +7,13 @@ import type { Database } from "@/types/database";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+/**
+ * Check if Supabase is configured
+ */
+export function isSupabaseConfigured(): boolean {
+  return !!(supabaseUrl && supabaseAnonKey);
+}
+
 export function createClient() {
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error(

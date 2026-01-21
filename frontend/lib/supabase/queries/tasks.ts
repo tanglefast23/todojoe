@@ -1,7 +1,7 @@
 /**
  * Supabase queries for tasks table
  */
-import { getSupabaseClient } from "../client";
+import { getSupabaseClient, isSupabaseConfigured } from "../client";
 import type { Database } from "@/types/database";
 import type { Task } from "@/types/tasks";
 
@@ -50,6 +50,7 @@ function taskToUpdate(task: Partial<Task>): TaskUpdate {
 }
 
 export async function fetchAllTasks(): Promise<Task[]> {
+  if (!isSupabaseConfigured()) return [];
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("tasks")
@@ -65,6 +66,10 @@ export async function fetchAllTasks(): Promise<Task[]> {
 }
 
 export async function createTask(task: Omit<Task, "id">): Promise<Task> {
+  if (!isSupabaseConfigured()) {
+    // Return a mock task with generated ID when Supabase is not configured
+    return { ...task, id: crypto.randomUUID() } as Task;
+  }
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("tasks")
@@ -81,6 +86,10 @@ export async function createTask(task: Omit<Task, "id">): Promise<Task> {
 }
 
 export async function updateTask(id: string, updates: Partial<Task>): Promise<Task> {
+  if (!isSupabaseConfigured()) {
+    // Return updates with ID when Supabase is not configured
+    return { id, ...updates } as Task;
+  }
   const supabase = getSupabaseClient();
   const updateData = {
     ...taskToUpdate(updates),
@@ -103,6 +112,7 @@ export async function updateTask(id: string, updates: Partial<Task>): Promise<Ta
 }
 
 export async function deleteTask(id: string): Promise<void> {
+  if (!isSupabaseConfigured()) return;
   const supabase = getSupabaseClient();
   const { error } = await supabase
     .from("tasks")
@@ -116,6 +126,7 @@ export async function deleteTask(id: string): Promise<void> {
 }
 
 export async function upsertTasks(tasks: Task[]): Promise<void> {
+  if (!isSupabaseConfigured()) return;
   if (tasks.length === 0) return;
 
   const supabase = getSupabaseClient();
@@ -133,6 +144,7 @@ export async function upsertTasks(tasks: Task[]): Promise<void> {
 
 // Bulk sync: replace all tasks
 export async function syncTasks(tasks: Task[]): Promise<void> {
+  if (!isSupabaseConfigured()) return;
   const supabase = getSupabaseClient();
 
   // Delete all existing tasks

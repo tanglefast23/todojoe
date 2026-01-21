@@ -1,7 +1,7 @@
 /**
  * Supabase queries for scheduled_events table
  */
-import { getSupabaseClient } from "../client";
+import { getSupabaseClient, isSupabaseConfigured } from "../client";
 import type { Database } from "@/types/database";
 import type { ScheduledEvent } from "@/types/scheduled-events";
 
@@ -65,6 +65,7 @@ function scheduledEventToUpdate(event: Partial<ScheduledEvent>): ScheduledEventU
 }
 
 export async function fetchAllScheduledEvents(): Promise<ScheduledEvent[]> {
+  if (!isSupabaseConfigured()) return [];
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("scheduled_events")
@@ -80,6 +81,9 @@ export async function fetchAllScheduledEvents(): Promise<ScheduledEvent[]> {
 }
 
 export async function createScheduledEvent(event: Omit<ScheduledEvent, "id">): Promise<ScheduledEvent> {
+  if (!isSupabaseConfigured()) {
+    return { ...event, id: crypto.randomUUID() } as ScheduledEvent;
+  }
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("scheduled_events")
@@ -96,6 +100,9 @@ export async function createScheduledEvent(event: Omit<ScheduledEvent, "id">): P
 }
 
 export async function updateScheduledEvent(id: string, updates: Partial<ScheduledEvent>): Promise<ScheduledEvent> {
+  if (!isSupabaseConfigured()) {
+    return { id, ...updates } as ScheduledEvent;
+  }
   const supabase = getSupabaseClient();
   const updateData = {
     ...scheduledEventToUpdate(updates),
@@ -118,6 +125,7 @@ export async function updateScheduledEvent(id: string, updates: Partial<Schedule
 }
 
 export async function deleteScheduledEvent(id: string): Promise<void> {
+  if (!isSupabaseConfigured()) return;
   const supabase = getSupabaseClient();
   const { error } = await supabase
     .from("scheduled_events")
@@ -131,6 +139,7 @@ export async function deleteScheduledEvent(id: string): Promise<void> {
 }
 
 export async function upsertScheduledEvents(events: ScheduledEvent[]): Promise<void> {
+  if (!isSupabaseConfigured()) return;
   if (events.length === 0) return;
 
   const supabase = getSupabaseClient();

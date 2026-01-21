@@ -3,7 +3,7 @@
 import { memo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CheckSquare, CalendarDays, Mail, Settings, PlusCircle } from "lucide-react";
+import { CheckSquare, CalendarDays, Mail, PlusCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { playClickSound } from "@/lib/audio";
 
@@ -13,7 +13,6 @@ const navItems = [
   { title: "Calendar", href: "/calendar", icon: CalendarDays },
   { title: "Tasks", href: "/tasks", icon: CheckSquare },
   { title: "Gmail", href: "/gmail", icon: Mail },
-  { title: "Settings", href: "/settings", icon: Settings },
 ];
 
 /** Mobile bottom navigation bar for TODO app */

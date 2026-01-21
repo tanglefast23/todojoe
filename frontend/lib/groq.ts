@@ -189,6 +189,99 @@ Today's date is ${new Date().toLocaleDateString("en-US", { weekday: "long", mont
 }
 
 /**
+ * Parse natural language text to extract calendar event details
+ * Uses Groq to understand phrases like "Dentist tomorrow at 3pm at 123 Main St"
+ */
+export interface ParsedEvent {
+  title: string;
+  date: string; // YYYY-MM-DD
+  time: string; // HH:MM (24-hour)
+  endTime?: string; // HH:MM (24-hour)
+  description?: string; // Address, phone, details
+}
+
+export async function parseNaturalLanguageEvent(text: string): Promise<ParsedEvent> {
+  if (!GROQ_API_KEY) {
+    throw new Error("Groq API key not configured");
+  }
+
+  const today = new Date();
+  const todayStr = today.toISOString().split("T")[0];
+  const dayOfWeek = today.toLocaleDateString("en-US", { weekday: "long" });
+
+  const systemPrompt = `You are an event parser. Extract calendar event details from natural language.
+Today is ${dayOfWeek}, ${todayStr}.
+
+Parse the user's text and return ONLY a JSON object with these fields:
+{
+  "title": "Event name/title (required)",
+  "date": "YYYY-MM-DD format (required)",
+  "time": "HH:MM in 24-hour format (required, default to 09:00 if not specified)",
+  "endTime": "HH:MM in 24-hour format (optional, only if duration/end time mentioned)",
+  "description": "Additional details like address, phone number, notes (optional)"
+}
+
+Rules:
+- "tomorrow" = add 1 day to today
+- "next Monday" = the upcoming Monday
+- "3pm" = "15:00", "noon" = "12:00", "9am" = "09:00"
+- Extract addresses, phone numbers, and minor details into "description"
+- The title should be the main event name, not the details
+- If duration mentioned (e.g., "for 2 hours"), calculate endTime
+- Return ONLY the JSON object, no markdown or explanation`;
+
+  const response = await fetch(GROQ_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: "llama-3.1-8b-instant",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: text }
+      ],
+      temperature: 0.1,
+      max_tokens: 256,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || "Failed to parse event");
+  }
+
+  const data: GroqResponse = await response.json();
+  const content = data.choices?.[0]?.message?.content?.trim();
+
+  if (!content) {
+    throw new Error("No response from Groq");
+  }
+
+  try {
+    // Clean up potential markdown code blocks
+    const jsonStr = content.replace(/```json\n?|\n?```/g, "").trim();
+    const parsed = JSON.parse(jsonStr);
+
+    if (!parsed.title || !parsed.date || !parsed.time) {
+      throw new Error("Missing required fields");
+    }
+
+    return {
+      title: parsed.title,
+      date: parsed.date,
+      time: parsed.time,
+      endTime: parsed.endTime || undefined,
+      description: parsed.description || undefined,
+    };
+  } catch (parseError) {
+    console.error("Failed to parse Groq response:", content);
+    throw new Error("Could not understand event details. Please try rephrasing.");
+  }
+}
+
+/**
  * Extract search terms from a user query
  * Uses a fast model to quickly identify names, topics, or keywords to search for
  */
