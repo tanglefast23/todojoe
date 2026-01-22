@@ -1,6 +1,7 @@
 /**
  * Supabase database types for JVTodo
- * Auto-generated from Supabase project: bijgirpowxurnyaccqhs
+ * Using dedicated jv_ prefixed tables in project: fyoizlhqttpnkgbndkkd (tanglefast23's)
+ * Tables are isolated to prevent cross-contamination with other apps
  */
 
 export type Json =
@@ -117,7 +118,7 @@ export type Database = {
         }
         Relationships: []
       }
-      scheduled_events: {
+      jv_scheduled_events: {
         Row: {
           completed_at: string | null
           created_at: string
@@ -165,7 +166,7 @@ export type Database = {
         }
         Relationships: []
       }
-      tasks: {
+      jv_tasks: {
         Row: {
           attachment_url: string | null
           completed_at: string | null
@@ -230,8 +231,8 @@ export type TablesUpdate<
 > = DefaultSchema["Tables"][TableName]["Update"]
 
 // Convenience aliases
-export type TaskRow = Tables<"tasks">
-export type ScheduledEventRow = Tables<"scheduled_events">
+export type TaskRow = Tables<"jv_tasks">
+export type ScheduledEventRow = Tables<"jv_scheduled_events">
 export type GmailMessageRow = Tables<"gmail_messages">
 export type GoogleTokenRow = Tables<"google_tokens">
 export type AppSettingRow = Tables<"app_settings">

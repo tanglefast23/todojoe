@@ -5,9 +5,9 @@ import { getSupabaseClient, isSupabaseConfigured } from "../client";
 import type { Database } from "@/types/database";
 import type { ScheduledEvent } from "@/types/scheduled-events";
 
-type ScheduledEventRow = Database["public"]["Tables"]["scheduled_events"]["Row"];
-type ScheduledEventInsert = Database["public"]["Tables"]["scheduled_events"]["Insert"];
-type ScheduledEventUpdate = Database["public"]["Tables"]["scheduled_events"]["Update"];
+type ScheduledEventRow = Database["public"]["Tables"]["jv_scheduled_events"]["Row"];
+type ScheduledEventInsert = Database["public"]["Tables"]["jv_scheduled_events"]["Insert"];
+type ScheduledEventUpdate = Database["public"]["Tables"]["jv_scheduled_events"]["Update"];
 
 // Convert database row to app type (snake_case to camelCase)
 function rowToScheduledEvent(row: ScheduledEventRow): ScheduledEvent {
@@ -68,7 +68,7 @@ export async function fetchAllScheduledEvents(): Promise<ScheduledEvent[]> {
   if (!isSupabaseConfigured()) return [];
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
-    .from("scheduled_events")
+    .from("jv_scheduled_events")
     .select("*")
     .order("scheduled_at", { ascending: true });
 
@@ -86,7 +86,7 @@ export async function createScheduledEvent(event: Omit<ScheduledEvent, "id">): P
   }
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
-    .from("scheduled_events")
+    .from("jv_scheduled_events")
     .insert(scheduledEventToInsert(event) as never)
     .select()
     .single();
@@ -110,7 +110,7 @@ export async function updateScheduledEvent(id: string, updates: Partial<Schedule
   };
 
   const { data, error } = await supabase
-    .from("scheduled_events")
+    .from("jv_scheduled_events")
     .update(updateData as never)
     .eq("id", id)
     .select()
@@ -128,7 +128,7 @@ export async function deleteScheduledEvent(id: string): Promise<void> {
   if (!isSupabaseConfigured()) return;
   const supabase = getSupabaseClient();
   const { error } = await supabase
-    .from("scheduled_events")
+    .from("jv_scheduled_events")
     .delete()
     .eq("id", id);
 
@@ -146,7 +146,7 @@ export async function upsertScheduledEvents(events: ScheduledEvent[]): Promise<v
   const rows = events.map((event) => scheduledEventToInsert(event));
 
   const { error } = await supabase
-    .from("scheduled_events")
+    .from("jv_scheduled_events")
     .upsert(rows as never, { onConflict: "id" });
 
   if (error) {

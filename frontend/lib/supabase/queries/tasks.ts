@@ -5,9 +5,9 @@ import { getSupabaseClient, isSupabaseConfigured } from "../client";
 import type { Database } from "@/types/database";
 import type { Task } from "@/types/tasks";
 
-type TaskRow = Database["public"]["Tables"]["tasks"]["Row"];
-type TaskInsert = Database["public"]["Tables"]["tasks"]["Insert"];
-type TaskUpdate = Database["public"]["Tables"]["tasks"]["Update"];
+type TaskRow = Database["public"]["Tables"]["jv_tasks"]["Row"];
+type TaskInsert = Database["public"]["Tables"]["jv_tasks"]["Insert"];
+type TaskUpdate = Database["public"]["Tables"]["jv_tasks"]["Update"];
 
 // Convert database row to app type (snake_case to camelCase)
 function rowToTask(row: TaskRow): Task {
@@ -53,7 +53,7 @@ export async function fetchAllTasks(): Promise<Task[]> {
   if (!isSupabaseConfigured()) return [];
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
-    .from("tasks")
+    .from("jv_tasks")
     .select("*")
     .order("created_at", { ascending: false });
 
@@ -72,7 +72,7 @@ export async function createTask(task: Omit<Task, "id">): Promise<Task> {
   }
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
-    .from("tasks")
+    .from("jv_tasks")
     .insert(taskToInsert(task) as never)
     .select()
     .single();
@@ -97,7 +97,7 @@ export async function updateTask(id: string, updates: Partial<Task>): Promise<Ta
   };
 
   const { data, error } = await supabase
-    .from("tasks")
+    .from("jv_tasks")
     .update(updateData as never)
     .eq("id", id)
     .select()
@@ -115,7 +115,7 @@ export async function deleteTask(id: string): Promise<void> {
   if (!isSupabaseConfigured()) return;
   const supabase = getSupabaseClient();
   const { error } = await supabase
-    .from("tasks")
+    .from("jv_tasks")
     .delete()
     .eq("id", id);
 
@@ -133,7 +133,7 @@ export async function upsertTasks(tasks: Task[]): Promise<void> {
   const rows = tasks.map((task) => taskToInsert(task));
 
   const { error } = await supabase
-    .from("tasks")
+    .from("jv_tasks")
     .upsert(rows as never, { onConflict: "id" });
 
   if (error) {
@@ -149,7 +149,7 @@ export async function syncTasks(tasks: Task[]): Promise<void> {
 
   // Delete all existing tasks
   const { error: deleteError } = await supabase
-    .from("tasks")
+    .from("jv_tasks")
     .delete()
     .neq("id", "00000000-0000-0000-0000-000000000000"); // Delete all
 
@@ -162,7 +162,7 @@ export async function syncTasks(tasks: Task[]): Promise<void> {
   if (tasks.length > 0) {
     const rows = tasks.map((task) => taskToInsert(task));
     const { error: insertError } = await supabase
-      .from("tasks")
+      .from("jv_tasks")
       .insert(rows as never);
 
     if (insertError) {
