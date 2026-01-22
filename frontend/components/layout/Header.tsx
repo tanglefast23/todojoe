@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { RefreshCw, Settings, CalendarDays, CheckSquare, Mail, PlusCircle, Sparkles } from "lucide-react";
+import { RefreshCw, Settings, CalendarDays, CheckSquare, Mail, PlusCircle, Sparkles, Sun } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 
 // Navigation items for the header
 const navItems = [
+  { title: "Daily", href: "/daily", icon: Sun },
   { title: "Entry", href: "/entry", icon: PlusCircle },
   { title: "Calendar", href: "/calendar", icon: CalendarDays },
   { title: "Tasks", href: "/tasks", icon: CheckSquare },
