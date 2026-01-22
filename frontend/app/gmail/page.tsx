@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Header } from "@/components/layout/Header";
 import { Mail, RefreshCw, Trash2, Archive, ChevronRight, AlertCircle, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LongPressButton } from "@/components/ui/long-press-button";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import type { GmailMessage, GmailMessageFull } from "@/types/gmail";
@@ -198,28 +199,26 @@ export default function GmailPage() {
                         {getPreview(email.snippet)}
                       </p>
                     </div>
-                    {/* Action buttons and chevron */}
+                    {/* Action buttons and chevron - long press to activate */}
                     <div className="flex items-center gap-2 flex-shrink-0 mt-1">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteEmail(email.gmailId);
-                        }}
-                        className="w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white flex items-center justify-center transition-colors"
-                        title="Move to trash"
+                      <LongPressButton
+                        onLongPress={() => deleteEmail(email.gmailId)}
+                        duration={800}
+                        className="w-8 h-8 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center transition-colors"
+                        activeClassName="bg-red-500/40 scale-110"
+                        title="Hold to delete"
                       >
                         <Trash2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          archiveEmail(email.gmailId);
-                        }}
-                        className="w-8 h-8 rounded-full bg-amber-500/20 hover:bg-amber-500 text-amber-400 hover:text-white flex items-center justify-center transition-colors"
-                        title="Archive"
+                      </LongPressButton>
+                      <LongPressButton
+                        onLongPress={() => archiveEmail(email.gmailId)}
+                        duration={800}
+                        className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center transition-colors"
+                        activeClassName="bg-amber-500/40 scale-110"
+                        title="Hold to archive"
                       >
                         <Archive className="w-4 h-4" />
-                      </button>
+                      </LongPressButton>
                       <ChevronRight className="h-5 w-5 text-muted-foreground" />
                     </div>
                   </div>
@@ -231,61 +230,69 @@ export default function GmailPage() {
           {/* Email Detail Modal */}
           {selectedEmail && (
             <div
-              className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+              className="fixed inset-0 z-50 bg-black/80 flex items-end sm:items-center justify-center"
               onClick={() => setSelectedEmail(null)}
             >
               <div
-                className="bg-background rounded-xl border max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col"
+                className="bg-background w-full sm:max-w-2xl sm:mx-4 sm:rounded-xl border-t sm:border rounded-t-xl max-h-[90vh] sm:max-h-[80vh] overflow-hidden flex flex-col"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="p-4 border-b flex items-start justify-between">
-                  <div className="flex-1 min-w-0 pr-4">
-                    <h2 className="text-xl font-bold truncate">{selectedEmail.subject || "(No subject)"}</h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      From: {selectedEmail.fromName || selectedEmail.fromEmail || "Unknown"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(selectedEmail.receivedAt).toLocaleString()}
-                    </p>
-                  </div>
+                {/* Header with close button */}
+                <div className="flex items-center justify-between p-3 border-b">
+                  <button
+                    onClick={() => setSelectedEmail(null)}
+                    className="text-muted-foreground hover:text-foreground text-sm"
+                  >
+                    Close
+                  </button>
                   <div className="flex gap-2">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => {
-                        deleteEmail(selectedEmail.gmailId);
-                        setSelectedEmail(null);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Delete
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
+                    <button
                       onClick={() => {
                         archiveEmail(selectedEmail.gmailId);
                         setSelectedEmail(null);
                       }}
+                      className="p-2 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500 hover:text-white transition-colors"
+                      title="Archive"
                     >
-                      <Archive className="h-4 w-4 mr-1" />
-                      Archive
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => setSelectedEmail(null)}>
-                      Close
-                    </Button>
+                      <Archive className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        deleteEmail(selectedEmail.gmailId);
+                        setSelectedEmail(null);
+                      }}
+                      className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </button>
                   </div>
                 </div>
+
+                {/* Email metadata */}
+                <div className="p-4 border-b space-y-1">
+                  <h2 className="text-lg font-bold leading-tight">
+                    {selectedEmail.subject || "(No subject)"}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    From: {selectedEmail.fromName || selectedEmail.fromEmail || "Unknown"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(selectedEmail.receivedAt).toLocaleString()}
+                  </p>
+                </div>
+
+                {/* Email body */}
                 <div className="flex-1 overflow-y-auto p-4">
                   {selectedEmail.bodyHtml ? (
                     <div
-                      className="prose prose-invert max-w-none"
+                      className="prose prose-invert prose-sm max-w-none break-words"
                       dangerouslySetInnerHTML={{ __html: selectedEmail.bodyHtml }}
                     />
                   ) : (
-                    <pre className="whitespace-pre-wrap text-sm">
+                    <p className="whitespace-pre-wrap text-sm break-words">
                       {selectedEmail.bodyText || selectedEmail.snippet || "No content"}
-                    </pre>
+                    </p>
                   )}
                 </div>
               </div>
