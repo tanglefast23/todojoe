@@ -171,31 +171,7 @@ export default function GmailPage() {
                   )}
                   onClick={() => fetchEmailDetail(email.gmailId)}
                 >
-                  {/* Action buttons */}
-                  <div className="absolute top-3 right-3 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteEmail(email.gmailId);
-                      }}
-                      className="w-8 h-8 rounded-full bg-red-500/80 hover:bg-red-500 text-white flex items-center justify-center"
-                      title="Move to trash"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        archiveEmail(email.gmailId);
-                      }}
-                      className="w-8 h-8 rounded-full bg-amber-500/80 hover:bg-amber-500 text-white flex items-center justify-center"
-                      title="Archive"
-                    >
-                      <Archive className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="flex items-start gap-3 pr-10">
+                  <div className="flex items-start gap-3">
                     {/* Unread indicator dot */}
                     {email.isUnread && (
                       <div className="w-2 h-2 rounded-full bg-blue-400 mt-2 flex-shrink-0" />
@@ -222,7 +198,30 @@ export default function GmailPage() {
                         {getPreview(email.snippet)}
                       </p>
                     </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground mt-2 flex-shrink-0" />
+                    {/* Action buttons and chevron */}
+                    <div className="flex items-center gap-2 flex-shrink-0 mt-1">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteEmail(email.gmailId);
+                        }}
+                        className="w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white flex items-center justify-center transition-colors"
+                        title="Move to trash"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          archiveEmail(email.gmailId);
+                        }}
+                        className="w-8 h-8 rounded-full bg-amber-500/20 hover:bg-amber-500 text-amber-400 hover:text-white flex items-center justify-center transition-colors"
+                        title="Archive"
+                      >
+                        <Archive className="w-4 h-4" />
+                      </button>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                    </div>
                   </div>
                 </div>
               ))}

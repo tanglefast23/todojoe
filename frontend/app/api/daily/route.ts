@@ -51,6 +51,8 @@ export interface DailyData {
     vietnam: NewsItem[];
     global: NewsItem[];
     popCulture: NewsItem[];
+    tech: NewsItem[];
+    vibeCoding: NewsItem[];
   };
   generatedAt: string;
 }
@@ -81,6 +83,8 @@ Categories needed:
 - 2 Vietnam/Ho Chi Minh City news stories
 - 2 Global/world news stories
 - 2 Entertainment/pop culture news stories
+- 2 Tech news stories (major technology companies, AI developments, hardware, software)
+- 4 Vibe Coding news stories (2 about vibe coding/AI-assisted coding in general, 2 specifically about Claude Code or Anthropic's Claude)
 
 Return ONLY valid JSON in this exact format, no other text:
 {
@@ -92,6 +96,12 @@ Return ONLY valid JSON in this exact format, no other text:
   ],
   "popCulture": [
     {"headline": "Detailed 2-3 sentence summary of the news story explaining what happened and why it matters.", "url": "https://source-url.com/article", "source": "Entertainment Weekly"}
+  ],
+  "tech": [
+    {"headline": "Detailed 2-3 sentence summary of the tech news story.", "url": "https://source-url.com/article", "source": "TechCrunch"}
+  ],
+  "vibeCoding": [
+    {"headline": "Detailed 2-3 sentence summary about vibe coding or Claude Code news.", "url": "https://source-url.com/article", "source": "Source Name"}
   ]
 }`;
 
@@ -115,7 +125,7 @@ Return ONLY valid JSON in this exact format, no other text:
         ],
         generationConfig: {
           temperature: 0.2,
-          maxOutputTokens: 2000,
+          maxOutputTokens: 4000,
         },
       }),
     }

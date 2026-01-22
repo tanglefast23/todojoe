@@ -73,8 +73,8 @@ export async function fetchAllScheduledEvents(): Promise<ScheduledEvent[]> {
     .order("scheduled_at", { ascending: true });
 
   if (error) {
-    console.error("Error fetching scheduled events:", error);
-    throw error;
+    console.error("Error fetching scheduled events:", error.message || error.code || JSON.stringify(error));
+    throw new Error(error.message || "Failed to fetch scheduled events");
   }
 
   return ((data as ScheduledEventRow[]) || []).map(rowToScheduledEvent);
@@ -150,7 +150,7 @@ export async function upsertScheduledEvents(events: ScheduledEvent[]): Promise<v
     .upsert(rows as never, { onConflict: "id" });
 
   if (error) {
-    console.error("Error upserting scheduled events:", error);
-    throw error;
+    console.error("Error upserting scheduled events:", error.message || error.code || JSON.stringify(error));
+    throw new Error(error.message || "Failed to upsert scheduled events");
   }
 }

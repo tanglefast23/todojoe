@@ -58,8 +58,8 @@ export async function fetchAllTasks(): Promise<Task[]> {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching tasks:", error);
-    throw error;
+    console.error("Error fetching tasks:", error.message || error.code || JSON.stringify(error));
+    throw new Error(error.message || "Failed to fetch tasks");
   }
 
   return ((data as TaskRow[]) || []).map(rowToTask);
@@ -137,8 +137,8 @@ export async function upsertTasks(tasks: Task[]): Promise<void> {
     .upsert(rows as never, { onConflict: "id" });
 
   if (error) {
-    console.error("Error upserting tasks:", error);
-    throw error;
+    console.error("Error upserting tasks:", error.message || error.code || JSON.stringify(error));
+    throw new Error(error.message || "Failed to upsert tasks");
   }
 }
 

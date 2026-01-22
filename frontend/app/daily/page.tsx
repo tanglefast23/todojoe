@@ -13,6 +13,8 @@ import {
   AlertCircle,
   ExternalLink,
   Gem,
+  Cpu,
+  Code,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -56,6 +58,8 @@ interface DailyData {
     vietnam: NewsItem[];
     global: NewsItem[];
     popCulture: NewsItem[];
+    tech: NewsItem[];
+    vibeCoding: NewsItem[];
   };
   generatedAt: string;
 }
@@ -408,6 +412,28 @@ export default function DailyPage() {
                 </div>
                 {renderNewsSection(data.news.popCulture, "border-pink-500/50")}
               </section>
+
+              {/* Tech News */}
+              {data.news.tech && data.news.tech.length > 0 && (
+                <section className="bg-card border border-border rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Cpu className="h-5 w-5 text-indigo-500" />
+                    <h2 className="font-semibold">Tech</h2>
+                  </div>
+                  {renderNewsSection(data.news.tech, "border-indigo-500/50")}
+                </section>
+              )}
+
+              {/* Vibe Coding */}
+              {data.news.vibeCoding && data.news.vibeCoding.length > 0 && (
+                <section className="bg-card border border-border rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Code className="h-5 w-5 text-violet-500" />
+                    <h2 className="font-semibold">Vibe Coding & Claude Code</h2>
+                  </div>
+                  {renderNewsSection(data.news.vibeCoding, "border-violet-500/50")}
+                </section>
+              )}
 
               {/* Disclaimer */}
               <p className="text-xs text-center text-muted-foreground pt-2">
