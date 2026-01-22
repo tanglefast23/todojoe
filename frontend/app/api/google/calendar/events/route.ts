@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, startTime, endTime, description, calendarId } = body;
+    const { title, startTime, endTime, description, calendarId, timeZone } = body;
 
     if (!title || !startTime) {
       return NextResponse.json(
@@ -50,7 +50,8 @@ export async function POST(request: NextRequest) {
       startTime,
       endTime,
       description,
-      calendarId || "primary"
+      calendarId || "primary",
+      timeZone
     );
 
     return NextResponse.json({ event });

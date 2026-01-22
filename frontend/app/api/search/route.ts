@@ -15,7 +15,7 @@ function isEventCreationRequest(query: string): boolean {
 
 export async function POST(request: NextRequest) {
   try {
-    const { query, image } = await request.json();
+    const { query, image, timeZone } = await request.json();
 
     if (!query || typeof query !== "string") {
       return NextResponse.json(
@@ -83,7 +83,9 @@ export async function POST(request: NextRequest) {
                 eventData.title,
                 startDateTime.toISOString(),
                 undefined, // end time (will default to 1 hour)
-                [eventData.location, eventData.description].filter(Boolean).join("\n") || undefined
+                [eventData.location, eventData.description].filter(Boolean).join("\n") || undefined,
+                "primary",
+                timeZone
               );
 
               createdEvents.push(

@@ -53,7 +53,10 @@ export default function EntryPage() {
       const res = await fetch("/api/events/parse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: nlEventText.trim() }),
+        body: JSON.stringify({
+          text: nlEventText.trim(),
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        }),
       });
 
       const data = await res.json();
@@ -118,6 +121,7 @@ export default function EntryPage() {
           body: JSON.stringify({
             query: "Create all calendar events from this image",
             image: base64,
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           }),
         });
 

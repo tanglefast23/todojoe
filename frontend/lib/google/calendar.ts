@@ -76,23 +76,27 @@ export async function createCalendarEvent(
   startTime: string,
   endTime?: string,
   description?: string,
-  calendarId: string = "primary"
+  calendarId: string = "primary",
+  timeZone?: string
 ): Promise<ScheduledEvent> {
   const calendar = await getCalendarClient();
 
   // If no end time provided, default to 1 hour after start
   const eventEndTime = endTime || new Date(new Date(startTime).getTime() + 60 * 60 * 1000).toISOString();
 
+  // Use provided timezone or fall back to UTC (server-side safe default)
+  const eventTimeZone = timeZone || "UTC";
+
   const event: calendar_v3.Schema$Event = {
     summary: title,
     description,
     start: {
       dateTime: startTime,
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timeZone: eventTimeZone,
     },
     end: {
       dateTime: eventEndTime,
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timeZone: eventTimeZone,
     },
   };
 
@@ -115,9 +119,13 @@ export async function updateCalendarEvent(
     startTime?: string;
     endTime?: string;
   },
-  calendarId: string = "primary"
+  calendarId: string = "primary",
+  timeZone?: string
 ): Promise<ScheduledEvent> {
   const calendar = await getCalendarClient();
+
+  // Use provided timezone or fall back to UTC (server-side safe default)
+  const eventTimeZone = timeZone || "UTC";
 
   // Get existing event
   const existing = await calendar.events.get({
@@ -134,14 +142,14 @@ export async function updateCalendarEvent(
   if (updates.startTime) {
     event.start = {
       dateTime: updates.startTime,
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timeZone: eventTimeZone,
     };
   }
 
   if (updates.endTime) {
     event.end = {
       dateTime: updates.endTime,
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timeZone: eventTimeZone,
     };
   }
 

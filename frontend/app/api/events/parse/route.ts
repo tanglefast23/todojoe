@@ -6,7 +6,7 @@ import { isGoogleConfigured } from "@/lib/google/auth";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { text } = body;
+    const { text, timeZone } = body;
 
     if (!text || typeof text !== "string" || text.trim().length === 0) {
       return NextResponse.json(
@@ -42,7 +42,8 @@ export async function POST(request: NextRequest) {
       startDateTime,
       endDateTime,
       parsed.description,
-      "primary"
+      "primary",
+      timeZone
     );
 
     return NextResponse.json({
