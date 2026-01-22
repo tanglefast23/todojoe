@@ -1,81 +1,136 @@
-# Investment Tracker
+# JV To Do
 
-A personal investment portfolio tracker with real-time market data, allocation planning, and multi-account support.
+A personal productivity hub combining task management, calendar integration, Gmail inbox, daily market briefings, and AI-powered search — all in one app.
+
+**Live:** [todojoe.app](https://todojoe.app)
 
 ## Features
 
-### Portfolio Management
-- **Multi-Account Support** - Track investments across TFSA, RRSP, margin, and other account types
-- **Multi-Portfolio** - Create and switch between different portfolios
-- **Transaction History** - Record buys, sells, and track your investment journey
+### Task Management
+- **Quick Task Entry** — Add tasks with title and priority level (urgent/regular)
+- **Task Lifecycle** — Track tasks from creation through completion
+- **File Attachments** — Upload images or files to tasks for context
+- **Cross-Device Sync** — Real-time synchronization via Supabase
 
-### Real-Time Market Data
-- **Live Stock Quotes** - Real-time prices via Yahoo Finance API
-- **Cryptocurrency Support** - Track BTC, ETH, SOL, and other major cryptocurrencies
-- **Price Charts** - Interactive charts powered by TradingView's Lightweight Charts
+### Calendar
+- **Unified Calendar View** — See both local and Google Calendar events together
+- **Event Creation** — Add events with title, date, time, and optional end time
+- **Natural Language Parsing** — Create events from text like "Dentist tomorrow at 3pm"
+- **Image-to-Event** — Upload a flyer or screenshot to automatically extract and create events
+- **Google Calendar Sync** — Two-way integration with your Google Calendar
 
-### Allocation Overview
-- **Holdings Grid** - See all holdings across all accounts in one view
-- **Allocation Breakdown** - Current portfolio allocation percentages
-- **Historical Tracking** - Compare allocations to 5 and 15 sessions ago
-- **Account Values** - Total value per account with profit/loss
+### Gmail Integration
+- **Inbox View** — Browse your Gmail Primary inbox
+- **Full Email Reading** — View complete email content with HTML rendering
+- **Quick Actions** — Delete and archive emails directly from the app
+- **Unread Indicators** — Visual distinction between read and unread messages
 
-### Sell Planning
-- **Percentage-Based Sells** - Plan sells as a percentage of your portfolio
-- **Per-Account Allocation** - Specify how many shares to sell from each account
-- **Buy Allocation** - Plan what to buy with proceeds, per account
-- **Order Tracking** - "Upcoming Orders" section to track planned sells and buys
-- **Completion Tracking** - Mark orders as done and track progress
+### Daily Briefing
+- **Cryptocurrency Prices** — BTC, ETH, HYPE, ZEC with 24h changes
+- **Stock Market** — Top gainers and losers from 30+ tracked symbols
+- **Commodities** — Silver, uranium, and copper ETF tracking
+- **News Categories** — Vietnam, global, entertainment, tech, and vibe coding news
+- **AI-Powered** — News aggregated via Gemini with search grounding
 
-### User Experience
-- **Dark Theme** - Easy on the eyes for market watching
-- **Keyboard Shortcuts** - Press "S" to start a new sell plan
-- **Local Storage** - All data stored locally in your browser
-- **Responsive Design** - Works on desktop and mobile
+### AI Search
+- **Smart Search** — Ask questions about your calendar and emails
+- **Image Analysis** — Upload images and ask questions about them
+- **Search History** — Review past queries and responses
+
+### Settings
+- **Data Export** — Download tasks and events as JSON backup
+- **Data Import** — Restore from backup files
+- **Clear Data** — Reset all local data with confirmation
 
 ## Tech Stack
 
 ### Frontend
-- **Next.js 16** - React framework with App Router
-- **React 19** - Latest React with concurrent features
-- **TypeScript** - Type-safe development
-- **Tailwind CSS 4** - Utility-first styling
-- **Zustand** - Lightweight state management with persistence
-- **TanStack Query** - Server state management and caching
-- **Radix UI** - Accessible component primitives
-- **Recharts** - Data visualization
-- **Lightweight Charts** - TradingView charting library
+- **Next.js 16** — React framework with App Router
+- **React 19** — UI library
+- **TypeScript** — Strict mode, no `any` types
+- **Tailwind CSS 4** — Utility-first styling
+- **Zustand** — State management with localStorage persistence
+- **TanStack Query** — Server state and caching
+- **Radix UI** — Accessible component primitives
+- **Lucide React** — Icon library
 
-### Backend
-- **FastAPI** - Python web framework
-- **Yahoo Finance API** - Market data provider
+### Backend & Services
+- **Supabase** — PostgreSQL database, real-time sync, file storage
+- **Google APIs** — Calendar, Gmail, Gemini 2.0 Flash
+- **Groq API** — Fast LLM inference for search and NLP
+- **Yahoo Finance** — Stock and crypto market data
+- **CoinGecko** — Cryptocurrency prices
 
 ## Getting Started
 
 ### Prerequisites
-- Node.js 18+
-- Python 3.11+
+- Node.js >= 20.9.0
+- Supabase project
+- Google OAuth credentials (for calendar/email features)
+- API keys for Groq and Gemini (for AI features)
 
-### Frontend Setup
+### Installation
+
 ```bash
 cd frontend
 npm install
+```
+
+### Environment Variables
+
+Create a `.env.local` file:
+
+```env
+# Supabase (Required)
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Google APIs (Optional)
+GOOGLE_CLIENT_ID=your_client_id
+GOOGLE_CLIENT_SECRET=your_client_secret
+GOOGLE_REDIRECT_URI=http://localhost:3000/api/google/callback
+
+# AI APIs (Optional)
+GROQ_API_KEY=your_groq_key
+GEMINI_API_KEY=your_gemini_key
+```
+
+### Development
+
+```bash
 npm run dev
 ```
 
-### Backend Setup
-```bash
-cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload
+The app runs at `http://localhost:3000`
+
+### Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm start` | Start production server |
+| `npm run lint` | Run ESLint |
+| `npm test` | Run tests |
+
+## Project Structure
+
 ```
-
-The app will be available at `http://localhost:3000`
-
-## Screenshots
-
-*Coming soon*
+frontend/
+├── app/                    # Next.js App Router pages
+│   ├── calendar/          # Calendar view
+│   ├── daily/             # Daily briefing
+│   ├── entry/             # Task entry
+│   ├── gmail/             # Gmail inbox
+│   ├── search/            # AI search
+│   ├── settings/          # Data management
+│   └── api/               # API routes
+├── components/            # React components
+├── stores/                # Zustand state stores
+├── lib/                   # Utilities and API clients
+└── types/                 # TypeScript definitions
+```
 
 ## License
 
-Private project - All rights reserved
+Private project — All rights reserved
