@@ -88,7 +88,7 @@ export function SearchDialog({ isOpen, onClose }: SearchDialogProps) {
       >
         {/* Search Input */}
         <div className="flex items-center gap-3 p-4 border-b border-border">
-          <Sparkles className="h-5 w-5 text-violet-400 flex-shrink-0" />
+          <Sparkles className="h-5 w-5 text-indigo-400 flex-shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -111,7 +111,7 @@ export function SearchDialog({ isOpen, onClose }: SearchDialogProps) {
             size="sm"
             onClick={handleSearch}
             disabled={!query.trim() || isLoading}
-            className="bg-violet-600 hover:bg-violet-700"
+            className="bg-indigo-500 hover:bg-indigo-600"
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -139,7 +139,7 @@ export function SearchDialog({ isOpen, onClose }: SearchDialogProps) {
           {response && !isLoading && (
             <div className="p-4">
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center flex-shrink-0">
                   <Sparkles className="h-4 w-4 text-white" />
                 </div>
                 <div className="flex-1 prose prose-invert prose-sm max-w-none">

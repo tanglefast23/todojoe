@@ -43,9 +43,9 @@ export default function TasksPage() {
     <div className="flex flex-col min-h-screen">
       <Header />
 
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-5 md:p-6">
         <div className="max-w-3xl mx-auto space-y-6">
-          <h1 className="text-2xl font-bold">Tasks</h1>
+          <h1 className="text-[13px] font-semibold tracking-wide text-indigo-400">Tasks</h1>
 
           {/* Task List */}
           <TaskList

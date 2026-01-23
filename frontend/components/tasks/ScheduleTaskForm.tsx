@@ -93,44 +93,9 @@ export function ScheduleTaskForm({ onScheduleTask, disabled = false }: ScheduleT
 
   return (
     <>
-      <div className="space-y-3 md:space-y-0">
-        {/* Desktop Layout - Single Row */}
-        <div className="hidden md:flex gap-2">
-          <Input
-            ref={inputRef}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Schedule an event..."
-            disabled={disabled}
-            className="flex-1 rounded-full px-5 border-2 border-violet-400/30 focus:border-violet-400 focus-visible:ring-violet-400/30"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleScheduleClick();
-              }
-            }}
-          />
-
-          {/* Schedule Button */}
-          <button
-            type="button"
-            onClick={handleScheduleClick}
-            disabled={disabled || !title.trim()}
-            className={cn(
-              "px-4 py-2 text-sm font-medium rounded-full border-2 transition-all flex items-center gap-2",
-              title.trim()
-                ? "bg-gradient-to-r from-violet-500 to-purple-500 border-violet-400 text-white shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50"
-                : "bg-transparent border-violet-400/40 text-violet-400/50 cursor-not-allowed"
-            )}
-          >
-            <CalendarIcon className="h-4 w-4" />
-            Schedule
-          </button>
-        </div>
-
-        {/* Mobile Layout - Stacked with Large Input */}
-        <div className="md:hidden space-y-3">
-          {/* Large text input area for mobile */}
+      <div className="space-y-3">
+        {/* Card-style input container - matches Pencil design */}
+        <div className="bg-card border border-border rounded-xl p-4">
           <textarea
             ref={textareaRef}
             value={title}
@@ -138,27 +103,31 @@ export function ScheduleTaskForm({ onScheduleTask, disabled = false }: ScheduleT
             placeholder="Schedule an event..."
             disabled={disabled}
             rows={3}
-            className="w-full rounded-2xl px-4 py-3 text-base border-2 border-violet-400/30 focus:border-violet-400 focus-visible:ring-1 focus-visible:ring-violet-400/30 focus:outline-none bg-background resize-none"
+            className="w-full bg-transparent text-base outline-none placeholder:text-muted-foreground resize-none leading-relaxed"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleScheduleClick();
+              }
+            }}
           />
-
-          {/* Schedule Button */}
-          <div className="flex justify-center">
-            <button
-              type="button"
-              onClick={handleScheduleClick}
-              disabled={disabled || !title.trim()}
-              className={cn(
-                "flex-1 px-4 py-3 text-sm font-medium rounded-full border-2 transition-all flex items-center justify-center gap-2",
-                title.trim()
-                  ? "bg-gradient-to-r from-violet-500 to-purple-500 border-violet-400 text-white shadow-lg shadow-violet-500/30"
-                  : "bg-transparent border-violet-400/40 text-violet-400/50 cursor-not-allowed"
-              )}
-            >
-              <CalendarIcon className="h-4 w-4" />
-              Schedule
-            </button>
-          </div>
         </div>
+
+        {/* Schedule Button - outline style matching Pencil design */}
+        <button
+          type="button"
+          onClick={handleScheduleClick}
+          disabled={disabled || !title.trim()}
+          className={cn(
+            "w-full py-3 text-[15px] font-medium rounded-xl border-[1.5px] transition-all flex items-center justify-center gap-2",
+            title.trim()
+              ? "bg-card border-border text-muted-foreground hover:bg-muted"
+              : "bg-card border-border text-muted-foreground/50 cursor-not-allowed"
+          )}
+        >
+          <CalendarIcon className="h-[18px] w-[18px]" />
+          Schedule
+        </button>
       </div>
 
       {/* Date/Time Picker Dialog */}
@@ -168,12 +137,12 @@ export function ScheduleTaskForm({ onScheduleTask, disabled = false }: ScheduleT
             <DialogTitle className="flex items-center gap-2">
               {step === "date" ? (
                 <>
-                  <CalendarIcon className="h-5 w-5 text-violet-400" />
+                  <CalendarIcon className="h-5 w-5 text-indigo-400" />
                   Pick a Date
                 </>
               ) : (
                 <>
-                  <Clock className="h-5 w-5 text-violet-400" />
+                  <Clock className="h-5 w-5 text-indigo-400" />
                   Pick a Time
                 </>
               )}
@@ -214,7 +183,7 @@ export function ScheduleTaskForm({ onScheduleTask, disabled = false }: ScheduleT
                         className={cn(
                           "p-3 rounded-lg text-sm font-medium transition-all",
                           selectedHour === hour
-                            ? "bg-violet-500 text-white"
+                            ? "bg-indigo-500 text-white"
                             : "bg-muted hover:bg-muted/80"
                         )}
                       >
@@ -236,7 +205,7 @@ export function ScheduleTaskForm({ onScheduleTask, disabled = false }: ScheduleT
                         className={cn(
                           "p-3 rounded-lg text-sm font-medium transition-all",
                           selectedMinute === minute
-                            ? "bg-violet-500 text-white"
+                            ? "bg-indigo-500 text-white"
                             : "bg-muted hover:bg-muted/80"
                         )}
                       >
@@ -258,7 +227,7 @@ export function ScheduleTaskForm({ onScheduleTask, disabled = false }: ScheduleT
                         className={cn(
                           "p-3 rounded-lg text-sm font-medium transition-all",
                           selectedPeriod === period
-                            ? "bg-violet-500 text-white"
+                            ? "bg-indigo-500 text-white"
                             : "bg-muted hover:bg-muted/80"
                         )}
                       >
@@ -271,25 +240,25 @@ export function ScheduleTaskForm({ onScheduleTask, disabled = false }: ScheduleT
                 {/* Time Preview */}
                 <div className="text-center pt-2 border-t">
                   <p className="text-sm text-muted-foreground">Scheduled for:</p>
-                  <p className="text-xl font-bold text-violet-400">
+                  <p className="text-xl font-bold text-indigo-400">
                     {selectedHour}:{selectedMinute} {selectedPeriod}
                   </p>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-2 pt-4">
+              <div className="flex gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setStep("date")}
-                  className="flex-1 px-4 py-3 rounded-full border-2 border-muted-foreground/30 text-muted-foreground font-medium transition-all hover:bg-muted"
+                  className="flex-1 px-4 py-3 rounded-xl border-[1.5px] border-border text-muted-foreground font-medium transition-all hover:bg-muted"
                 >
                   Back
                 </button>
                 <button
                   type="button"
                   onClick={handleConfirmSchedule}
-                  className="flex-1 px-4 py-3 rounded-full bg-gradient-to-r from-violet-500 to-purple-500 text-white font-medium shadow-lg shadow-violet-500/30 transition-all hover:shadow-violet-500/50"
+                  className="flex-1 px-4 py-3 rounded-xl bg-indigo-500 text-white font-medium transition-all hover:bg-indigo-600"
                 >
                   Confirm
                 </button>

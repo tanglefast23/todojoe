@@ -92,7 +92,7 @@ export function ScheduledEventList({
       {/* Upcoming Events */}
       {pendingByDay.length > 0 && (
         <div className="space-y-6">
-          <h2 className="text-lg font-semibold text-violet-400 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-indigo-400 flex items-center gap-2">
             <CalendarDays className="h-5 w-5" />
             Upcoming
           </h2>

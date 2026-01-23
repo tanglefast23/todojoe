@@ -238,7 +238,7 @@ export default function DailyPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-background to-background/95">
+    <div className="flex flex-col min-h-screen bg-background">
       <Header />
 
       <main className="flex-1 p-4 pb-24">
@@ -246,7 +246,7 @@ export default function DailyPage() {
           {/* Loading State */}
           {loading && !data && (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
+              <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
               <p className="text-muted-foreground">Fetching your daily briefing...</p>
             </div>
           )}
@@ -428,10 +428,10 @@ export default function DailyPage() {
               {data.news.vibeCoding && data.news.vibeCoding.length > 0 && (
                 <section className="bg-card border border-border rounded-2xl p-4 space-y-3">
                   <div className="flex items-center gap-2">
-                    <Code className="h-5 w-5 text-violet-500" />
+                    <Code className="h-5 w-5 text-indigo-500" />
                     <h2 className="font-semibold">Vibe Coding & Claude Code</h2>
                   </div>
-                  {renderNewsSection(data.news.vibeCoding, "border-violet-500/50")}
+                  {renderNewsSection(data.news.vibeCoding, "border-indigo-500/50")}
                 </section>
               )}
 

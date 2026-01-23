@@ -161,7 +161,7 @@ export default function SearchPage() {
           {/* Page Title */}
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Sparkles className="h-6 w-6 text-violet-400" />
+              <Sparkles className="h-6 w-6 text-indigo-400" />
               AI Search
             </h1>
             {results.length > 0 && (
@@ -180,7 +180,7 @@ export default function SearchPage() {
           {/* Calendar/Email Search Input */}
           <div className="bg-card border border-border rounded-xl p-4">
             <div className="flex items-center gap-3">
-              <Sparkles className="h-5 w-5 text-violet-400 flex-shrink-0" />
+              <Sparkles className="h-5 w-5 text-indigo-400 flex-shrink-0" />
               <input
                 ref={calendarInputRef}
                 type="text"
@@ -203,7 +203,7 @@ export default function SearchPage() {
               <Button
                 onClick={handleCalendarSearch}
                 disabled={!calendarQuery.trim() || isCalendarLoading}
-                className="bg-violet-600 hover:bg-violet-700"
+                className="bg-indigo-500 hover:bg-indigo-600"
               >
                 {isCalendarLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -267,7 +267,7 @@ export default function SearchPage() {
             )}
 
             <div className="flex items-center gap-3">
-              <Paperclip className="h-5 w-5 text-violet-400 flex-shrink-0" />
+              <Paperclip className="h-5 w-5 text-indigo-400 flex-shrink-0" />
               <input
                 ref={attachmentInputRef}
                 type="text"
@@ -302,7 +302,7 @@ export default function SearchPage() {
                 disabled={isAttachmentLoading}
                 className={cn(
                   "flex-shrink-0 min-w-[44px] min-h-[44px]",
-                  image && "text-violet-400"
+                  image && "text-indigo-400"
                 )}
                 title="Attach image"
                 aria-label="Attach image"
@@ -317,7 +317,7 @@ export default function SearchPage() {
               <Button
                 onClick={handleAttachmentSearch}
                 disabled={!image || isAttachmentLoading}
-                className="bg-violet-600 hover:bg-violet-700"
+                className="bg-indigo-500 hover:bg-indigo-600"
               >
                 {isAttachmentLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -405,7 +405,7 @@ function SearchResultCard({
       {/* Response */}
       <div className="p-4">
         <div className="flex items-start gap-3">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+          <div className="w-7 h-7 rounded-full bg-indigo-500 flex items-center justify-center flex-shrink-0">
             <Sparkles className="h-3.5 w-3.5 text-white" />
           </div>
           <div className="flex-1 prose prose-invert prose-sm max-w-none">

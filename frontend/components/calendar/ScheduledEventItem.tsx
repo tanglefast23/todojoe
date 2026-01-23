@@ -78,7 +78,7 @@ export function ScheduledEventItem({
     }
     // Google Calendar events: Purple
     if (isGoogleEvent) {
-      return "bg-gradient-to-r from-violet-500/10 to-purple-500/10 border-violet-400/30 hover:border-violet-400/50";
+      return "bg-gradient-to-r from-indigo-500/10 to-indigo-600/10 border-indigo-400/30 hover:border-indigo-400/50";
     }
     // Local (app-created) events: Blue
     return "bg-gradient-to-r from-blue-500/10 to-sky-500/10 border-blue-400/30 hover:border-blue-400/50";
@@ -89,14 +89,14 @@ export function ScheduledEventItem({
     if (isCompleted) return "border-emerald-500";
     if (isOverdue) return "border-red-400";
     if (isToday(scheduledDate)) return "border-amber-400";
-    if (isGoogleEvent) return "border-violet-400";
+    if (isGoogleEvent) return "border-indigo-400";
     return "border-blue-400";
   };
 
   const getTextAccentColor = () => {
     if (isCompleted) return "text-muted-foreground";
     if (isOverdue) return "text-red-400";
-    if (isGoogleEvent) return "text-violet-400";
+    if (isGoogleEvent) return "text-indigo-400";
     return "text-blue-400";
   };
 

@@ -27,33 +27,39 @@ export const MobileBottomNav = memo(function MobileBottomNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 safe-area-pb">
-      <div className="flex items-center justify-around h-16">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background safe-area-pb">
+      <div className="flex items-center justify-around h-[84px] pt-3 pb-7">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
+          const isEntry = item.href === "/entry";
+
           return (
             <Link
               key={item.href}
               href={item.href}
               onClick={() => handleNavClick(item.href)}
               className={cn(
-                "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors",
+                "flex flex-col items-center justify-center gap-1 transition-colors",
                 isActive
-                  ? "text-violet-400"
+                  ? "text-indigo-400"
                   : "text-muted-foreground hover:text-foreground"
               )}
               aria-label={item.title}
               aria-current={isActive ? "page" : undefined}
             >
-              <item.icon
-                className={cn(
-                  "h-6 w-6 transition-all",
-                  isActive && "scale-110"
-                )}
-              />
+              {isActive ? (
+                // Active state: circular background with larger icon
+                <div className="flex items-center justify-center w-11 h-11 rounded-full bg-indigo-500 transition-all">
+                  <item.icon className="h-6 w-6 text-white" />
+                </div>
+              ) : (
+                // Inactive state: regular icon
+                <item.icon className="h-[22px] w-[22px] transition-all" />
+              )}
               <span className={cn(
-                "text-xs font-medium",
-                isActive && "text-violet-400"
+                "text-[11px] font-medium",
+                isActive && "text-indigo-400",
+                isEntry && isActive && "font-semibold"
               )}>
                 {item.title}
               </span>

@@ -44,61 +44,9 @@ export function AddTaskForm({ onAddTask, disabled = false }: AddTaskFormProps) {
   };
 
   return (
-    <div className="space-y-3 md:space-y-0">
-      {/* Desktop Layout - Single Row */}
-      <div className="hidden md:flex gap-2">
-        <Input
-          ref={inputRef}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Add a new task... (Enter = Normal, Tab = Urgent)"
-          disabled={disabled}
-          className="flex-1 rounded-full px-5 border-2 border-violet-400/30 focus:border-violet-400 focus-visible:ring-violet-400/30"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              createTask("regular"); // Enter = Normal task
-            } else if (e.key === "Tab" && title.trim()) {
-              e.preventDefault();
-              createTask("urgent"); // Tab = Urgent task
-            }
-          }}
-        />
-
-        {/* Priority Action Buttons - clicking creates task */}
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => createTask("regular")}
-            disabled={disabled || !title.trim()}
-            className={cn(
-              "px-4 py-2 text-sm font-medium rounded-full border-2 transition-all",
-              title.trim()
-                ? "bg-gradient-to-r from-cyan-500 to-blue-500 border-cyan-400 text-white shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50"
-                : "bg-transparent border-cyan-400/40 text-cyan-400/50 cursor-not-allowed"
-            )}
-          >
-            Normal
-          </button>
-          <button
-            type="button"
-            onClick={() => createTask("urgent")}
-            disabled={disabled || !title.trim()}
-            className={cn(
-              "px-4 py-2 text-sm font-medium rounded-full border-2 transition-all",
-              title.trim()
-                ? "bg-gradient-to-r from-orange-500 to-red-500 border-orange-400 text-white shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50"
-                : "bg-transparent border-orange-400/40 text-orange-400/50 cursor-not-allowed"
-            )}
-          >
-            Urgent
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Layout - Stacked with Large Input */}
-      <div className="md:hidden space-y-3">
-        {/* Large text input area for mobile */}
+    <div className="space-y-3">
+      {/* Card-style input container - matches Pencil design */}
+      <div className="bg-card border border-border rounded-xl p-4">
         <textarea
           ref={textareaRef}
           value={title}
@@ -106,38 +54,47 @@ export function AddTaskForm({ onAddTask, disabled = false }: AddTaskFormProps) {
           placeholder="What needs to be done?"
           disabled={disabled}
           rows={3}
-          className="w-full rounded-2xl px-4 py-3 text-base border-2 border-violet-400/30 focus:border-violet-400 focus-visible:ring-1 focus-visible:ring-violet-400/30 focus:outline-none bg-background resize-none"
+          className="w-full bg-transparent text-base outline-none placeholder:text-muted-foreground resize-none leading-relaxed"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey && window.innerWidth >= 768) {
+              e.preventDefault();
+              createTask("regular");
+            } else if (e.key === "Tab" && title.trim()) {
+              e.preventDefault();
+              createTask("urgent");
+            }
+          }}
         />
+      </div>
 
-        {/* Priority Action Buttons - clicking creates task */}
-        <div className="flex gap-2 justify-center">
-          <button
-            type="button"
-            onClick={() => createTask("regular")}
-            disabled={disabled || !title.trim()}
-            className={cn(
-              "flex-1 px-4 py-3 text-sm font-medium rounded-full border-2 transition-all",
-              title.trim()
-                ? "bg-gradient-to-r from-cyan-500 to-blue-500 border-cyan-400 text-white shadow-lg shadow-cyan-500/30"
-                : "bg-transparent border-cyan-400/40 text-cyan-400/50 cursor-not-allowed"
-            )}
-          >
-            Normal
-          </button>
-          <button
-            type="button"
-            onClick={() => createTask("urgent")}
-            disabled={disabled || !title.trim()}
-            className={cn(
-              "flex-1 px-4 py-3 text-sm font-medium rounded-full border-2 transition-all",
-              title.trim()
-                ? "bg-gradient-to-r from-orange-500 to-red-500 border-orange-400 text-white shadow-lg shadow-orange-500/30"
-                : "bg-transparent border-orange-400/40 text-orange-400/50 cursor-not-allowed"
-            )}
-          >
-            Urgent
-          </button>
-        </div>
+      {/* Priority Action Buttons - outline style matching Pencil design */}
+      <div className="flex gap-3">
+        <button
+          type="button"
+          onClick={() => createTask("regular")}
+          disabled={disabled || !title.trim()}
+          className={cn(
+            "flex-1 py-3 text-[15px] font-medium rounded-xl border-[1.5px] transition-all bg-card",
+            "border-blue-500 text-blue-500",
+            !title.trim() && "opacity-60 cursor-not-allowed",
+            title.trim() && "hover:bg-blue-500/10"
+          )}
+        >
+          Normal
+        </button>
+        <button
+          type="button"
+          onClick={() => createTask("urgent")}
+          disabled={disabled || !title.trim()}
+          className={cn(
+            "flex-1 py-3 text-[15px] font-medium rounded-xl border-[1.5px] transition-all bg-card",
+            "border-orange-500 text-orange-500",
+            !title.trim() && "opacity-60 cursor-not-allowed",
+            title.trim() && "hover:bg-orange-500/10"
+          )}
+        >
+          Urgent
+        </button>
       </div>
     </div>
   );

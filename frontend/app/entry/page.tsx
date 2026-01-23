@@ -179,67 +179,69 @@ export default function EntryPage() {
     <div className="flex flex-col min-h-screen">
       <Header />
 
-      <main className="flex-1 p-6">
-        <div className="max-w-3xl mx-auto space-y-8">
+      <main className="flex-1 p-5 md:p-6">
+        <div className="max-w-3xl mx-auto space-y-7">
           {/* Task Section */}
-          <section className="space-y-4">
-            <span className="inline-block px-3 py-1 bg-violet-600 text-white text-sm font-medium rounded-full">
+          <section className="space-y-3">
+            <span className="text-[13px] font-semibold tracking-wide text-indigo-400">
               Task
             </span>
             <AddTaskForm onAddTask={handleAddTask} />
           </section>
 
           {/* Calendar Section */}
-          <section className="space-y-4">
-            <span className="inline-block px-3 py-1 bg-violet-600 text-white text-sm font-medium rounded-full">
+          <section className="space-y-3">
+            <span className="text-[13px] font-semibold tracking-wide text-indigo-400">
               Calendar
             </span>
             <ScheduleTaskForm onScheduleTask={handleScheduleEvent} />
           </section>
 
-          {/* Calendar from Language Section */}
-          <section className="space-y-4">
-            <span className="inline-block px-3 py-1 bg-violet-600 text-white text-sm font-medium rounded-full">
-              Calendar from Language
+          {/* Quick Add Section */}
+          <section className="space-y-3">
+            <span className="text-[13px] font-semibold tracking-wide text-indigo-400">
+              Quick Add
             </span>
             <div className="bg-card border border-border rounded-xl p-4">
-              <div className="flex items-center gap-3">
-                <Sparkles className="h-5 w-5 text-violet-400 flex-shrink-0" />
-                <input
-                  ref={nlEventInputRef}
-                  type="text"
-                  value={nlEventText}
-                  onChange={(e) => setNlEventText(e.target.value)}
-                  onKeyDown={handleNlEventKeyDown}
-                  placeholder="Dentist tomorrow at 3pm at 123 Main St..."
-                  className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
-                  disabled={nlEventLoading}
-                />
-                {nlEventText && !nlEventLoading && (
-                  <button
-                    onClick={() => setNlEventText("")}
-                    className="p-1 hover:bg-muted rounded"
-                  >
-                    <X className="h-4 w-4 text-muted-foreground" />
-                  </button>
-                )}
-                <Button
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <Sparkles className="h-5 w-5 text-indigo-400 flex-shrink-0" />
+                  <input
+                    ref={nlEventInputRef}
+                    type="text"
+                    value={nlEventText}
+                    onChange={(e) => setNlEventText(e.target.value)}
+                    onKeyDown={handleNlEventKeyDown}
+                    placeholder="Dentist tomorrow at 3pm at 123 Main St..."
+                    className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground min-w-0"
+                    disabled={nlEventLoading}
+                  />
+                  {nlEventText && !nlEventLoading && (
+                    <button
+                      onClick={() => setNlEventText("")}
+                      className="p-1 hover:bg-muted rounded"
+                    >
+                      <X className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  )}
+                </div>
+                <button
                   onClick={handleNlEventSubmit}
                   disabled={!nlEventText.trim() || nlEventLoading}
-                  className="bg-violet-600 hover:bg-violet-700"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-500 text-white text-sm font-medium transition-all hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                 >
                   {nlEventLoading ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Creating...
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="hidden sm:inline">Creating...</span>
                     </>
                   ) : (
                     <>
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Add
+                      <CalendarPlus className="h-4 w-4" />
+                      <span>Add</span>
                     </>
                   )}
-                </Button>
+                </button>
               </div>
 
               {/* Error */}
@@ -268,10 +270,10 @@ export default function EntryPage() {
             </div>
           </section>
 
-          {/* Calendar from Image Section */}
-          <section className="space-y-4">
-            <span className="inline-block px-3 py-1 bg-violet-600 text-white text-sm font-medium rounded-full">
-              Calendar from Image
+          {/* From Image Section */}
+          <section className="space-y-3">
+            <span className="text-[13px] font-semibold tracking-wide text-indigo-400">
+              From Image
             </span>
             <div className="bg-card border border-border rounded-xl p-4">
               {/* Image Preview */}
@@ -301,12 +303,11 @@ export default function EntryPage() {
                 onChange={handleCalendarImageUpload}
                 className="hidden"
               />
-              <div className="flex items-center gap-3">
-                <Button
+              <div className="flex items-center gap-4">
+                <button
                   onClick={() => calendarFileInputRef.current?.click()}
                   disabled={isLoading}
-                  variant="outline"
-                  className="flex items-center gap-2 text-violet-400 border-violet-400/30 hover:bg-violet-400/10"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-card border border-border text-indigo-400 text-sm font-medium transition-all hover:bg-muted disabled:opacity-50"
                 >
                   {isLoading ? (
                     <>
@@ -315,13 +316,13 @@ export default function EntryPage() {
                     </>
                   ) : (
                     <>
-                      <CalendarPlus className="h-4 w-4" />
-                      Upload Image
+                      <Calendar className="h-4 w-4" />
+                      Upload
                     </>
                   )}
-                </Button>
-                <span className="text-sm text-muted-foreground">
-                  Upload a flyer, screenshot, or photo to extract calendar events
+                </button>
+                <span className="text-[13px] text-muted-foreground leading-snug">
+                  Upload a flyer or screenshot to extract events
                 </span>
               </div>
 
