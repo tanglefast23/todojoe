@@ -47,15 +47,18 @@ export const MobileBottomNav = memo(function MobileBottomNav() {
               aria-label={item.title}
               aria-current={isActive ? "page" : undefined}
             >
-              {isActive ? (
-                // Active state: circular background with larger icon
-                <div className="flex items-center justify-center w-11 h-11 rounded-full bg-indigo-500 transition-all">
-                  <item.icon className="h-6 w-6 text-white" />
-                </div>
-              ) : (
-                // Inactive state: regular icon
-                <item.icon className="h-[22px] w-[22px] transition-all" />
-              )}
+              {/* Fixed-size container ensures center point stays consistent */}
+              <div className="flex items-center justify-center w-11 h-11">
+                {isActive ? (
+                  // Active state: circular background with larger icon
+                  <div className="flex items-center justify-center w-11 h-11 rounded-full bg-indigo-500 transition-all">
+                    <item.icon className="h-6 w-6 text-white" />
+                  </div>
+                ) : (
+                  // Inactive state: regular icon centered in same space
+                  <item.icon className="h-[22px] w-[22px] transition-all" />
+                )}
+              </div>
               <span className={cn(
                 "text-[11px] font-medium",
                 isActive && "text-indigo-400",

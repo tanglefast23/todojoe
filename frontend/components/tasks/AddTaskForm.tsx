@@ -53,7 +53,7 @@ export function AddTaskForm({ onAddTask, disabled = false }: AddTaskFormProps) {
           onChange={(e) => setTitle(e.target.value)}
           placeholder="What needs to be done?"
           disabled={disabled}
-          rows={3}
+          rows={2}
           className="w-full bg-transparent text-base outline-none placeholder:text-muted-foreground resize-none leading-relaxed"
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey && window.innerWidth >= 768) {
