@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { CheckSquare, CalendarDays, Mail, PlusCircle, Sunrise } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { playClickSound } from "@/lib/audio";
+import { useNavVisibility } from "@/components/providers/NavVisibilityProvider";
 
 // Navigation items for mobile bottom nav
 const navItems = [
@@ -19,6 +20,7 @@ const navItems = [
 /** Mobile bottom navigation bar for TODO app */
 export const MobileBottomNav = memo(function MobileBottomNav() {
   const pathname = usePathname();
+  const { isBottomNavVisible } = useNavVisibility();
 
   const handleNavClick = (href: string) => {
     if (pathname !== href) {
@@ -27,7 +29,13 @@ export const MobileBottomNav = memo(function MobileBottomNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background safe-area-pb">
+    <nav
+      className={cn(
+        "fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background safe-area-pb",
+        "transition-transform duration-300 ease-in-out",
+        !isBottomNavVisible && "translate-y-full"
+      )}
+    >
       <div className="flex items-center justify-around h-[84px] pt-3 pb-7">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
