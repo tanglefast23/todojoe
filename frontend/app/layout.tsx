@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { SupabaseSyncProvider } from "@/components/providers/SupabaseSyncProvider";
 import { FontSizeProvider } from "@/components/providers/FontSizeProvider";
+import { NavVisibilityProvider } from "@/components/providers/NavVisibilityProvider";
 import { SidebarProvider } from "@/components/layout/SidebarContext";
 import { MobileAwareLayout } from "@/components/layout/MobileAwareLayout";
 // TooltipProvider removed - all Radix tooltips replaced with native title attributes
@@ -70,7 +71,9 @@ export default function RootLayout({
                 Skip to main content
               </a>
               <SidebarProvider>
-                <MobileAwareLayout>{children}</MobileAwareLayout>
+                <NavVisibilityProvider>
+                  <MobileAwareLayout>{children}</MobileAwareLayout>
+                </NavVisibilityProvider>
               </SidebarProvider>
               </ThemeProvider>
             </FontSizeProvider>

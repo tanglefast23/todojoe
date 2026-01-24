@@ -10,6 +10,7 @@ import { MobileToggle } from "@/components/ui/mobile-toggle";
 import { FontSizeControl } from "@/components/ui/font-size-control";
 import { Logo } from "./Logo";
 import { cn } from "@/lib/utils";
+import { useNavVisibility } from "@/components/providers/NavVisibilityProvider";
 
 // Navigation items for the header
 const navItems = [
@@ -24,9 +25,16 @@ const navItems = [
 export function Header() {
   const router = useRouter();
   const pathname = usePathname();
+  const { isHeaderVisible } = useNavVisibility();
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header
+      className={cn(
+        "sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+        "transition-transform duration-300 ease-in-out",
+        !isHeaderVisible && "-translate-y-full"
+      )}
+    >
       {/* Left: Spacer for balance */}
       <div className="flex-1" />
 
