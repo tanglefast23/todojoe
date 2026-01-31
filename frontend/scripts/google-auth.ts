@@ -17,7 +17,7 @@ import * as url from "url";
 import { exec } from "child_process";
 
 // Configuration
-const CREDENTIALS_PATH = process.env.GOOGLE_CREDENTIALS_PATH || "/Volumes/Samsung SSD/Claude Code Projects/credentials.json";
+const CREDENTIALS_PATH = process.env.GOOGLE_CREDENTIALS_PATH || path.join(process.cwd(), "..", "credentials2.json");
 const TOKEN_PATH = path.join(process.cwd(), "token.json");
 const PORT = 3001;
 
