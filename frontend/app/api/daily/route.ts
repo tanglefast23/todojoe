@@ -21,7 +21,7 @@ const COMMODITY_SYMBOLS = ["SILJ", "URA", "COPX", "HBM"];
 // Investment symbols to monitor for significant news
 const INVESTMENT_WATCH_SYMBOLS = [
   "GOOGL", "MU", "SNDK", "IREN", "SILJ", "URA", "HBM", "ERO",
-  "NBIS", "OKLO", "TSM", "CRWV", "ASML", "AMZN", "TSLA"
+  "TSM", "CRWV", "ASML", "AMZN", "TSLA"
 ];
 
 // Crypto symbols to track
