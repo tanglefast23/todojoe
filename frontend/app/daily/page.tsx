@@ -15,6 +15,7 @@ import {
   Gem,
   Cpu,
   Code,
+  LineChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -47,6 +48,14 @@ interface CommodityItem {
   isPositive: boolean;
 }
 
+interface InvestmentNewsItem {
+  symbol: string;
+  headline: string;
+  url: string;
+  source?: string;
+  significance: "high" | "medium";
+}
+
 interface DailyData {
   crypto: CryptoItem[];
   stocks: {
@@ -54,6 +63,7 @@ interface DailyData {
     losers: StockItem[];
   };
   commodities: CommodityItem[];
+  investmentNews: InvestmentNewsItem[];
   news: {
     vietnam: NewsItem[];
     global: NewsItem[];
@@ -381,6 +391,62 @@ export default function DailyPage() {
                           {item.change}
                         </span>
                       </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Investment News - Only shows if significant news exists */}
+              {data.investmentNews && data.investmentNews.length > 0 && (
+                <section className="bg-card border border-border rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <LineChart className="h-5 w-5 text-emerald-500" />
+                    <h2 className="font-semibold">Investment Watchlist News</h2>
+                  </div>
+                  <div className="space-y-3">
+                    {data.investmentNews.map((item, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleNewsClick(item.url)}
+                        disabled={!item.url}
+                        className={cn(
+                          "w-full text-left transition-colors",
+                          item.url && "hover:bg-muted/50 cursor-pointer active:bg-muted",
+                          !item.url && "cursor-default"
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "pl-3 border-l-2",
+                            item.significance === "high"
+                              ? "border-emerald-500"
+                              : "border-emerald-500/50"
+                          )}
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <span
+                              className={cn(
+                                "text-xs font-bold px-2 py-0.5 rounded",
+                                "bg-emerald-500/20 text-emerald-400"
+                              )}
+                            >
+                              {item.symbol}
+                            </span>
+                            {item.significance === "high" && (
+                              <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-400">
+                                Major
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm leading-relaxed">{item.headline}</p>
+                          {item.source && item.url && (
+                            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                              {item.source}
+                              <ExternalLink className="h-3 w-3" />
+                            </p>
+                          )}
+                        </div>
+                      </button>
                     ))}
                   </div>
                 </section>
