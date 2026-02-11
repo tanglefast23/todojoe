@@ -107,7 +107,10 @@ export async function getUnreadEmails(maxResults: number = 20): Promise<GmailMes
 
 /**
  * Fetch emails from Primary inbox (both read and unread)
+ * Uses batch fetching with concurrency limit to reduce API pressure
  */
+const GMAIL_CONCURRENCY = 5;
+
 export async function getPrimaryInboxEmails(maxResults: number = 20): Promise<GmailMessage[]> {
   const gmail = await getGmailClient();
 
@@ -124,41 +127,47 @@ export async function getPrimaryInboxEmails(maxResults: number = 20): Promise<Gm
     return [];
   }
 
-  // Fetch details for each message
-  const emailPromises = messages.map(async (msg) => {
-    if (!msg.id) return null;
+  // Fetch details in batches to limit concurrent API calls
+  const results: GmailMessage[] = [];
+  for (let i = 0; i < messages.length; i += GMAIL_CONCURRENCY) {
+    const batch = messages.slice(i, i + GMAIL_CONCURRENCY);
+    const batchResults = await Promise.all(
+      batch.map(async (msg) => {
+        if (!msg.id) return null;
 
-    const detail = await gmail.users.messages.get({
-      userId: "me",
-      id: msg.id,
-      format: "metadata",
-      metadataHeaders: ["From", "Subject", "Date"],
-    });
+        const detail = await gmail.users.messages.get({
+          userId: "me",
+          id: msg.id,
+          format: "metadata",
+          metadataHeaders: ["From", "Subject", "Date"],
+        });
 
-    const headers = detail.data.payload?.headers;
-    const fromHeader = getHeader(headers, "From") || "";
-    const { email: fromEmail, name: fromName } = parseEmailAddress(fromHeader);
+        const headers = detail.data.payload?.headers;
+        const fromHeader = getHeader(headers, "From") || "";
+        const { email: fromEmail, name: fromName } = parseEmailAddress(fromHeader);
 
-    return {
-      id: crypto.randomUUID(),
-      gmailId: msg.id,
-      threadId: msg.threadId || "",
-      subject: getHeader(headers, "Subject"),
-      snippet: detail.data.snippet || null,
-      bodyPreview: detail.data.snippet ? getFirstSentences(detail.data.snippet) : null,
-      fromEmail,
-      fromName,
-      receivedAt: detail.data.internalDate
-        ? new Date(parseInt(detail.data.internalDate)).toISOString()
-        : new Date().toISOString(),
-      isUnread: detail.data.labelIds?.includes("UNREAD") || false,
-      labels: detail.data.labelIds || [],
-      cachedAt: new Date().toISOString(),
-    } satisfies GmailMessage;
-  });
+        return {
+          id: crypto.randomUUID(),
+          gmailId: msg.id,
+          threadId: msg.threadId || "",
+          subject: getHeader(headers, "Subject"),
+          snippet: detail.data.snippet || null,
+          bodyPreview: detail.data.snippet ? getFirstSentences(detail.data.snippet) : null,
+          fromEmail,
+          fromName,
+          receivedAt: detail.data.internalDate
+            ? new Date(parseInt(detail.data.internalDate)).toISOString()
+            : new Date().toISOString(),
+          isUnread: detail.data.labelIds?.includes("UNREAD") || false,
+          labels: detail.data.labelIds || [],
+          cachedAt: new Date().toISOString(),
+        } satisfies GmailMessage;
+      })
+    );
+    results.push(...batchResults.filter((r): r is GmailMessage => r !== null));
+  }
 
-  const results = await Promise.all(emailPromises);
-  return results.filter((r): r is GmailMessage => r !== null);
+  return results;
 }
 
 /**
@@ -259,39 +268,45 @@ export async function searchEmails(query: string, maxResults: number = 50): Prom
     return [];
   }
 
-  // Fetch details for each message
-  const emailPromises = messages.map(async (msg) => {
-    if (!msg.id) return null;
+  // Fetch details in batches to limit concurrent API calls
+  const results: GmailMessage[] = [];
+  for (let i = 0; i < messages.length; i += GMAIL_CONCURRENCY) {
+    const batch = messages.slice(i, i + GMAIL_CONCURRENCY);
+    const batchResults = await Promise.all(
+      batch.map(async (msg) => {
+        if (!msg.id) return null;
 
-    const detail = await gmail.users.messages.get({
-      userId: "me",
-      id: msg.id,
-      format: "metadata",
-      metadataHeaders: ["From", "Subject", "Date"],
-    });
+        const detail = await gmail.users.messages.get({
+          userId: "me",
+          id: msg.id,
+          format: "metadata",
+          metadataHeaders: ["From", "Subject", "Date"],
+        });
 
-    const headers = detail.data.payload?.headers;
-    const fromHeader = getHeader(headers, "From") || "";
-    const { email: fromEmail, name: fromName } = parseEmailAddress(fromHeader);
+        const headers = detail.data.payload?.headers;
+        const fromHeader = getHeader(headers, "From") || "";
+        const { email: fromEmail, name: fromName } = parseEmailAddress(fromHeader);
 
-    return {
-      id: crypto.randomUUID(),
-      gmailId: msg.id,
-      threadId: msg.threadId || "",
-      subject: getHeader(headers, "Subject"),
-      snippet: detail.data.snippet || null,
-      bodyPreview: detail.data.snippet ? getFirstSentences(detail.data.snippet) : null,
-      fromEmail,
-      fromName,
-      receivedAt: detail.data.internalDate
-        ? new Date(parseInt(detail.data.internalDate)).toISOString()
-        : new Date().toISOString(),
-      isUnread: detail.data.labelIds?.includes("UNREAD") || false,
-      labels: detail.data.labelIds || [],
-      cachedAt: new Date().toISOString(),
-    } satisfies GmailMessage;
-  });
+        return {
+          id: crypto.randomUUID(),
+          gmailId: msg.id,
+          threadId: msg.threadId || "",
+          subject: getHeader(headers, "Subject"),
+          snippet: detail.data.snippet || null,
+          bodyPreview: detail.data.snippet ? getFirstSentences(detail.data.snippet) : null,
+          fromEmail,
+          fromName,
+          receivedAt: detail.data.internalDate
+            ? new Date(parseInt(detail.data.internalDate)).toISOString()
+            : new Date().toISOString(),
+          isUnread: detail.data.labelIds?.includes("UNREAD") || false,
+          labels: detail.data.labelIds || [],
+          cachedAt: new Date().toISOString(),
+        } satisfies GmailMessage;
+      })
+    );
+    results.push(...batchResults.filter((r): r is GmailMessage => r !== null));
+  }
 
-  const results = await Promise.all(emailPromises);
-  return results.filter((r): r is GmailMessage => r !== null);
+  return results;
 }

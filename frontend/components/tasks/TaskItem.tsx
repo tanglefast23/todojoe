@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from "react";
 import { X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +20,7 @@ interface TaskItemProps {
   canDelete?: boolean;
 }
 
-export function TaskItem({
+export const TaskItem = memo(function TaskItem({
   task,
   onComplete,
   onUncomplete,
@@ -211,4 +211,4 @@ export function TaskItem({
       )}
     </div>
   );
-}
+});

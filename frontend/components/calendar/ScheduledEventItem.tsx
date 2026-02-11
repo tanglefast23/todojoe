@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from "react";
 import { X, Clock } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
@@ -16,7 +16,7 @@ interface ScheduledEventItemProps {
   canDelete?: boolean;
 }
 
-export function ScheduledEventItem({
+export const ScheduledEventItem = memo(function ScheduledEventItem({
   event,
   onComplete,
   onUncomplete,
@@ -195,4 +195,4 @@ export function ScheduledEventItem({
       )}
     </div>
   );
-}
+});

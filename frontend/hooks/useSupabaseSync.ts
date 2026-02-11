@@ -11,18 +11,13 @@
 
 import { useEffect, useRef } from "react";
 
-// Stores
-import { useScheduledEventsStore } from "@/stores/scheduledEventsStore";
-
 // Supabase client
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 
 // Sync functions
 import {
   performInitialLoad,
-  createSyncScheduledEventsToSupabase,
   flushAllPendingSyncs,
-  type SyncStateRefs,
 } from "@/lib/supabase/sync";
 
 /**
@@ -32,24 +27,10 @@ import {
 export function useSupabaseSync(): void {
   // Refs for sync state management
   const isInitialLoad = useRef(true);
-  const isSyncing = useRef(false);
   const initialLoadComplete = useRef(false);
 
   // Check if Supabase is configured - skip all sync if not
   const supabaseEnabled = isSupabaseConfigured();
-
-  // Create refs object for sync functions
-  const refs: SyncStateRefs = {
-    isInitialLoad,
-    isSyncing,
-  };
-
-  // Create debounced sync functions (memoized to avoid recreating on each render)
-  // Note: Tasks sync is disabled - individual actions sync directly to Supabase
-  const syncScheduledEvents = useRef(createSyncScheduledEventsToSupabase(refs));
-
-  // Subscribe to store changes
-  const scheduledEvents = useScheduledEventsStore((state) => state.events);
 
   // Perform initial load on mount (only if Supabase is configured)
   useEffect(() => {
@@ -155,11 +136,11 @@ export function useSupabaseSync(): void {
   //   syncTasks.current(tasks);
   // }, [tasks]);
 
-  // Sync scheduled events when they change
-  // Note: Individual actions (add, complete, delete) also sync directly to Supabase.
-  // This provides retry logic and ensures changes aren't lost if individual syncs fail.
-  useEffect(() => {
-    if (!supabaseEnabled || !initialLoadComplete.current) return;
-    syncScheduledEvents.current(scheduledEvents);
-  }, [scheduledEvents, supabaseEnabled]);
+  // Scheduled events sync disabled - individual actions (add, delete, complete, uncomplete)
+  // now sync directly to Supabase (same pattern as tasks).
+  // Bulk upsert was causing double writes on every mutation.
+  // useEffect(() => {
+  //   if (!supabaseEnabled || !initialLoadComplete.current) return;
+  //   syncScheduledEvents.current(scheduledEvents);
+  // }, [scheduledEvents, supabaseEnabled]);
 }

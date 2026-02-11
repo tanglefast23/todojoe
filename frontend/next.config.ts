@@ -28,11 +28,6 @@ const nextConfig: NextConfig = {
       // Icon libraries
       "lucide-react",
       "@radix-ui/react-icons",
-      // Chart libraries
-      "recharts",
-      "lightweight-charts",
-      // Grid layout
-      "react-grid-layout",
       // Radix UI primitives (used via shadcn/ui)
       "@radix-ui/react-alert-dialog",
       "@radix-ui/react-checkbox",

@@ -15,7 +15,8 @@ function isEventCreationRequest(query: string): boolean {
 
 export async function POST(request: NextRequest) {
   try {
-    const { query, image, timeZone } = await request.json();
+    const body: { query?: string; image?: string; timeZone?: string } = await request.json();
+    const { query, image, timeZone } = body;
 
     if (!query || typeof query !== "string") {
       return NextResponse.json(

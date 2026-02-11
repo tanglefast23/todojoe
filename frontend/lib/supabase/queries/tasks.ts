@@ -9,6 +9,8 @@ type TaskRow = Database["public"]["Tables"]["jv_tasks"]["Row"];
 type TaskInsert = Database["public"]["Tables"]["jv_tasks"]["Insert"];
 type TaskUpdate = Database["public"]["Tables"]["jv_tasks"]["Update"];
 
+const MAX_QUERY_LIMIT = 500;
+
 // Convert database row to app type (snake_case to camelCase)
 function rowToTask(row: TaskRow): Task {
   return {
@@ -55,7 +57,8 @@ export async function fetchAllTasks(): Promise<Task[]> {
   const { data, error } = await supabase
     .from("jv_tasks")
     .select("*")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(MAX_QUERY_LIMIT);
 
   if (error) {
     console.error("Error fetching tasks:", error.message || error.code || JSON.stringify(error));
@@ -73,7 +76,7 @@ export async function createTask(task: Omit<Task, "id">): Promise<Task> {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("jv_tasks")
-    .insert(taskToInsert(task) as never)
+    .insert(taskToInsert(task))
     .select()
     .single();
 
@@ -98,7 +101,7 @@ export async function updateTask(id: string, updates: Partial<Task>): Promise<Ta
 
   const { data, error } = await supabase
     .from("jv_tasks")
-    .update(updateData as never)
+    .update(updateData)
     .eq("id", id)
     .select()
     .single();
@@ -134,7 +137,7 @@ export async function upsertTasks(tasks: Task[]): Promise<void> {
 
   const { error } = await supabase
     .from("jv_tasks")
-    .upsert(rows as never, { onConflict: "id" });
+    .upsert(rows, { onConflict: "id" });
 
   if (error) {
     console.error("Error upserting tasks:", error.message || error.code || JSON.stringify(error));
@@ -142,32 +145,3 @@ export async function upsertTasks(tasks: Task[]): Promise<void> {
   }
 }
 
-// Bulk sync: replace all tasks
-export async function syncTasks(tasks: Task[]): Promise<void> {
-  if (!isSupabaseConfigured()) return;
-  const supabase = getSupabaseClient();
-
-  // Delete all existing tasks
-  const { error: deleteError } = await supabase
-    .from("jv_tasks")
-    .delete()
-    .neq("id", "00000000-0000-0000-0000-000000000000"); // Delete all
-
-  if (deleteError) {
-    console.error("Error deleting tasks:", deleteError);
-    throw deleteError;
-  }
-
-  // Insert all tasks if any exist
-  if (tasks.length > 0) {
-    const rows = tasks.map((task) => taskToInsert(task));
-    const { error: insertError } = await supabase
-      .from("jv_tasks")
-      .insert(rows as never);
-
-    if (insertError) {
-      console.error("Error inserting tasks:", insertError);
-      throw insertError;
-    }
-  }
-}

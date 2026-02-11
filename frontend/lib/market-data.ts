@@ -105,35 +105,41 @@ export async function fetchCryptoPrices(
 
 /**
  * Fetch stock prices from Yahoo Finance
- * Uses the same approach as Investment Tracker - fetch each symbol individually in parallel
+ * Batches symbols into chunks to reduce API calls
  */
+const BATCH_SIZE = 10;
+
 export async function fetchStockPrices(
   symbols: string[]
 ): Promise<StockPrice[]> {
-  // Fetch all quotes in parallel - one at a time like Investment Tracker does
-  const quotes = await Promise.all(
-    symbols.map(async (symbol) => {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const quote: any = await yahooFinance.quote(symbol.toUpperCase());
+  const results: StockPrice[] = [];
 
-        if (!quote) return null;
+  // Process in batches to limit concurrent requests
+  for (let i = 0; i < symbols.length; i += BATCH_SIZE) {
+    const batch = symbols.slice(i, i + BATCH_SIZE);
+    const batchResults = await Promise.all(
+      batch.map(async (symbol) => {
+        try {
+          const quote = await yahooFinance.quote(symbol.toUpperCase());
 
-        return {
-          symbol: quote.symbol as string,
-          price: quote.regularMarketPrice || 0,
-          change: quote.regularMarketChange || 0,
-          changePercent: quote.regularMarketChangePercent || 0,
-        };
-      } catch (error) {
-        console.error(`[Market Data] Failed to fetch quote for ${symbol}:`, error);
-        return null;
-      }
-    })
-  );
+          if (!quote) return null;
 
-  // Filter out failed quotes
-  return quotes.filter((q): q is StockPrice => q !== null);
+          return {
+            symbol: String(quote.symbol ?? symbol),
+            price: Number(quote.regularMarketPrice ?? 0),
+            change: Number(quote.regularMarketChange ?? 0),
+            changePercent: Number(quote.regularMarketChangePercent ?? 0),
+          };
+        } catch (error) {
+          console.error(`[Market Data] Failed to fetch quote for ${symbol}:`, error);
+          return null;
+        }
+      })
+    );
+    results.push(...batchResults.filter((q): q is StockPrice => q !== null));
+  }
+
+  return results;
 }
 
 /**
@@ -167,21 +173,5 @@ export function getTopMovers(stocks: StockPrice[]): TopMovers {
   return { gainers, losers };
 }
 
-/**
- * Format crypto price for display
- */
-export function formatCryptoPrice(price: number): string {
-  if (price < 0.01) {
-    return `$${price.toFixed(6)}`;
-  }
-  if (price < 1) {
-    return `$${price.toFixed(4)}`;
-  }
-  if (price >= 1000) {
-    return `$${price.toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-  }
-  return `$${price.toFixed(2)}`;
-}
+// Re-export formatCryptoPrice from formatters to avoid duplication
+export { formatCryptoPrice } from "@/lib/formatters";

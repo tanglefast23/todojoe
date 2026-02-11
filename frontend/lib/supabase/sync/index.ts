@@ -16,11 +16,5 @@ export {
   type SyncStateRefs,
 } from "./utils";
 
-// Sync functions
-export {
-  createSyncTasksToSupabase,
-  createSyncScheduledEventsToSupabase,
-} from "./syncFunctions";
-
 // Initial load
 export { performInitialLoad } from "./initialLoad";

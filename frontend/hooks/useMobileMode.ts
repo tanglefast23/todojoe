@@ -9,7 +9,15 @@ import { useSettingsStore } from "@/stores/settingsStore";
 
 const MOBILE_BREAKPOINT = 768; // Tailwind's 'md' breakpoint - matches Header nav
 
-export function useMobileMode() {
+interface MobileModeResult {
+  isMobile: boolean;
+  isSmallScreen: boolean;
+  mobileMode: "auto" | "mobile" | "desktop";
+  setMobileMode: (mode: "auto" | "mobile" | "desktop") => void;
+  isMounted: boolean;
+}
+
+export function useMobileMode(): MobileModeResult {
   const mobileMode = useSettingsStore((state) => state.mobileMode);
   const setMobileMode = useSettingsStore((state) => state.setMobileMode);
 

@@ -12,19 +12,9 @@ import {
   deleteTask as deleteTaskFromSupabase,
 } from "@/lib/supabase/queries/tasks";
 import { deleteAttachment } from "@/lib/supabase/queries/storage";
+import { generateId } from "@/lib/utils";
 
 const TASKS_STORAGE_KEY = "tasks-storage";
-
-function generateId(): string {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
 
 interface TasksState {
   tasks: Task[];
@@ -34,7 +24,7 @@ interface TasksState {
 
   // Task CRUD
   addTask: (title: string, priority: TaskPriority) => string;
-  completeTask: (id: string, completedBy?: string | null) => void;
+  completeTask: (id: string) => void;
   uncompleteTask: (id: string) => void;
   deleteTask: (id: string) => void;
 
@@ -205,6 +195,7 @@ export const useTasksStore = create<TasksState>()(
     }),
     {
       name: TASKS_STORAGE_KEY,
+      version: 1,
     }
   )
 );

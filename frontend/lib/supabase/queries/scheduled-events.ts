@@ -9,6 +9,8 @@ type ScheduledEventRow = Database["public"]["Tables"]["jv_scheduled_events"]["Ro
 type ScheduledEventInsert = Database["public"]["Tables"]["jv_scheduled_events"]["Insert"];
 type ScheduledEventUpdate = Database["public"]["Tables"]["jv_scheduled_events"]["Update"];
 
+const MAX_QUERY_LIMIT = 500;
+
 // Convert database row to app type (snake_case to camelCase)
 function rowToScheduledEvent(row: ScheduledEventRow): ScheduledEvent {
   return {
@@ -70,7 +72,8 @@ export async function fetchAllScheduledEvents(): Promise<ScheduledEvent[]> {
   const { data, error } = await supabase
     .from("jv_scheduled_events")
     .select("*")
-    .order("scheduled_at", { ascending: true });
+    .order("scheduled_at", { ascending: true })
+    .limit(MAX_QUERY_LIMIT);
 
   if (error) {
     console.error("Error fetching scheduled events:", error.message || error.code || JSON.stringify(error));
@@ -87,7 +90,7 @@ export async function createScheduledEvent(event: Omit<ScheduledEvent, "id">): P
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("jv_scheduled_events")
-    .insert(scheduledEventToInsert(event) as never)
+    .insert(scheduledEventToInsert(event) )
     .select()
     .single();
 
@@ -111,7 +114,7 @@ export async function updateScheduledEvent(id: string, updates: Partial<Schedule
 
   const { data, error } = await supabase
     .from("jv_scheduled_events")
-    .update(updateData as never)
+    .update(updateData )
     .eq("id", id)
     .select()
     .single();

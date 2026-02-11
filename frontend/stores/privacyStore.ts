@@ -22,6 +22,7 @@ export const usePrivacyMode = create<PrivacyModeState>()(
     }),
     {
       name: "portfolio-privacy-mode",
+      version: 1,
     }
   )
 );

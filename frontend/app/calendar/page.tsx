@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { ScheduledEventList } from "@/components/calendar/ScheduledEventList";
@@ -30,7 +30,7 @@ export default function CalendarPage() {
         const data = await response.json();
         throw new Error(data.error || "Failed to fetch calendar events");
       }
-      const data = await response.json();
+      const data: { events?: ScheduledEvent[]; error?: string } = await response.json();
       setGoogleEvents(data.events || []);
     } catch (err) {
       console.error("Error fetching Google Calendar events:", err);
@@ -46,8 +46,11 @@ export default function CalendarPage() {
   }, [fetchGoogleEvents]);
 
   // Combine local and Google events, sorted by date
-  const allEvents = [...localEvents, ...googleEvents].sort(
-    (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
+  const allEvents = useMemo(
+    () => [...localEvents, ...googleEvents].sort(
+      (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
+    ),
+    [localEvents, googleEvents]
   );
 
   // Handle completing an event

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { TaskPriority } from "@/types/tasks";
 
@@ -12,18 +11,12 @@ interface AddTaskFormProps {
 
 export function AddTaskForm({ onAddTask, disabled = false }: AddTaskFormProps) {
   const [title, setTitle] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-focus input on mount
+  // Auto-focus textarea on mount
   useEffect(() => {
-    // Small delay to ensure DOM is ready after hydration
     const timer = setTimeout(() => {
-      if (window.innerWidth >= 768) {
-        inputRef.current?.focus();
-      } else {
-        textareaRef.current?.focus();
-      }
+      textareaRef.current?.focus();
     }, 100);
     return () => clearTimeout(timer);
   }, []);
@@ -35,12 +28,7 @@ export function AddTaskForm({ onAddTask, disabled = false }: AddTaskFormProps) {
 
     onAddTask(trimmedTitle, priority);
     setTitle("");
-    // Refocus input for quick consecutive entries
-    if (window.innerWidth >= 768) {
-      inputRef.current?.focus();
-    } else {
-      textareaRef.current?.focus();
-    }
+    textareaRef.current?.focus();
   };
 
   return (

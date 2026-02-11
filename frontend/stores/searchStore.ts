@@ -29,7 +29,7 @@ export const useSearchStore = create<SearchState>()(
               timestamp: new Date().toISOString(),
             },
             ...state.results,
-          ],
+          ].slice(0, 50),
         })),
       deleteResult: (id) =>
         set((state) => ({
@@ -39,6 +39,7 @@ export const useSearchStore = create<SearchState>()(
     }),
     {
       name: "search-results",
+      version: 1,
     }
   )
 );

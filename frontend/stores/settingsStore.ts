@@ -10,21 +10,18 @@ type MobileMode = "auto" | "mobile" | "desktop";
 export type ActiveView = "home" | "add" | "watchlist";
 export type FontSize = "small" | "medium" | "large" | "xlarge";
 
-interface SettingsState {
-  // Refresh settings
+interface SettingsData {
   autoRefreshEnabled: boolean;
   refreshIntervalSeconds: number;
-
-  // Display settings
   metricsMode: MetricsMode;
   currency: string;
   mobileMode: MobileMode;
   activeView: ActiveView;
   fontSize: FontSize;
-
-  // Risk-free rate for Sharpe ratio (fixed at 4.5%)
   riskFreeRate: number;
+}
 
+interface SettingsState extends SettingsData {
   // Actions
   setAutoRefresh: (enabled: boolean) => void;
   setRefreshInterval: (seconds: number) => void;
@@ -37,7 +34,7 @@ interface SettingsState {
   decreaseFontSize: () => void;
   cycleFontSize: () => void;
   // Setter for Supabase sync - completely replaces settings state
-  setSettings: (settings: Partial<Omit<SettingsState, "setAutoRefresh" | "setRefreshInterval" | "setMetricsMode" | "setCurrency" | "setMobileMode" | "setActiveView" | "setFontSize" | "increaseFontSize" | "decreaseFontSize" | "cycleFontSize" | "setSettings">>) => void;
+  setSettings: (settings: Partial<SettingsData>) => void;
 }
 
 const FONT_SIZE_ORDER: FontSize[] = ["small", "medium", "large", "xlarge"];
@@ -84,6 +81,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: "settings-storage",
+      version: 1,
     }
   )
 );

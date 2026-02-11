@@ -11,19 +11,9 @@ import {
   updateScheduledEvent,
   deleteScheduledEvent as deleteScheduledEventFromSupabase,
 } from "@/lib/supabase/queries/scheduled-events";
+import { generateId } from "@/lib/utils";
 
 const SCHEDULED_EVENTS_STORAGE_KEY = "scheduled-events-storage";
-
-function generateId(): string {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
 
 interface ScheduledEventsState {
   events: ScheduledEvent[];
@@ -33,7 +23,7 @@ interface ScheduledEventsState {
 
   // Event CRUD
   addEvent: (title: string, scheduledAt: string) => string;
-  completeEvent: (id: string, completedBy?: string | null) => void;
+  completeEvent: (id: string) => void;
   uncompleteEvent: (id: string) => void;
   deleteEvent: (id: string) => void;
 
@@ -161,6 +151,7 @@ export const useScheduledEventsStore = create<ScheduledEventsState>()(
     }),
     {
       name: SCHEDULED_EVENTS_STORAGE_KEY,
+      version: 1,
     }
   )
 );
