@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import { google } from "googleapis";
 
 export async function GET() {
+  // Diagnostic endpoint — credential details stripped to prevent info leakage
   const diagnostics: Record<string, unknown> = {
     timestamp: new Date().toISOString(),
     env: {
       hasClientId: !!process.env.GOOGLE_CLIENT_ID,
       hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
       hasRefreshToken: !!process.env.GOOGLE_REFRESH_TOKEN,
-      clientIdPrefix: process.env.GOOGLE_CLIENT_ID?.substring(0, 20) + "...",
+      // clientIdPrefix intentionally omitted — leaks credential info
     },
   };
 
@@ -23,7 +24,6 @@ export async function GET() {
       refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
     });
 
-    // Try to refresh the token
     const { credentials } = await oauth2Client.refreshAccessToken();
 
     diagnostics.auth = {
@@ -34,8 +34,8 @@ export async function GET() {
   } catch (error) {
     diagnostics.auth = {
       success: false,
-      error: error instanceof Error ? error.message : String(error),
-      errorDetails: error,
+      // errorDetails intentionally omitted — may contain token fragments/stack traces
+      error: error instanceof Error ? error.message : "Auth failed",
     };
   }
 
