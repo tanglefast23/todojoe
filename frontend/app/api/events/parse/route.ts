@@ -3,7 +3,21 @@ import { parseNaturalLanguageEvent } from "@/lib/groq";
 import { createCalendarEvent } from "@/lib/google/calendar";
 import { isGoogleConfigured } from "@/lib/google/auth";
 
+/**
+ * Guard: if INTERNAL_API_KEY is set in env, require it via X-Api-Key header.
+ * Add INTERNAL_API_KEY=<random> to .env.local to enable.
+ */
+function isAuthorized(request: NextRequest): boolean {
+  const requiredKey = process.env.INTERNAL_API_KEY;
+  if (!requiredKey) return true; // key not configured — allow (backward compat)
+  return request.headers.get("x-api-key") === requiredKey;
+}
+
 export async function POST(request: NextRequest) {
+  if (!isAuthorized(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { text, timeZone } = body;
@@ -15,20 +29,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse natural language to extract event details
+    // Limit input size to prevent abuse
+    if (text.length > 500) {
+      return NextResponse.json(
+        { error: "Text too long (max 500 chars)" },
+        { status: 400 }
+      );
+    }
+
     const parsed = await parseNaturalLanguageEvent(text.trim());
 
-    // Build datetime strings
     const startDateTime = `${parsed.date}T${parsed.time}:00`;
     let endDateTime: string | undefined;
-
     if (parsed.endTime) {
       endDateTime = `${parsed.date}T${parsed.endTime}:00`;
     }
 
-    // Check if Google is configured before attempting to create event
     if (!isGoogleConfigured()) {
-      // Return parsed data without creating event
       return NextResponse.json({
         parsed,
         event: null,
@@ -36,7 +53,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create the calendar event
     const event = await createCalendarEvent(
       parsed.title,
       startDateTime,
