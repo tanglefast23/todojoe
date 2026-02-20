@@ -18,11 +18,11 @@ const STOCK_SYMBOLS = [
 // Commodity ETF symbols to track (mining/resources ETFs)
 const COMMODITY_SYMBOLS = ["SILJ", "URA", "COPX", "HBM"];
 
-// Investment symbols to monitor for significant news
-const INVESTMENT_WATCH_SYMBOLS = [
-  "GOOGL", "MU", "SNDK", "IREN", "SILJ", "URA", "HBM", "ERO",
-  "TSM", "CRWV", "ASML", "AMZN", "TSLA"
-];
+// Investment symbols loaded from env — keeps positions out of the public repo
+// Set INVESTMENT_WATCH_SYMBOLS=GOOGL,MU,TSLA,... in .env.local
+const INVESTMENT_WATCH_SYMBOLS: string[] = process.env.INVESTMENT_WATCH_SYMBOLS
+  ? process.env.INVESTMENT_WATCH_SYMBOLS.split(",").map((s) => s.trim()).filter(Boolean)
+  : []; // empty default — no symbols committed to repo
 
 // Crypto symbols to track
 const CRYPTO_SYMBOLS = ["BTC", "ETH", "HYPE", "ZEC"];
@@ -187,6 +187,7 @@ async function fetchInvestmentNews(): Promise<InvestmentNewsItem[]> {
     day: "numeric",
   });
 
+  // Symbols passed at runtime — not embedded in source
   const symbolsList = INVESTMENT_WATCH_SYMBOLS.join(", ");
 
   const prompt = `Today is ${today}. Search for SIGNIFICANT news about these investment tickers: ${symbolsList}
