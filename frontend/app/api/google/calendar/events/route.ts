@@ -2,16 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCalendarEvents, createCalendarEvent } from "@/lib/google/calendar";
 import { isGoogleConfigured } from "@/lib/google/auth";
 
-function isAuthorizedRequest(req: NextRequest): boolean {
-  const forwarded = req.headers.get("x-forwarded-for");
-  const ip = forwarded ? forwarded.split(",")[0].trim() : null;
-  return !ip || ip.startsWith("127.") || ip.startsWith("::1") || ip.startsWith("100.");
-}
-
 export async function GET(request: NextRequest) {
-  if (!isAuthorizedRequest(request)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
   try {
     if (!isGoogleConfigured()) {
       return NextResponse.json(
@@ -34,9 +25,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isAuthorizedRequest(request)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
   try {
     if (!isGoogleConfigured()) {
       return NextResponse.json({ error: "Google API not configured" }, { status: 401 });
