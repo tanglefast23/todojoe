@@ -2,19 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getEmailById, trashEmail, markAsRead, archiveEmail } from "@/lib/google/gmail";
 import { isGoogleConfigured } from "@/lib/google/auth";
 
-function isAuthorizedRequest(req: NextRequest): boolean {
-  const forwarded = req.headers.get("x-forwarded-for");
-  const ip = forwarded ? forwarded.split(",")[0].trim() : null;
-  return !ip || ip.startsWith("127.") || ip.startsWith("::1") || ip.startsWith("100.");
-}
-
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!isAuthorizedRequest(request)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
   try {
     const { id } = await params;
     if (!isGoogleConfigured()) {
@@ -39,9 +30,6 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!isAuthorizedRequest(request)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
   try {
     const { id } = await params;
     if (!isGoogleConfigured()) {
@@ -62,9 +50,6 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!isAuthorizedRequest(request)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
   try {
     const { id } = await params;
     const body = await request.json();
