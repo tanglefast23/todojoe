@@ -54,8 +54,21 @@ export async function POST(request: NextRequest) {
           }
           const parsed = JSON.parse(cleanJson);
 
+          // Sanitize LLM output — limit field lengths, strip unexpected content
+          function sanitizeEventField(val: unknown, maxLen = 200): string {
+            if (typeof val !== 'string') return '';
+            return val.slice(0, maxLen).replace(/[<>]/g, '');
+          }
+
           // Handle both single object and array of events
-          const events = Array.isArray(parsed) ? parsed : [parsed];
+          const rawEvents = Array.isArray(parsed) ? parsed : [parsed];
+          const events = rawEvents.slice(0, 20).map((e: any) => ({
+            title: sanitizeEventField(e.title, 100),
+            date: sanitizeEventField(e.date, 10),
+            time: sanitizeEventField(e.time, 8),
+            location: sanitizeEventField(e.location, 200),
+            description: sanitizeEventField(e.description, 500),
+          }));
 
           if (events.length === 0) {
             throw new Error("No events found in the image");
