@@ -1,10 +1,20 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getPrimaryInboxEmails } from "@/lib/google/gmail";
 import { isGoogleConfigured } from "@/lib/google/auth";
 
-export async function GET() {
+function isAuthorizedRequest(req: NextRequest): boolean {
+  const forwarded = req.headers.get("x-forwarded-for");
+  const ip = forwarded ? forwarded.split(",")[0].trim() : null;
+  // Allow localhost and Tailscale IPs (100.x.x.x)
+  return !ip || ip.startsWith("127.") || ip.startsWith("::1") || ip.startsWith("100.");
+}
+
+export async function GET(request: NextRequest) {
+  if (!isAuthorizedRequest(request)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   try {
-    // Check if Google API is configured
     if (!isGoogleConfigured()) {
       return NextResponse.json(
         { error: "Google API not configured. Please run the OAuth setup script." },
@@ -12,7 +22,6 @@ export async function GET() {
       );
     }
 
-    // Fetch emails from Primary inbox (both read and unread)
     const messages = await getPrimaryInboxEmails(50);
     return NextResponse.json({ messages });
   } catch (error) {
