@@ -1,19 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getPrimaryInboxEmails } from "@/lib/google/gmail";
 import { isGoogleConfigured } from "@/lib/google/auth";
 
-function isAuthorizedRequest(req: NextRequest): boolean {
-  const forwarded = req.headers.get("x-forwarded-for");
-  const ip = forwarded ? forwarded.split(",")[0].trim() : null;
-  // Allow localhost and Tailscale IPs (100.x.x.x)
-  return !ip || ip.startsWith("127.") || ip.startsWith("::1") || ip.startsWith("100.");
-}
-
-export async function GET(request: NextRequest) {
-  if (!isAuthorizedRequest(request)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
+export async function GET() {
   try {
     if (!isGoogleConfigured()) {
       return NextResponse.json(
