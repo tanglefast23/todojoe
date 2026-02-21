@@ -2,28 +2,28 @@ import { NextRequest, NextResponse } from "next/server";
 import { getEmailById, trashEmail, markAsRead, archiveEmail } from "@/lib/google/gmail";
 import { isGoogleConfigured } from "@/lib/google/auth";
 
+function isAuthorizedRequest(req: NextRequest): boolean {
+  const forwarded = req.headers.get("x-forwarded-for");
+  const ip = forwarded ? forwarded.split(",")[0].trim() : null;
+  return !ip || ip.startsWith("127.") || ip.startsWith("::1") || ip.startsWith("100.");
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!isAuthorizedRequest(request)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   try {
     const { id } = await params;
-
     if (!isGoogleConfigured()) {
-      return NextResponse.json(
-        { error: "Google API not configured" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Google API not configured" }, { status: 401 });
     }
-
     const email = await getEmailById(id);
     if (!email) {
-      return NextResponse.json(
-        { error: "Email not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Email not found" }, { status: 404 });
     }
-
     await markAsRead(id).catch(console.error);
     return NextResponse.json(email);
   } catch (error) {
@@ -39,16 +39,14 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!isAuthorizedRequest(request)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   try {
     const { id } = await params;
-
     if (!isGoogleConfigured()) {
-      return NextResponse.json(
-        { error: "Google API not configured" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Google API not configured" }, { status: 401 });
     }
-
     await trashEmail(id);
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -64,26 +62,20 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!isAuthorizedRequest(request)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   try {
     const { id } = await params;
     const body = await request.json();
-
     if (!isGoogleConfigured()) {
-      return NextResponse.json(
-        { error: "Google API not configured" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Google API not configured" }, { status: 401 });
     }
-
     if (body.action === "archive") {
       await archiveEmail(id);
       return NextResponse.json({ success: true });
     }
-
-    return NextResponse.json(
-      { error: "Invalid action" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error) {
     console.error("[Gmail API] Error updating email:", error);
     return NextResponse.json(
