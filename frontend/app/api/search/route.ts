@@ -4,6 +4,15 @@ import { getCalendarEvents, createCalendarEvent } from "@/lib/google/calendar";
 import { getPrimaryInboxEmails, searchEmails } from "@/lib/google/gmail";
 import { isGoogleConfigured } from "@/lib/google/auth";
 
+/** Strip HTML tags and dangerous patterns from LLM output before returning to client */
+function stripHtml(text: string): string {
+  return text
+    .replace(/<script[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+\s*=/gi, '');
+}
+
 // Check if the query is asking to create a calendar event
 function isEventCreationRequest(query: string): boolean {
   const lowerQuery = query.toLowerCase();
@@ -132,7 +141,7 @@ export async function POST(request: NextRequest) {
           // Fall back to regular vision response
           const response = await queryGeminiVision(query, image, false);
           return NextResponse.json({
-            response: response + "\n\n⚠️ *I found the event details but couldn't automatically create the event. You can manually add it to your calendar.*"
+            response: stripHtml(response) + "\n\n⚠️ *I found the event details but couldn't automatically create the event. You can manually add it to your calendar.*"
           });
         }
       }
