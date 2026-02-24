@@ -8,12 +8,11 @@ import {
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-// Stock symbols to track
-const STOCK_SYMBOLS = [
-  "COIN", "META", "AMD", "AAPL", "MSFT", "AVGO", "CRCL", "HOOD", "OKLO", "SMR",
-  "BRK-B", "GOOG", "TSM", "AMZN", "TSLA", "MU", "NVDA",
-  "ERO", "IREN", "MSTR", "NBIS", "CRWV",
-];
+// Stock symbols loaded from env — keeps specific holdings out of the public repo
+// Set STOCK_TRACK_SYMBOLS=AAPL,MSFT,NVDA,... in .env.local
+const STOCK_SYMBOLS: string[] = process.env.STOCK_TRACK_SYMBOLS
+  ? process.env.STOCK_TRACK_SYMBOLS.split(",").map((s) => s.trim()).filter(Boolean)
+  : ["AAPL", "MSFT", "NVDA", "TSLA", "META", "AMZN", "GOOG", "TSM"]; // minimal generic default
 
 // Commodity ETF symbols to track (mining/resources ETFs)
 const COMMODITY_SYMBOLS = ["SILJ", "URA", "COPX", "HBM"];
@@ -24,8 +23,11 @@ const INVESTMENT_WATCH_SYMBOLS: string[] = process.env.INVESTMENT_WATCH_SYMBOLS
   ? process.env.INVESTMENT_WATCH_SYMBOLS.split(",").map((s) => s.trim()).filter(Boolean)
   : []; // empty default — no symbols committed to repo
 
-// Crypto symbols to track
-const CRYPTO_SYMBOLS = ["BTC", "ETH", "HYPE", "ZEC"];
+// Crypto symbols loaded from env — keeps specific holdings out of the public repo
+// Set CRYPTO_TRACK_SYMBOLS=BTC,ETH,... in .env.local
+const CRYPTO_SYMBOLS: string[] = process.env.CRYPTO_TRACK_SYMBOLS
+  ? process.env.CRYPTO_TRACK_SYMBOLS.split(",").map((s) => s.trim()).filter(Boolean)
+  : ["BTC", "ETH"]; // minimal safe default
 
 export interface NewsItem {
   headline: string;

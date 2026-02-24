@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { apiHeaders } from "@/lib/api-key";
 import { Header } from "@/components/layout/Header";
 import { Mail, RefreshCw, Trash2, Archive, ChevronRight, AlertCircle, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,7 @@ export default function GmailPage() {
     setError(null);
 
     try {
-      const response = await fetch("/api/google/gmail/messages");
+      const response = await fetch("/api/google/gmail/messages", { headers: apiHeaders() });
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || "Failed to fetch emails");
@@ -41,7 +42,7 @@ export default function GmailPage() {
   // Fetch full email content
   const fetchEmailDetail = useCallback(async (gmailId: string) => {
     try {
-      const response = await fetch(`/api/google/gmail/message/${gmailId}`);
+      const response = await fetch(`/api/google/gmail/message/${gmailId}`, { headers: apiHeaders() });
       if (!response.ok) {
         throw new Error("Failed to fetch email details");
       }
@@ -57,6 +58,7 @@ export default function GmailPage() {
     try {
       const response = await fetch(`/api/google/gmail/message/${gmailId}`, {
         method: "DELETE",
+        headers: apiHeaders(),
       });
       if (!response.ok) {
         throw new Error("Failed to delete email");
@@ -76,7 +78,7 @@ export default function GmailPage() {
     try {
       const response = await fetch(`/api/google/gmail/message/${gmailId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: apiHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ action: "archive" }),
       });
       if (!response.ok) {

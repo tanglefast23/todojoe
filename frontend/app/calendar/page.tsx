@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { apiHeaders } from "@/lib/api-key";
 import { RefreshCw } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { ScheduledEventList } from "@/components/calendar/ScheduledEventList";
@@ -25,7 +26,7 @@ export default function CalendarPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/google/calendar/events");
+      const response = await fetch("/api/google/calendar/events", { headers: apiHeaders() });
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || "Failed to fetch calendar events");

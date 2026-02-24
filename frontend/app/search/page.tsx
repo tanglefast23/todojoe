@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
+import { apiHeaders } from "@/lib/api-key";
 import { Header } from "@/components/layout/Header";
 import { Search, Sparkles, Loader2, X, Trash2, ImagePlus, Image as ImageIcon, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -75,7 +76,7 @@ export default function SearchPage() {
     try {
       const res = await fetch("/api/search", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: apiHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           query: calendarQuery.trim(),
         }),
@@ -106,7 +107,7 @@ export default function SearchPage() {
     try {
       const res = await fetch("/api/search", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: apiHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           query: attachmentQuery.trim() || "What is in this image?",
           image: image,

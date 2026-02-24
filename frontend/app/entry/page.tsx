@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState, useRef } from "react";
+import { apiHeaders } from "@/lib/api-key";
 import { Header } from "@/components/layout/Header";
 import { AddTaskForm } from "@/components/tasks/AddTaskForm";
 import { ScheduleTaskForm } from "@/components/tasks/ScheduleTaskForm";
@@ -52,7 +53,7 @@ export default function EntryPage() {
     try {
       const res = await fetch("/api/events/parse", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: apiHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           text: nlEventText.trim(),
           timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -117,7 +118,7 @@ export default function EntryPage() {
       try {
         const res = await fetch("/api/search", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: apiHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             query: "Create all calendar events from this image",
             image: base64,

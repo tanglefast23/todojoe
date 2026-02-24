@@ -83,59 +83,37 @@ export async function POST(request: NextRequest) {
             throw new Error("No events found in the image");
           }
 
-          const createdEvents: string[] = [];
-          const failedEvents: string[] = [];
+          // Image-sourced events require user confirmation before creation.
+          // LLM-parsed data from arbitrary images can be manipulated (prompt injection),
+          // so we return pendingEvents for the caller to confirm rather than auto-creating.
+          const pendingEvents = events.filter(
+            (e) => e.title && e.date && e.time
+          ).map((eventData) => {
+            const startDateTime = new Date(`${eventData.date}T${eventData.time}:00`);
+            return {
+              title: eventData.title,
+              date: eventData.date,
+              time: eventData.time,
+              location: eventData.location || "",
+              description: eventData.description || "",
+              startIso: isNaN(startDateTime.getTime()) ? null : startDateTime.toISOString(),
+            };
+          });
 
-          for (const eventData of events) {
-            try {
-              // Validate required fields
-              if (!eventData.title || !eventData.date || !eventData.time) {
-                failedEvents.push(`Missing details for: ${eventData.title || "Unknown event"}`);
-                continue;
-              }
-
-              // Construct the start time in ISO format
-              const startDateTime = new Date(`${eventData.date}T${eventData.time}:00`);
-              if (isNaN(startDateTime.getTime())) {
-                failedEvents.push(`Invalid date/time for: ${eventData.title}`);
-                continue;
-              }
-
-              // Create the calendar event
-              await createCalendarEvent(
-                eventData.title,
-                startDateTime.toISOString(),
-                undefined, // end time (will default to 1 hour)
-                [eventData.location, eventData.description].filter(Boolean).join("\n") || undefined,
-                "primary",
-                timeZone
-              );
-
-              createdEvents.push(
-                `**${eventData.title}**\n` +
-                `📅 ${startDateTime.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}\n` +
-                `🕐 ${startDateTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}` +
-                (eventData.location ? `\n📍 ${eventData.location}` : "")
-              );
-            } catch (err) {
-              failedEvents.push(`Failed to create: ${eventData.title || "Unknown"}`);
-            }
+          if (pendingEvents.length === 0) {
+            return NextResponse.json({
+              response: "⚠️ Found event data in the image but couldn't parse valid date/time fields. Please add the event manually.",
+            });
           }
 
-          console.log("[Search API] Created events:", createdEvents.length, "Failed:", failedEvents.length);
+          const summary = pendingEvents.map(e =>
+            `**${e.title}** — ${e.date} ${e.time}${e.location ? ` @ ${e.location}` : ""}`
+          ).join("\n");
 
-          // Build response message
-          let response = "";
-          if (createdEvents.length > 0) {
-            response = `✅ **${createdEvents.length} calendar event${createdEvents.length > 1 ? "s" : ""} created!**\n\n`;
-            response += createdEvents.join("\n\n---\n\n");
-            response += "\n\nAll events have been added to your Google Calendar.";
-          }
-          if (failedEvents.length > 0) {
-            response += `\n\n⚠️ Could not create: ${failedEvents.join(", ")}`;
-          }
-
-          return NextResponse.json({ response });
+          return NextResponse.json({
+            response: `📅 Found ${pendingEvents.length} event${pendingEvents.length > 1 ? "s" : ""} — please confirm before adding to calendar:\n\n${summary}`,
+            pendingEvents,
+          });
         } catch (parseError) {
           console.error("[Search API] Failed to parse/create event:", parseError);
           // Fall back to regular vision response

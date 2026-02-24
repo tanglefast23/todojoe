@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { apiHeaders } from "@/lib/api-key";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import {
@@ -169,7 +170,7 @@ export default function DailyPage() {
     setFromCache(false);
 
     try {
-      const res = await fetch("/api/daily");
+      const res = await fetch("/api/daily", { headers: apiHeaders() });
       const result = await res.json();
 
       if (!res.ok) {
