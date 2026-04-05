@@ -77,6 +77,18 @@ export function Header() {
         {/* Mobile/Desktop Toggle */}
         <MobileToggle size="sm" />
 
+        {/* Search Button (mobile only) */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => router.push("/search")}
+          className="group md:hidden"
+          title="Search"
+        >
+          <Sparkles className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />
+          <span className="sr-only">Search</span>
+        </Button>
+
         {/* Settings Button */}
         <Button
           variant="ghost"
