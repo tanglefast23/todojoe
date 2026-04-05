@@ -28,8 +28,10 @@ export function ScheduleTaskForm({ onScheduleTask, disabled = false }: ScheduleT
   const [selectedMinute, setSelectedMinute] = useState("00");
   const [selectedPeriod, setSelectedPeriod] = useState<"AM" | "PM">("PM");
   const [step, setStep] = useState<ScheduleStep>("date");
+  const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Reset state when dialog closes
   useEffect(() => {
@@ -93,9 +95,18 @@ export function ScheduleTaskForm({ onScheduleTask, disabled = false }: ScheduleT
 
   return (
     <>
-      <div className="space-y-3">
+      <div
+        ref={containerRef}
+        className="space-y-3"
+        onFocus={() => setIsFocused(true)}
+        onBlur={(e) => {
+          if (!containerRef.current?.contains(e.relatedTarget as Node)) {
+            setIsFocused(false);
+          }
+        }}
+      >
         {/* Card-style input container - matches Pencil design */}
-        <div className="bg-card border border-border rounded-xl p-4">
+        <div className="bg-card border-[3px] border-border rounded-xl p-4">
           <textarea
             ref={textareaRef}
             value={title}
@@ -113,9 +124,11 @@ export function ScheduleTaskForm({ onScheduleTask, disabled = false }: ScheduleT
           />
         </div>
 
-        {/* Schedule Button - outline style matching Pencil design */}
+        {/* Schedule Button - only visible when the calendar field is focused */}
+        {isFocused && (
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={handleScheduleClick}
           disabled={disabled || !title.trim()}
           className={cn(
@@ -128,6 +141,7 @@ export function ScheduleTaskForm({ onScheduleTask, disabled = false }: ScheduleT
           <CalendarIcon className="h-[18px] w-[18px]" />
           Schedule
         </button>
+        )}
       </div>
 
       {/* Date/Time Picker Dialog */}
