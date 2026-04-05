@@ -11,6 +11,7 @@ interface AddTaskFormProps {
 
 export function AddTaskForm({ onAddTask, disabled = false }: AddTaskFormProps) {
   const [title, setTitle] = useState("");
+  const [pressedButton, setPressedButton] = useState<TaskPriority | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-focus textarea on mount
@@ -26,9 +27,20 @@ export function AddTaskForm({ onAddTask, disabled = false }: AddTaskFormProps) {
     const trimmedTitle = title.trim();
     if (!trimmedTitle) return;
 
+    // Haptic feedback (if supported)
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      navigator.vibrate(priority === "urgent" ? [15, 30, 15] : 20);
+    }
+
+    // Visual press cue
+    setPressedButton(priority);
+    setTimeout(() => setPressedButton(null), 180);
+
     onAddTask(trimmedTitle, priority);
     setTitle("");
-    textareaRef.current?.focus();
+
+    // Dismiss keyboard popup by blurring the textarea
+    textareaRef.current?.blur();
   };
 
   return (
@@ -64,10 +76,12 @@ export function AddTaskForm({ onAddTask, disabled = false }: AddTaskFormProps) {
           onClick={() => createTask("regular")}
           disabled={disabled || !title.trim()}
           className={cn(
-            "flex-1 py-3 text-[15px] font-medium rounded-xl border-[1.5px] transition-all bg-card",
+            "flex-1 py-3 text-[15px] font-medium rounded-xl border-[1.5px] transition-all duration-150 bg-card",
             "border-blue-500 text-blue-500",
+            "active:scale-95 active:bg-blue-500/20",
             !title.trim() && "opacity-60 cursor-not-allowed",
-            title.trim() && "hover:bg-blue-500/10"
+            title.trim() && "hover:bg-blue-500/10",
+            pressedButton === "regular" && "scale-95 bg-blue-500/25 shadow-inner"
           )}
         >
           Normal
@@ -77,10 +91,12 @@ export function AddTaskForm({ onAddTask, disabled = false }: AddTaskFormProps) {
           onClick={() => createTask("urgent")}
           disabled={disabled || !title.trim()}
           className={cn(
-            "flex-1 py-3 text-[15px] font-medium rounded-xl border-[1.5px] transition-all bg-card",
+            "flex-1 py-3 text-[15px] font-medium rounded-xl border-[1.5px] transition-all duration-150 bg-card",
             "border-orange-500 text-orange-500",
+            "active:scale-95 active:bg-orange-500/20",
             !title.trim() && "opacity-60 cursor-not-allowed",
-            title.trim() && "hover:bg-orange-500/10"
+            title.trim() && "hover:bg-orange-500/10",
+            pressedButton === "urgent" && "scale-95 bg-orange-500/25 shadow-inner"
           )}
         >
           Urgent
