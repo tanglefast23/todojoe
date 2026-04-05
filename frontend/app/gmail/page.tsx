@@ -85,8 +85,15 @@ export default function GmailPage() {
     }
   }, []);
 
-  // Fetch full email content
+  // Fetch full email content.
+  // The backend marks the email as read on Gmail's side when we GET it,
+  // so we optimistically update local state to match — the blue unread dot
+  // disappears immediately without waiting for a refresh.
   const fetchEmailDetail = useCallback(async (gmailId: string) => {
+    // Optimistically clear the unread flag locally
+    setEmails((prev) =>
+      prev.map((e) => (e.gmailId === gmailId ? { ...e, isUnread: false } : e))
+    );
     try {
       const response = await fetch(`/api/google/gmail/message/${gmailId}`, { headers: apiHeaders() });
       if (!response.ok) {

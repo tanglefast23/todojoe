@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Trash2, Archive, ChevronRight } from "lucide-react";
+import { Trash2, Archive } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { GmailMessage } from "@/types/gmail";
@@ -164,29 +164,6 @@ export function SwipeableEmailCard({
             <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
               {getPreview(email.snippet)}
             </p>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0 mt-1">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              className="w-8 h-8 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center transition-colors hover:bg-red-500/40 active:scale-95"
-              title="Delete"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onArchive();
-              }}
-              className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center transition-colors hover:bg-amber-500/40 active:scale-95"
-              title="Archive"
-            >
-              <Archive className="w-4 h-4" />
-            </button>
-            <ChevronRight className="h-5 w-5 text-muted-foreground" />
           </div>
         </div>
       </div>

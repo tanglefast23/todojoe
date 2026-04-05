@@ -46,13 +46,23 @@ export default function CalendarPage() {
     fetchGoogleEvents();
   }, [fetchGoogleEvents]);
 
-  // Combine local and Google events, sorted by date
-  const allEvents = useMemo(
-    () => [...localEvents, ...googleEvents].sort(
-      (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
-    ),
-    [localEvents, googleEvents]
-  );
+  // Combine local and Google events, filter to upcoming only, sorted by date.
+  // An event counts as upcoming if it hasn't ended yet — prefer the event's
+  // end time if present, otherwise fall back to the start time. This keeps
+  // in-progress events visible until they actually finish.
+  const allEvents = useMemo(() => {
+    const now = Date.now();
+    return [...localEvents, ...googleEvents]
+      .filter((event) => {
+        const endMs = event.endAt ? new Date(event.endAt).getTime() : null;
+        const startMs = new Date(event.scheduledAt).getTime();
+        const effectiveEnd = endMs ?? startMs;
+        return effectiveEnd >= now;
+      })
+      .sort(
+        (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
+      );
+  }, [localEvents, googleEvents]);
 
   // Handle completing an event
   const handleComplete = useCallback((id: string) => {
