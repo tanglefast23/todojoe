@@ -7,7 +7,9 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-mono), ui-monospace, monospace;
+  /* System monospace stack — no webfont loaded, zero render-blocking cost.
+     Any `font-mono` Tailwind class falls through to the OS default. */
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -159,25 +161,64 @@
   * {
     @apply border-border outline-ring/50;
   }
-  /* Font size scaling system */
+  /*
+   * Font size scaling system.
+   *
+   * This intentionally scales the html root font-size, which means every
+   * rem-based value in the stylesheet (spacing, radii, icon sizes, gaps)
+   * zooms proportionally with text. That's the desired behavior — think
+   * iOS Dynamic Type, not a "text only" zoom.
+   *
+   * The range is kept modest (16px → 22px, ~37% spread) to avoid stressing
+   * carefully-tuned layouts. Wider ranges caused urgent/overdue cards to
+   * wrap awkwardly on tablets and caused touch targets to inflate past
+   * their intended hit areas. Do not widen without testing all pages.
+   */
   html {
-    font-size: 18px; /* Default medium */
+    font-size: 18px; /* medium (default) */
   }
   html.font-small {
-    font-size: 14px;
+    font-size: 16px;
   }
   html.font-medium {
     font-size: 18px;
   }
   html.font-large {
-    font-size: 22px;
+    font-size: 20px;
   }
   html.font-xlarge {
-    font-size: 26px;
+    font-size: 22px;
   }
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* ===== SNAPPY POLISH — KEYFRAMES ===== */
+
+/* Page mount — subtle fade up, used on route landings */
+@keyframes page-mount {
+  0% { opacity: 0; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Task added — confident reveal from a small slide */
+@keyframes task-mount {
+  0% { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Task removed — collapse vertically + fade */
+@keyframes task-collapse {
+  0% { opacity: 1; max-height: 200px; transform: translateX(0); }
+  100% { opacity: 0; max-height: 0; transform: translateX(-8px); padding-top: 0; padding-bottom: 0; margin-top: 0; margin-bottom: 0; }
+}
+
+/* Checkbox check — scale pop */
+@keyframes check-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
 }
 
 /* Custom keyframes for micro-interactions */
@@ -300,15 +341,6 @@
 
   /* ===== MICRO-INTERACTION UTILITIES ===== */
 
-  /* Hover lift effect - use on cards, widgets */
-  .hover-lift {
-    @apply transition-all duration-200;
-  }
-  .hover-lift:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-elevated);
-  }
-
   /* Press effect - use on buttons */
   .press-effect {
     @apply transition-transform;
@@ -316,16 +348,6 @@
   .press-effect:active {
     transform: scale(0.97);
     transition-duration: 75ms;
-  }
-
-  /* Interactive card - combines lift + shadow */
-  .interactive-card {
-    @apply transition-all duration-300;
-    box-shadow: var(--shadow-small);
-  }
-  .interactive-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-elevated);
   }
 
   /* Glassmorphism effect */
@@ -375,6 +397,105 @@
   .animate-spin-once {
     animation: spin-once 0.5s var(--ease-out-expo);
   }
+
+  /* ===== SNAPPY POLISH — TACTILE UTILITIES ===== */
+
+  /* Tactile button — hover + press feedback in one class.
+     Use on all clickable buttons, nav links, icon buttons. */
+  .btn-tactile {
+    transition-property: transform, background-color, border-color, color, opacity;
+    transition-duration: 120ms;
+    transition-timing-function: var(--ease-out-expo);
+    will-change: transform;
+  }
+  .btn-tactile:hover {
+    transform: translateY(-1px);
+  }
+  .btn-tactile:active {
+    transform: scale(0.96) translateY(0);
+    transition-duration: 80ms;
+  }
+  .btn-tactile:disabled,
+  .btn-tactile[aria-disabled="true"] {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  /* Tactile card — for task cards, list items, anything pressable but larger.
+     Shadow is painted on an ::after pseudo-element that crossfades via opacity
+     instead of animating box-shadow directly — avoids per-frame repaints and
+     stays on the GPU compositor. Parent must be position: relative (added here). */
+  .card-tactile {
+    position: relative;
+    transition-property: transform, border-color, background-color;
+    transition-duration: 150ms;
+    transition-timing-function: var(--ease-out-expo);
+    will-change: transform;
+  }
+  .card-tactile::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: var(--shadow-medium);
+    opacity: 0;
+    transition: opacity 150ms var(--ease-out-expo);
+    pointer-events: none;
+  }
+  .card-tactile:hover {
+    transform: translateY(-1px);
+  }
+  .card-tactile:hover::after {
+    opacity: 1;
+  }
+  .card-tactile:active {
+    transform: scale(0.99);
+    transition-duration: 80ms;
+  }
+
+  /* Icon button — smaller elements that need clear press feedback */
+  .icon-tactile {
+    transition: transform 120ms var(--ease-out-expo), color 120ms, background-color 120ms, opacity 120ms;
+    will-change: transform;
+  }
+  .icon-tactile:hover {
+    transform: scale(1.08);
+  }
+  .icon-tactile:active {
+    transform: scale(0.92);
+    transition-duration: 60ms;
+  }
+
+  /* Page mount — apply to top-level page wrappers */
+  .page-mount {
+    animation: page-mount 250ms var(--ease-out-expo) both;
+  }
+
+  /* Task animations */
+  .task-mount {
+    animation: task-mount 200ms var(--ease-out-expo) both;
+  }
+  .task-collapse {
+    animation: task-collapse 220ms var(--ease-out-expo) forwards;
+    overflow: hidden;
+  }
+
+  /* Checkbox pop — layered on top of existing checkbox styles */
+  .check-pop {
+    animation: check-pop 240ms var(--ease-out-back);
+  }
+
+  /* Snappy stagger — tighter than the existing 50ms version.
+     Used for list item entrance animations. */
+  .stagger-snap > *:nth-child(1) { animation-delay: 0ms; }
+  .stagger-snap > *:nth-child(2) { animation-delay: 30ms; }
+  .stagger-snap > *:nth-child(3) { animation-delay: 60ms; }
+  .stagger-snap > *:nth-child(4) { animation-delay: 90ms; }
+  .stagger-snap > *:nth-child(5) { animation-delay: 120ms; }
+  .stagger-snap > *:nth-child(6) { animation-delay: 150ms; }
+  .stagger-snap > *:nth-child(7) { animation-delay: 180ms; }
+  .stagger-snap > *:nth-child(8) { animation-delay: 210ms; }
+  /* After 8 items, no delay — long lists shouldn't drag */
 }
 
 /* Reduced motion support - WCAG 2.3.3 */

@@ -42,30 +42,6 @@ export const TaskItem = memo(function TaskItem({
     }
   };
 
-  // Long press handler for delete (mobile)
-  const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
-
-  const handlePressStart = () => {
-    if (!isCompleted) return;
-    const timer = setTimeout(() => {
-      setShowDeleteConfirm(true);
-    }, 500); // 500ms long press
-    setPressTimer(timer);
-  };
-
-  const handlePressEnd = () => {
-    if (pressTimer) {
-      clearTimeout(pressTimer);
-      setPressTimer(null);
-    }
-  };
-
-  const handleContextMenu = (e: React.MouseEvent) => {
-    if (!isCompleted) return;
-    e.preventDefault();
-    setShowDeleteConfirm(true);
-  };
-
   // Determine card style based on priority and completion status
   const getCardStyle = () => {
     if (isCompleted) {
@@ -80,27 +56,18 @@ export const TaskItem = memo(function TaskItem({
   return (
     <div
       className={cn(
-        "relative flex flex-col gap-2 p-4 rounded-xl border-2 transition-all",
+        "relative flex flex-col gap-2 p-4 rounded-xl border-2 card-tactile task-mount",
         getCardStyle(),
         isCompleted && "opacity-70",
         showDeleteConfirm && "ring-2 ring-destructive"
       )}
-      onTouchStart={handlePressStart}
-      onTouchEnd={handlePressEnd}
-      onMouseDown={handlePressStart}
-      onMouseUp={handlePressEnd}
-      onMouseLeave={handlePressEnd}
-      onContextMenu={handleContextMenu}
     >
-      {/* Delete X button for completed tasks - admin only */}
+      {/* Delete X button for completed tasks — tap to reveal confirm (no long-press) */}
       {isCompleted && canDelete && !showDeleteConfirm && (
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(task.id);
-          }}
-          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg transition-all hover:scale-110"
-          title="Remove completed task"
+          onClick={() => setShowDeleteConfirm(true)}
+          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg icon-tactile focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          aria-label={`Remove completed task: ${task.title}`}
         >
           <X className="w-4 h-4" />
         </button>
@@ -143,7 +110,7 @@ export const TaskItem = memo(function TaskItem({
                       e.stopPropagation();
                       onClearAttachment(task.id);
                     }}
-                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 icon-tactile"
                     title="Remove attachment"
                   >
                     <X className="w-3 h-3" />
@@ -197,13 +164,13 @@ export const TaskItem = memo(function TaskItem({
         <div className="flex gap-2">
           <button
             onClick={() => onDelete(task.id)}
-            className="px-2 py-1 text-xs bg-destructive text-destructive-foreground rounded"
+            className="px-2 py-1 text-xs bg-destructive text-destructive-foreground rounded btn-tactile"
           >
             Delete
           </button>
           <button
             onClick={() => setShowDeleteConfirm(false)}
-            className="px-2 py-1 text-xs bg-secondary rounded"
+            className="px-2 py-1 text-xs bg-secondary rounded btn-tactile"
           >
             Cancel
           </button>

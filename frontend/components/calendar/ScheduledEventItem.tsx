@@ -1,8 +1,7 @@
 "use client";
 
-import { memo, useState } from "react";
-import { X, Clock } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
+import { memo, useState, useRef, useCallback, type PointerEvent as ReactPointerEvent } from "react";
+import { Trash2, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ScheduledEvent } from "@/types/scheduled-events";
 import { format, formatDistanceToNow, isPast, isToday } from "date-fns";
@@ -16,60 +15,85 @@ interface ScheduledEventItemProps {
   canDelete?: boolean;
 }
 
+// Swipe thresholds
+const SWIPE_REVEAL_WIDTH = 88;      // how far the delete zone shows when fully revealed
+const SWIPE_DELETE_THRESHOLD = 120; // drag past this to auto-delete
+
 export const ScheduledEventItem = memo(function ScheduledEventItem({
   event,
-  onComplete,
-  onUncomplete,
   onDelete,
-  canComplete,
   canDelete = true,
 }: ScheduledEventItemProps) {
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const startXRef = useRef(0);
+  const pointerActiveRef = useRef(false);
+
   const isCompleted = event.status === "completed";
   const scheduledDate = new Date(event.scheduledAt);
   const isOverdue = isPast(scheduledDate) && !isCompleted;
 
-  const handleCheckChange = (checked: boolean) => {
-    if (!canComplete) return;
-    if (checked) {
-      onComplete(event.id);
-    } else {
-      onUncomplete(event.id);
-    }
-  };
-
-  // Long press handler for delete (mobile)
-  const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
-
-  const handlePressStart = () => {
-    if (!isCompleted) return;
-    const timer = setTimeout(() => {
-      setShowDeleteConfirm(true);
-    }, 500); // 500ms long press
-    setPressTimer(timer);
-  };
-
-  const handlePressEnd = () => {
-    if (pressTimer) {
-      clearTimeout(pressTimer);
-      setPressTimer(null);
-    }
-  };
-
-  const handleContextMenu = (e: React.MouseEvent) => {
-    if (!isCompleted) return;
-    e.preventDefault();
-    setShowDeleteConfirm(true);
-  };
-
   // Tap the card body to open the event in Google Calendar (if it has a link).
-  // Clicks on the checkbox, delete button, etc. stopPropagation so this doesn't fire.
-  const handleCardClick = () => {
-    if (showDeleteConfirm) return;
+  const handleCardClick = useCallback(() => {
+    // Ignore taps that are actually the end of a swipe
+    if (Math.abs(dragX) > 6) return;
     if (event.htmlLink) {
       window.open(event.htmlLink, "_blank", "noopener,noreferrer");
     }
-  };
+  }, [dragX, event.htmlLink]);
+
+  const handlePointerDown = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!canDelete) return;
+    // Only track primary button / single touch
+    if (e.button !== undefined && e.button !== 0) return;
+    startXRef.current = e.clientX;
+    pointerActiveRef.current = true;
+    setIsDragging(true);
+    (e.currentTarget as HTMLDivElement).setPointerCapture?.(e.pointerId);
+  }, [canDelete]);
+
+  const handlePointerMove = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!pointerActiveRef.current) return;
+    const delta = e.clientX - startXRef.current;
+    // Only allow left swipe (negative)
+    if (delta > 0) {
+      setDragX(0);
+      return;
+    }
+    // Add a soft resistance past the reveal width
+    const resistance = delta < -SWIPE_REVEAL_WIDTH
+      ? -SWIPE_REVEAL_WIDTH + (delta + SWIPE_REVEAL_WIDTH) * 0.5
+      : delta;
+    setDragX(resistance);
+  }, []);
+
+  const handlePointerUp = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!pointerActiveRef.current) return;
+    pointerActiveRef.current = false;
+    setIsDragging(false);
+    (e.currentTarget as HTMLDivElement).releasePointerCapture?.(e.pointerId);
+
+    // Past delete threshold → animate out + delete
+    if (dragX <= -SWIPE_DELETE_THRESHOLD) {
+      setIsRemoving(true);
+      setTimeout(() => onDelete(event.id), 220);
+      return;
+    }
+    // Past reveal threshold → snap open
+    if (dragX <= -SWIPE_REVEAL_WIDTH * 0.6) {
+      setDragX(-SWIPE_REVEAL_WIDTH);
+      return;
+    }
+    // Otherwise snap closed
+    setDragX(0);
+  }, [dragX, event.id, onDelete]);
+
+  const handleDeleteClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsRemoving(true);
+    setTimeout(() => onDelete(event.id), 220);
+  }, [event.id, onDelete]);
 
   // Determine if this is a Google Calendar event or a local (app-created) event
   const isGoogleEvent = event.source === "google";
@@ -93,15 +117,6 @@ export const ScheduledEventItem = memo(function ScheduledEventItem({
     return "bg-gradient-to-r from-blue-500/10 to-sky-500/10 border-blue-400/30 hover:border-blue-400/50";
   };
 
-  // Get accent color based on source
-  const getAccentColor = () => {
-    if (isCompleted) return "border-emerald-500";
-    if (isOverdue) return "border-red-400";
-    if (isToday(scheduledDate)) return "border-amber-400";
-    if (isGoogleEvent) return "border-indigo-400";
-    return "border-blue-400";
-  };
-
   const getTextAccentColor = () => {
     if (isCompleted) return "text-muted-foreground";
     if (isOverdue) return "text-red-400";
@@ -109,103 +124,94 @@ export const ScheduledEventItem = memo(function ScheduledEventItem({
     return "text-blue-400";
   };
 
+  const isInteractive = Boolean(event.htmlLink);
+
   return (
     <div
       className={cn(
-        "relative flex flex-col gap-2 p-4 rounded-xl border-2 transition-all",
-        getCardStyle(),
-        isCompleted && "opacity-70",
-        showDeleteConfirm && "ring-2 ring-destructive",
-        event.htmlLink && "cursor-pointer"
+        "relative overflow-hidden rounded-xl",
+        isRemoving && "task-collapse"
       )}
-      onClick={handleCardClick}
-      onTouchStart={handlePressStart}
-      onTouchEnd={handlePressEnd}
-      onMouseDown={handlePressStart}
-      onMouseUp={handlePressEnd}
-      onMouseLeave={handlePressEnd}
-      onContextMenu={handleContextMenu}
     >
-      {/* Delete X button for completed events - admin only */}
-      {isCompleted && canDelete && !showDeleteConfirm && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(event.id);
-          }}
-          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg transition-all hover:scale-110"
-          title="Remove completed event"
-        >
-          <X className="w-4 h-4" />
-        </button>
+      {/* Delete zone revealed by swipe */}
+      {canDelete && (
+        <div className="absolute inset-0 flex items-center justify-end bg-destructive rounded-xl pr-5">
+          <button
+            onClick={handleDeleteClick}
+            className="flex items-center gap-2 text-destructive-foreground icon-tactile"
+            aria-label={`Delete event: ${event.title}`}
+          >
+            <Trash2 className="h-5 w-5" />
+            <span className="text-sm font-medium">Delete</span>
+          </button>
+        </div>
       )}
 
-      {/* Top row: Created time */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>Created {formatDistanceToNow(new Date(event.createdAt), { addSuffix: true })}</span>
-          {isCompleted && event.completedAt && (
-            <span className="ml-2">
-              &#8226; Completed {formatDistanceToNow(new Date(event.completedAt), { addSuffix: true })}
-            </span>
+      {/* Card content — translates on swipe */}
+      <div
+        role={isInteractive ? "button" : undefined}
+        tabIndex={isInteractive ? 0 : undefined}
+        aria-label={isInteractive ? `Open event in Google Calendar: ${event.title}` : undefined}
+        className={cn(
+          "relative flex flex-col gap-2 p-4 rounded-xl border-2 card-tactile task-mount",
+          getCardStyle(),
+          isCompleted && "opacity-70",
+          isInteractive && "cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          "touch-pan-y select-none"
+        )}
+        style={{
+          transform: `translateX(${dragX}px)`,
+          transition: isDragging ? "none" : "transform 220ms cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onClick={handleCardClick}
+        onKeyDown={
+          isInteractive
+            ? (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleCardClick();
+                }
+              }
+            : undefined
+        }
+      >
+        {/* Top row: Created time */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>Created {formatDistanceToNow(new Date(event.createdAt), { addSuffix: true })}</span>
+            {isCompleted && event.completedAt && (
+              <span className="ml-2">
+                &#8226; Completed {formatDistanceToNow(new Date(event.completedAt), { addSuffix: true })}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Main content row: event title */}
+        <div className="flex items-start gap-2 flex-wrap">
+          <span className={cn("font-medium", isCompleted && "line-through")}>
+            {event.title}
+          </span>
+        </div>
+
+        {/* Scheduled time row */}
+        <div className="flex items-center gap-4 text-sm">
+          <div className={cn(
+            "flex items-center gap-1.5",
+            getTextAccentColor()
+          )}>
+            <Clock className="h-4 w-4" />
+            <span className="font-medium">{format(scheduledDate, "h:mm a")}</span>
+          </div>
+          {isOverdue && !isCompleted && (
+            <span className="text-xs text-red-400 font-medium">Overdue</span>
           )}
         </div>
       </div>
-
-      {/* Main content row: Checkbox and event description */}
-      <div className="flex items-start gap-3">
-        <div onClick={(e) => e.stopPropagation()}>
-          <Checkbox
-            checked={isCompleted}
-            onCheckedChange={handleCheckChange}
-            disabled={!canComplete}
-            className={cn(
-              "h-5 w-5 border-2 mt-0.5 flex-shrink-0",
-              getAccentColor(),
-              isCompleted && "data-[state=checked]:bg-emerald-500"
-            )}
-          />
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start gap-2 flex-wrap">
-            <span className={cn("font-medium", isCompleted && "line-through")}>
-              {event.title}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Scheduled time row */}
-      <div className="flex items-center gap-4 text-sm pl-8">
-        <div className={cn(
-          "flex items-center gap-1.5",
-          getTextAccentColor()
-        )}>
-          <Clock className="h-4 w-4" />
-          <span className="font-medium">{format(scheduledDate, "h:mm a")}</span>
-        </div>
-        {isOverdue && !isCompleted && (
-          <span className="text-xs text-red-400 font-medium">Overdue</span>
-        )}
-      </div>
-
-      {showDeleteConfirm && (
-        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-          <button
-            onClick={() => onDelete(event.id)}
-            className="px-2 py-1 text-xs bg-destructive text-destructive-foreground rounded"
-          >
-            Delete
-          </button>
-          <button
-            onClick={() => setShowDeleteConfirm(false)}
-            className="px-2 py-1 text-xs bg-secondary rounded"
-          >
-            Cancel
-          </button>
-        </div>
-      )}
     </div>
   );
 });

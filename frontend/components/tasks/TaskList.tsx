@@ -76,7 +76,7 @@ export function TaskList({
               Urgent ({urgentTasks.length})
             </h3>
             {urgentTasks.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-3 stagger-snap">
                 {urgentTasks.map((task) => (
                   <TaskItem
                     key={task.id}
@@ -102,7 +102,7 @@ export function TaskList({
               Normal ({normalTasks.length})
             </h3>
             {normalTasks.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-3 stagger-snap">
                 {normalTasks.map((task) => (
                   <TaskItem
                     key={task.id}
@@ -135,7 +135,7 @@ export function TaskList({
           <h3 className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-500">
             Completed ({completedTasks.length})
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-3 stagger-snap">
             {completedTasks.map((task) => (
               <TaskItem
                 key={task.id}

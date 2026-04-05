@@ -73,7 +73,7 @@ export default function CalendarPage() {
     <div className="flex flex-col min-h-screen">
       <Header />
 
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-6 page-mount">
         <div className="max-w-3xl mx-auto space-y-6">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">Calendar</h1>

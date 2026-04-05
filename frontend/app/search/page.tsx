@@ -157,7 +157,7 @@ export default function SearchPage() {
     <div className="flex flex-col min-h-screen">
       <Header />
 
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-6 page-mount">
         <div className="max-w-3xl mx-auto space-y-6">
           {/* Page Title */}
           <div className="flex items-center justify-between">
@@ -189,6 +189,7 @@ export default function SearchPage() {
                 onChange={(e) => setCalendarQuery(e.target.value)}
                 onKeyDown={handleCalendarKeyDown}
                 placeholder="Ask about your calendar or emails..."
+                aria-label="Search calendar and emails"
                 className="flex-1 bg-transparent text-lg outline-none placeholder:text-muted-foreground"
                 disabled={isCalendarLoading}
               />
@@ -276,6 +277,7 @@ export default function SearchPage() {
                 onChange={(e) => setAttachmentQuery(e.target.value)}
                 onKeyDown={handleAttachmentKeyDown}
                 placeholder={image ? "Ask about this image..." : "Ask about an attachment..."}
+                aria-label={image ? "Ask about the uploaded image" : "Ask about an attachment"}
                 className="flex-1 bg-transparent text-lg outline-none placeholder:text-muted-foreground"
                 disabled={isAttachmentLoading}
               />

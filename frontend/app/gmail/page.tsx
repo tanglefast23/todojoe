@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import DOMPurify from "isomorphic-dompurify";
 import { apiHeaders } from "@/lib/api-key";
 import { Header } from "@/components/layout/Header";
 import { Mail, RefreshCw, Trash2, Archive, ChevronRight, AlertCircle, Inbox } from "lucide-react";
@@ -9,12 +10,58 @@ import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import type { GmailMessage, GmailMessageFull } from "@/types/gmail";
 
+// Email bodies are untrusted. Strip scripts, iframes, event handlers,
+// and dangerous URL schemes before rendering via dangerouslySetInnerHTML.
+const FORBID_TAGS = ["script", "iframe", "object", "embed", "form", "input", "style", "link", "meta"];
+const FORBID_ATTR = ["onerror", "onload", "onclick", "onmouseover", "onfocus", "onblur", "formaction", "srcdoc"];
+
 export default function GmailPage() {
   const [emails, setEmails] = useState<GmailMessage[]>([]);
   const [selectedEmail, setSelectedEmail] = useState<GmailMessageFull | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Dialog focus management — capture the element that had focus before the
+  // modal opened so we can return focus to it on close, and focus the close
+  // button on open so keyboard users have somewhere to start.
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  // Sanitized email body (memoized — DOMPurify is expensive for long HTML)
+  const sanitizedBody = useMemo(
+    () =>
+      selectedEmail?.bodyHtml
+        ? DOMPurify.sanitize(selectedEmail.bodyHtml, {
+            FORBID_TAGS,
+            FORBID_ATTR,
+            ALLOW_DATA_ATTR: false,
+          })
+        : null,
+    [selectedEmail?.bodyHtml]
+  );
+
+  // Open: save previous focus + focus close button. Close: restore focus.
+  useEffect(() => {
+    if (!selectedEmail) return;
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+    // Defer so the dialog has mounted
+    const id = requestAnimationFrame(() => closeButtonRef.current?.focus());
+    return () => {
+      cancelAnimationFrame(id);
+      previousFocusRef.current?.focus?.();
+    };
+  }, [selectedEmail]);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!selectedEmail) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelectedEmail(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selectedEmail]);
 
   // Fetch Primary inbox emails (both read and unread)
   const fetchEmails = useCallback(async (showRefreshing = false) => {
@@ -109,7 +156,7 @@ export default function GmailPage() {
     <div className="flex flex-col min-h-screen">
       <Header />
 
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-6 page-mount">
         <div className="max-w-4xl mx-auto space-y-6">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -163,8 +210,12 @@ export default function GmailPage() {
               {emails.map((email) => (
                 <div
                   key={email.gmailId}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Open email: ${email.subject || "No subject"} from ${email.fromName || email.fromEmail || "Unknown sender"}`}
                   className={cn(
                     "group relative rounded-xl border-2 p-4 transition-all cursor-pointer",
+                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                     email.isUnread
                       ? "bg-gradient-to-r from-blue-500/15 to-sky-500/15 border-blue-400/40"
                       : "bg-card/50 border-border/50",
@@ -172,6 +223,12 @@ export default function GmailPage() {
                     selectedEmail?.gmailId === email.gmailId && "ring-2 ring-blue-400"
                   )}
                   onClick={() => fetchEmailDetail(email.gmailId)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      fetchEmailDetail(email.gmailId);
+                    }
+                  }}
                 >
                   <div className="flex items-start gap-3">
                     {/* Unread indicator dot */}
@@ -235,16 +292,22 @@ export default function GmailPage() {
             <div
               className="fixed inset-0 z-50 bg-black/80 flex items-end sm:items-center justify-center"
               onClick={() => setSelectedEmail(null)}
+              aria-hidden="true"
             >
               <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="email-dialog-title"
                 className="bg-background w-full sm:max-w-2xl sm:mx-4 sm:rounded-xl border-t sm:border rounded-t-xl max-h-[90vh] sm:max-h-[80vh] overflow-hidden flex flex-col"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header with close button */}
                 <div className="flex items-center justify-between p-3 border-b">
                   <button
+                    ref={closeButtonRef}
                     onClick={() => setSelectedEmail(null)}
-                    className="text-muted-foreground hover:text-foreground text-sm"
+                    className="text-muted-foreground hover:text-foreground text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded px-2 py-1"
+                    aria-label="Close email"
                   >
                     Close
                   </button>
@@ -274,7 +337,7 @@ export default function GmailPage() {
 
                 {/* Email metadata */}
                 <div className="p-4 border-b space-y-1">
-                  <h2 className="text-lg font-bold leading-tight">
+                  <h2 id="email-dialog-title" className="text-lg font-bold leading-tight">
                     {selectedEmail.subject || "(No subject)"}
                   </h2>
                   <p className="text-sm text-muted-foreground">
@@ -287,10 +350,10 @@ export default function GmailPage() {
 
                 {/* Email body */}
                 <div className="flex-1 overflow-y-auto p-4">
-                  {selectedEmail.bodyHtml ? (
+                  {sanitizedBody ? (
                     <div
                       className="prose prose-invert prose-sm max-w-none break-words"
-                      dangerouslySetInnerHTML={{ __html: selectedEmail.bodyHtml }}
+                      dangerouslySetInnerHTML={{ __html: sanitizedBody }}
                     />
                   ) : (
                     <p className="whitespace-pre-wrap text-sm break-words">

@@ -9,6 +9,64 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useTasksStore } from "@/stores/tasksStore";
 import { useScheduledEventsStore } from "@/stores/scheduledEventsStore";
+import type { Task } from "@/types/tasks";
+import type { ScheduledEvent } from "@/types/scheduled-events";
+
+interface BackupFile {
+  version: string;
+  exportedAt?: string;
+  tasks: Task[];
+  scheduledEvents: ScheduledEvent[];
+}
+
+/**
+ * Validate that imported JSON matches the backup file shape.
+ * Returns a discriminated result so callers get a specific error message
+ * instead of a generic "invalid format" alert.
+ */
+function validateBackup(data: unknown): { ok: true; data: BackupFile } | { ok: false; error: string } {
+  if (typeof data !== "object" || data === null) {
+    return { ok: false, error: "Backup must be a JSON object." };
+  }
+
+  const obj = data as Record<string, unknown>;
+
+  if (typeof obj.version !== "string") {
+    return { ok: false, error: "Missing or invalid version field." };
+  }
+
+  if (!Array.isArray(obj.tasks)) {
+    return { ok: false, error: "Missing or invalid 'tasks' array." };
+  }
+
+  if (!Array.isArray(obj.scheduledEvents)) {
+    return { ok: false, error: "Missing or invalid 'scheduledEvents' array." };
+  }
+
+  // Validate minimum fields on each task entry (id + title required; status must be a string)
+  for (let i = 0; i < obj.tasks.length; i++) {
+    const t = obj.tasks[i] as Record<string, unknown> | null;
+    if (!t || typeof t !== "object") {
+      return { ok: false, error: `Task at index ${i} is not an object.` };
+    }
+    if (typeof t.id !== "string" || typeof t.title !== "string") {
+      return { ok: false, error: `Task at index ${i} is missing id or title.` };
+    }
+  }
+
+  // Validate minimum fields on each event entry
+  for (let i = 0; i < obj.scheduledEvents.length; i++) {
+    const ev = obj.scheduledEvents[i] as Record<string, unknown> | null;
+    if (!ev || typeof ev !== "object") {
+      return { ok: false, error: `Event at index ${i} is not an object.` };
+    }
+    if (typeof ev.id !== "string" || typeof ev.title !== "string" || typeof ev.scheduledAt !== "string") {
+      return { ok: false, error: `Event at index ${i} is missing id, title, or scheduledAt.` };
+    }
+  }
+
+  return { ok: true, data: obj as unknown as BackupFile };
+}
 
 export default function SettingsPage() {
   const tasksStore = useTasksStore();
@@ -42,36 +100,42 @@ export default function SettingsPage() {
   const handleImport = () => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = ".json";
+    input.accept = ".json,application/json";
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
 
+      // Cap at 10MB to prevent OOM on malicious/corrupt files
+      if (file.size > 10 * 1024 * 1024) {
+        alert("Backup file is too large (max 10MB).");
+        return;
+      }
+
+      let parsed: unknown;
       try {
         const text = await file.text();
-        const data = JSON.parse(text);
+        parsed = JSON.parse(text);
+      } catch {
+        alert("Could not parse the file. Is it valid JSON?");
+        return;
+      }
 
-        // Validate data structure
-        if (!data.version) {
-          alert("Invalid backup file format");
-          return;
-        }
+      const result = validateBackup(parsed);
+      if (!result.ok) {
+        alert(`Invalid backup file: ${result.error}`);
+        return;
+      }
 
-        // Import tasks
-        if (data.tasks) {
-          tasksStore.setTasks(data.tasks);
-        }
-
-        // Import scheduled events
-        if (data.scheduledEvents) {
-          scheduledEventsStore.setEvents(data.scheduledEvents);
-        }
-
-        alert("Data imported successfully! Page will reload to apply changes.");
+      try {
+        tasksStore.setTasks(result.data.tasks);
+        scheduledEventsStore.setEvents(result.data.scheduledEvents);
+        alert(
+          `Imported ${result.data.tasks.length} task(s) and ${result.data.scheduledEvents.length} event(s). Reloading to apply changes.`
+        );
         window.location.reload();
       } catch (error) {
         console.error("Import error:", error);
-        alert("Failed to import data. Please check the file format.");
+        alert("Failed to apply imported data. Your existing data was not changed.");
       }
     };
     input.click();
@@ -107,7 +171,7 @@ export default function SettingsPage() {
     <div className="flex flex-col min-h-screen">
       <Header />
 
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-6 page-mount">
         <div className="max-w-3xl mx-auto space-y-6">
           <h1 className="text-2xl font-bold">Settings</h1>
 

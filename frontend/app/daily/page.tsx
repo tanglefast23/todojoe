@@ -252,7 +252,7 @@ export default function DailyPage() {
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
 
-      <main className="flex-1 p-4 pb-24">
+      <main className="flex-1 p-4 pb-24 page-mount">
         <div className="max-w-lg mx-auto space-y-4">
           {/* Loading State */}
           {loading && !data && (

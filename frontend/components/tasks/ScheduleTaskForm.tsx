@@ -174,14 +174,14 @@ export function ScheduleTaskForm({ onScheduleTask, disabled = false }: ScheduleT
                 {/* Hour Selection */}
                 <div>
                   <label className="text-sm font-medium text-muted-foreground mb-2 block">Hour</label>
-                  <div className="grid grid-cols-6 gap-2">
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                     {hours.map((hour) => (
                       <button
                         key={hour}
                         type="button"
                         onClick={() => setSelectedHour(hour)}
                         className={cn(
-                          "p-3 rounded-lg text-sm font-medium transition-all",
+                          "min-h-11 p-3 rounded-lg text-sm font-medium transition-all",
                           selectedHour === hour
                             ? "bg-indigo-500 text-white"
                             : "bg-muted hover:bg-muted/80"
@@ -203,7 +203,7 @@ export function ScheduleTaskForm({ onScheduleTask, disabled = false }: ScheduleT
                         type="button"
                         onClick={() => setSelectedMinute(minute)}
                         className={cn(
-                          "p-3 rounded-lg text-sm font-medium transition-all",
+                          "min-h-11 p-3 rounded-lg text-sm font-medium transition-all",
                           selectedMinute === minute
                             ? "bg-indigo-500 text-white"
                             : "bg-muted hover:bg-muted/80"
@@ -225,7 +225,7 @@ export function ScheduleTaskForm({ onScheduleTask, disabled = false }: ScheduleT
                         type="button"
                         onClick={() => setSelectedPeriod(period)}
                         className={cn(
-                          "p-3 rounded-lg text-sm font-medium transition-all",
+                          "min-h-11 p-3 rounded-lg text-sm font-medium transition-all",
                           selectedPeriod === period
                             ? "bg-indigo-500 text-white"
                             : "bg-muted hover:bg-muted/80"

@@ -40,8 +40,10 @@ export function AddTaskForm({ onAddTask, disabled = false }: AddTaskFormProps) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="What needs to be done?"
+          aria-label="New task"
           disabled={disabled}
           rows={2}
+          maxLength={500}
           className="w-full bg-transparent text-base outline-none placeholder:text-muted-foreground resize-none leading-relaxed"
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey && window.innerWidth >= 768) {

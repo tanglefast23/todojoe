@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useRef } from "react";
+import { useCallback, useState, useRef, useEffect } from "react";
 import { apiHeaders } from "@/lib/api-key";
 import { Header } from "@/components/layout/Header";
 import { AddTaskForm } from "@/components/tasks/AddTaskForm";
@@ -39,6 +39,20 @@ export default function EntryPage() {
   const [createdEvent, setCreatedEvent] = useState<CreatedEventResult | null>(null);
   const nlEventInputRef = useRef<HTMLInputElement>(null);
 
+  // Auto-dismiss the Quick Add success card 5s after it appears.
+  // Tied to the success state (not the submit handler) so it runs correctly
+  // under React Strict Mode, survives re-renders, and cleans up on a new
+  // submit or unmount without manual ref management.
+  useEffect(() => {
+    if (!nlEventSuccess) return;
+    const id = setTimeout(() => {
+      setNlEventSuccess(null);
+      setParsedEvent(null);
+      setCreatedEvent(null);
+    }, 5000);
+    return () => clearTimeout(id);
+  }, [nlEventSuccess]);
+
   // Calendar image upload state
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,6 +90,11 @@ export default function EntryPage() {
       setCreatedEvent(data.event ?? null);
       setNlEventSuccess(data.message);
       setNlEventText("");
+
+      // Return focus to the input so the user can immediately type the
+      // next event without hunting for it (esp. on mobile where the
+      // soft keyboard may have been dismissed on submit).
+      nlEventInputRef.current?.focus();
     } catch (err) {
       setNlEventError(err instanceof Error ? err.message : "Failed to create event");
     } finally {
@@ -187,8 +206,8 @@ export default function EntryPage() {
     <div className="flex flex-col min-h-screen">
       <Header />
 
-      <main className="flex-1 p-5 md:p-6">
-        <div className="max-w-3xl mx-auto space-y-7">
+      <main className="flex-1 p-4 sm:p-5 md:p-6 page-mount">
+        <div className="max-w-3xl mx-auto space-y-6 sm:space-y-7">
           {/* Task Section */}
           <section className="space-y-3">
             <span className="text-[13px] font-semibold tracking-wide text-indigo-400">
@@ -210,9 +229,9 @@ export default function EntryPage() {
             <span className="text-[13px] font-semibold tracking-wide text-indigo-400">
               Quick Add
             </span>
-            <div className="bg-card border border-border rounded-xl p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="bg-card border border-border rounded-xl p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                   <Sparkles className="h-5 w-5 text-indigo-400 flex-shrink-0" />
                   <input
                     ref={nlEventInputRef}
@@ -220,14 +239,16 @@ export default function EntryPage() {
                     value={nlEventText}
                     onChange={(e) => setNlEventText(e.target.value)}
                     onKeyDown={handleNlEventKeyDown}
-                    placeholder="Dentist tomorrow at 3pm at 123 Main St..."
-                    className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground min-w-0"
+                    placeholder="Dentist tomorrow at 3pm..."
+                    aria-label="Describe a calendar event in natural language"
+                    className="flex-1 bg-transparent text-sm outline-none min-w-0 placeholder:text-muted-foreground/50 placeholder:italic placeholder:font-light"
                     disabled={nlEventLoading}
                   />
                   {nlEventText && !nlEventLoading && (
                     <button
                       onClick={() => setNlEventText("")}
-                      className="p-1 hover:bg-muted rounded"
+                      aria-label="Clear input"
+                      className="p-2 -m-1 hover:bg-muted rounded flex items-center justify-center flex-shrink-0"
                     >
                       <X className="h-4 w-4 text-muted-foreground" />
                     </button>
@@ -236,7 +257,8 @@ export default function EntryPage() {
                 <button
                   onClick={handleNlEventSubmit}
                   disabled={!nlEventText.trim() || nlEventLoading}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-500 text-white text-sm font-medium transition-all hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                  aria-label={nlEventLoading ? "Creating event" : "Add event"}
+                  className="flex items-center gap-1.5 h-11 px-3 sm:px-4 rounded-lg bg-indigo-500 text-white text-sm font-medium transition-all hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                 >
                   {nlEventLoading ? (
                     <>
@@ -246,7 +268,7 @@ export default function EntryPage() {
                   ) : (
                     <>
                       <CalendarPlus className="h-4 w-4" />
-                      <span>Add</span>
+                      <span className="hidden sm:inline">Add</span>
                     </>
                   )}
                 </button>
@@ -305,18 +327,19 @@ export default function EntryPage() {
             <span className="text-[13px] font-semibold tracking-wide text-indigo-400">
               From Image
             </span>
-            <div className="bg-card border border-border rounded-xl p-4">
+            <div className="bg-card border border-border rounded-xl p-3 sm:p-4">
               {/* Image Preview */}
               {imagePreview && (
-                <div className="mb-4 relative inline-block">
+                <div className="mb-4 relative inline-block max-w-full">
                   <img
                     src={imagePreview}
                     alt="Upload preview"
-                    className="max-h-40 rounded-lg border border-border"
+                    className="max-h-40 max-w-full rounded-lg border border-border"
                   />
                   {!isLoading && (
                     <button
                       onClick={removeImage}
+                      aria-label="Remove image"
                       className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg"
                     >
                       <X className="w-4 h-4" />
@@ -333,11 +356,11 @@ export default function EntryPage() {
                 onChange={handleCalendarImageUpload}
                 className="hidden"
               />
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                 <button
                   onClick={() => calendarFileInputRef.current?.click()}
                   disabled={isLoading}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-card border border-border text-indigo-400 text-sm font-medium transition-all hover:bg-muted disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 h-11 px-4 rounded-lg bg-card border border-border text-indigo-400 text-sm font-medium transition-all hover:bg-muted disabled:opacity-50 flex-shrink-0 self-start sm:self-auto"
                 >
                   {isLoading ? (
                     <>
