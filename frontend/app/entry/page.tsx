@@ -8,7 +8,7 @@ import { ScheduleTaskForm } from "@/components/tasks/ScheduleTaskForm";
 import { useTasksStore } from "@/stores/tasksStore";
 import { useScheduledEventsStore } from "@/stores/scheduledEventsStore";
 import { Button } from "@/components/ui/button";
-import { CalendarPlus, Loader2, X, CheckCircle2, Sparkles, Calendar } from "lucide-react";
+import { CalendarPlus, Loader2, X, CheckCircle2, Zap, Calendar } from "lucide-react";
 import type { TaskPriority } from "@/types/tasks";
 
 interface ParsedEventResult {
@@ -232,7 +232,7 @@ export default function EntryPage() {
             <div className="bg-card border border-border rounded-xl p-3 sm:p-4">
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                  <Sparkles className="h-5 w-5 text-indigo-400 flex-shrink-0" />
+                  <Zap className="h-5 w-5 text-indigo-400 flex-shrink-0" />
                   <input
                     ref={nlEventInputRef}
                     type="text"
