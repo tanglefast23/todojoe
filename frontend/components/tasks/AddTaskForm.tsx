@@ -12,7 +12,9 @@ interface AddTaskFormProps {
 export function AddTaskForm({ onAddTask, disabled = false }: AddTaskFormProps) {
   const [title, setTitle] = useState("");
   const [pressedButton, setPressedButton] = useState<TaskPriority | null>(null);
+  const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Auto-focus textarea on mount
   useEffect(() => {
@@ -44,9 +46,18 @@ export function AddTaskForm({ onAddTask, disabled = false }: AddTaskFormProps) {
   };
 
   return (
-    <div className="space-y-3">
+    <div
+      ref={containerRef}
+      className="space-y-3"
+      onFocus={() => setIsFocused(true)}
+      onBlur={(e) => {
+        if (!containerRef.current?.contains(e.relatedTarget as Node)) {
+          setIsFocused(false);
+        }
+      }}
+    >
       {/* Card-style input container - matches Pencil design */}
-      <div className="bg-card border border-border rounded-xl p-4">
+      <div className="bg-card border-[3px] border-border rounded-xl p-4">
         <textarea
           ref={textareaRef}
           value={title}
@@ -69,10 +80,12 @@ export function AddTaskForm({ onAddTask, disabled = false }: AddTaskFormProps) {
         />
       </div>
 
-      {/* Priority Action Buttons - outline style matching Pencil design */}
+      {/* Priority Action Buttons - only visible when the task field is focused */}
+      {isFocused && (
       <div className="flex gap-3">
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => createTask("regular")}
           disabled={disabled || !title.trim()}
           className={cn(
@@ -88,6 +101,7 @@ export function AddTaskForm({ onAddTask, disabled = false }: AddTaskFormProps) {
         </button>
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => createTask("urgent")}
           disabled={disabled || !title.trim()}
           className={cn(
@@ -102,6 +116,7 @@ export function AddTaskForm({ onAddTask, disabled = false }: AddTaskFormProps) {
           Urgent
         </button>
       </div>
+      )}
     </div>
   );
 }
