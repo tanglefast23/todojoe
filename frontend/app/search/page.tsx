@@ -179,41 +179,50 @@ export default function SearchPage() {
           </div>
 
           {/* Calendar/Email Search Input */}
-          <div className="bg-card border border-border rounded-xl p-4">
-            <div className="flex items-center gap-3">
-              <Sparkles className="h-5 w-5 text-indigo-400 flex-shrink-0" />
-              <input
-                ref={calendarInputRef}
-                type="text"
-                value={calendarQuery}
-                onChange={(e) => setCalendarQuery(e.target.value)}
-                onKeyDown={handleCalendarKeyDown}
-                placeholder="Ask about your calendar or emails..."
-                aria-label="Search calendar and emails"
-                className="flex-1 bg-transparent text-lg outline-none placeholder:text-muted-foreground"
-                disabled={isCalendarLoading}
-              />
-              {calendarQuery && !isCalendarLoading && (
-                <button
-                  onClick={() => setCalendarQuery("")}
-                  className="p-1 hover:bg-muted rounded"
-                >
-                  <X className="h-4 w-4 text-muted-foreground" />
-                </button>
-              )}
+          <div className="bg-card border border-border rounded-xl p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                <Sparkles className="h-5 w-5 text-indigo-400 flex-shrink-0" />
+                <input
+                  ref={calendarInputRef}
+                  type="text"
+                  value={calendarQuery}
+                  onChange={(e) => setCalendarQuery(e.target.value)}
+                  onKeyDown={handleCalendarKeyDown}
+                  placeholder="Ask about your calendar or emails..."
+                  aria-label="Search calendar and emails"
+                  className="flex-1 bg-transparent text-sm sm:text-base outline-none min-w-0 placeholder:text-muted-foreground"
+                  disabled={isCalendarLoading}
+                />
+                {calendarQuery && !isCalendarLoading && (
+                  <button
+                    onClick={() => setCalendarQuery("")}
+                    aria-label="Clear input"
+                    className="p-2 -m-1 hover:bg-muted rounded flex items-center justify-center flex-shrink-0"
+                  >
+                    <X className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                )}
+              </div>
 
-              <Button
+              <button
                 onClick={handleCalendarSearch}
                 disabled={!calendarQuery.trim() || isCalendarLoading}
-                className="bg-indigo-500 hover:bg-indigo-600"
+                aria-label={isCalendarLoading ? "Searching" : "Search"}
+                className="flex items-center gap-1.5 h-11 px-3 sm:px-4 rounded-lg bg-indigo-500 text-white text-sm font-medium transition-all hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
               >
                 {isCalendarLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="hidden sm:inline">Searching...</span>
+                  </>
                 ) : (
-                  <Search className="h-4 w-4 mr-2" />
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    <span className="hidden sm:inline">Search</span>
+                  </>
                 )}
-                {isCalendarLoading ? "Searching..." : "Search"}
-              </Button>
+              </button>
             </div>
 
             {/* Calendar Error */}
@@ -250,7 +259,7 @@ export default function SearchPage() {
           </div>
 
           {/* Attachment Search Input */}
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="bg-card border border-border rounded-xl p-3 sm:p-4">
             {/* Image Preview */}
             {imagePreview && (
               <div className="mb-3 relative inline-block">
@@ -268,27 +277,30 @@ export default function SearchPage() {
               </div>
             )}
 
-            <div className="flex items-center gap-3">
-              <Paperclip className="h-5 w-5 text-indigo-400 flex-shrink-0" />
-              <input
-                ref={attachmentInputRef}
-                type="text"
-                value={attachmentQuery}
-                onChange={(e) => setAttachmentQuery(e.target.value)}
-                onKeyDown={handleAttachmentKeyDown}
-                placeholder={image ? "Ask about this image..." : "Ask about an attachment..."}
-                aria-label={image ? "Ask about the uploaded image" : "Ask about an attachment"}
-                className="flex-1 bg-transparent text-lg outline-none placeholder:text-muted-foreground"
-                disabled={isAttachmentLoading}
-              />
-              {attachmentQuery && !isAttachmentLoading && (
-                <button
-                  onClick={() => setAttachmentQuery("")}
-                  className="p-1 hover:bg-muted rounded"
-                >
-                  <X className="h-4 w-4 text-muted-foreground" />
-                </button>
-              )}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                <Paperclip className="h-5 w-5 text-indigo-400 flex-shrink-0" />
+                <input
+                  ref={attachmentInputRef}
+                  type="text"
+                  value={attachmentQuery}
+                  onChange={(e) => setAttachmentQuery(e.target.value)}
+                  onKeyDown={handleAttachmentKeyDown}
+                  placeholder={image ? "Ask about this image..." : "Ask about an attachment..."}
+                  aria-label={image ? "Ask about the uploaded image" : "Ask about an attachment"}
+                  className="flex-1 bg-transparent text-sm sm:text-base outline-none min-w-0 placeholder:text-muted-foreground"
+                  disabled={isAttachmentLoading}
+                />
+                {attachmentQuery && !isAttachmentLoading && (
+                  <button
+                    onClick={() => setAttachmentQuery("")}
+                    aria-label="Clear input"
+                    className="p-2 -m-1 hover:bg-muted rounded flex items-center justify-center flex-shrink-0"
+                  >
+                    <X className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                )}
+              </div>
 
               {/* Image Upload Button */}
               <input
@@ -298,37 +310,41 @@ export default function SearchPage() {
                 onChange={handleImageUpload}
                 className="hidden"
               />
-              <Button
-                variant="ghost"
-                size="icon"
+              <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isAttachmentLoading}
-                className={cn(
-                  "flex-shrink-0 min-w-[44px] min-h-[44px]",
-                  image && "text-indigo-400"
-                )}
                 title="Attach image"
                 aria-label="Attach image"
+                className={cn(
+                  "flex items-center justify-center h-11 w-11 rounded-lg hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0",
+                  image && "text-indigo-400"
+                )}
               >
                 {image ? (
                   <ImageIcon className="h-5 w-5" />
                 ) : (
                   <ImagePlus className="h-5 w-5" />
                 )}
-              </Button>
+              </button>
 
-              <Button
+              <button
                 onClick={handleAttachmentSearch}
                 disabled={!image || isAttachmentLoading}
-                className="bg-indigo-500 hover:bg-indigo-600"
+                aria-label={isAttachmentLoading ? "Analyzing" : "Analyze"}
+                className="flex items-center gap-1.5 h-11 px-3 sm:px-4 rounded-lg bg-indigo-500 text-white text-sm font-medium transition-all hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
               >
                 {isAttachmentLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="hidden sm:inline">Analyzing...</span>
+                  </>
                 ) : (
-                  <Search className="h-4 w-4 mr-2" />
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    <span className="hidden sm:inline">Analyze</span>
+                  </>
                 )}
-                {isAttachmentLoading ? "Analyzing..." : "Analyze"}
-              </Button>
+              </button>
             </div>
 
             {/* Attachment Error */}
