@@ -158,11 +158,11 @@ export const ScheduledEventItem = memo(function ScheduledEventItem({
   const isInteractive = Boolean(event.htmlLink);
 
   return (
-    <div className="relative overflow-hidden rounded-xl">
+    <div className="relative overflow-hidden rounded-lg">
       {/* Delete zone revealed on left swipe — fades in with drag distance */}
       {canDelete && (
         <div
-          className="absolute inset-0 flex items-center justify-end bg-red-500 rounded-xl pr-6 pointer-events-none"
+          className="absolute inset-0 flex items-center justify-end bg-red-500 rounded-lg pr-6 pointer-events-none"
           style={{ opacity: deleteBgOpacity }}
         >
           <button
@@ -205,7 +205,7 @@ export const ScheduledEventItem = memo(function ScheduledEventItem({
           borderColor: `${eventColor.hex}66`,
         }}
         className={cn(
-          "relative flex flex-col gap-1 p-2.5 rounded-lg border select-none",
+          "relative flex flex-col gap-1 p-2.5 rounded-lg border-2 select-none",
           isCompleted && "opacity-60",
           isInteractive && "cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         )}
