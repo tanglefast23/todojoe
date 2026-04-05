@@ -4,10 +4,10 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import DOMPurify from "isomorphic-dompurify";
 import { apiHeaders } from "@/lib/api-key";
 import { Header } from "@/components/layout/Header";
-import { Mail, RefreshCw, Trash2, Archive, ChevronRight, AlertCircle, Inbox } from "lucide-react";
+import { Mail, RefreshCw, Trash2, Archive, AlertCircle, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SwipeableEmailCard } from "@/components/gmail/SwipeableEmailCard";
 import { cn } from "@/lib/utils";
-import { formatDistanceToNow } from "date-fns";
 import type { GmailMessage, GmailMessageFull } from "@/types/gmail";
 
 // Email bodies are untrusted. Strip scripts, iframes, event handlers,
@@ -208,81 +208,15 @@ export default function GmailPage() {
           {!isLoading && !error && emails.length > 0 && (
             <div className="space-y-3">
               {emails.map((email) => (
-                <div
+                <SwipeableEmailCard
                   key={email.gmailId}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`Open email: ${email.subject || "No subject"} from ${email.fromName || email.fromEmail || "Unknown sender"}`}
-                  className={cn(
-                    "group relative rounded-xl border-2 p-4 transition-all cursor-pointer",
-                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                    email.isUnread
-                      ? "bg-gradient-to-r from-blue-500/15 to-sky-500/15 border-blue-400/40"
-                      : "bg-card/50 border-border/50",
-                    "hover:border-blue-400/50",
-                    selectedEmail?.gmailId === email.gmailId && "ring-2 ring-blue-400"
-                  )}
-                  onClick={() => fetchEmailDetail(email.gmailId)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      fetchEmailDetail(email.gmailId);
-                    }
-                  }}
-                >
-                  <div className="flex items-start gap-3">
-                    {/* Unread indicator dot */}
-                    {email.isUnread && (
-                      <div className="w-2 h-2 rounded-full bg-blue-400 mt-2 flex-shrink-0" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={cn(
-                          "truncate",
-                          email.isUnread ? "font-semibold" : "font-normal text-muted-foreground"
-                        )}>
-                          {email.fromName || email.fromEmail || "Unknown sender"}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(email.receivedAt), { addSuffix: true })}
-                        </span>
-                      </div>
-                      <p className={cn(
-                        "text-lg truncate",
-                        email.isUnread ? "font-semibold" : "font-normal"
-                      )}>
-                        {email.subject || "(No subject)"}
-                      </p>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                        {getPreview(email.snippet)}
-                      </p>
-                    </div>
-                    {/* Action buttons and chevron */}
-                    <div className="flex items-center gap-2 flex-shrink-0 mt-1">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteEmail(email.gmailId);
-                        }}
-                        className="w-8 h-8 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center transition-colors hover:bg-red-500/40 active:scale-95"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          archiveEmail(email.gmailId);
-                        }}
-                        className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center transition-colors hover:bg-amber-500/40 active:scale-95"
-                        title="Archive"
-                      >
-                        <Archive className="w-4 h-4" />
-                      </button>
-                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                  </div>
-                </div>
+                  email={email}
+                  isSelected={selectedEmail?.gmailId === email.gmailId}
+                  onOpen={() => fetchEmailDetail(email.gmailId)}
+                  onDelete={() => deleteEmail(email.gmailId)}
+                  onArchive={() => archiveEmail(email.gmailId)}
+                  getPreview={getPreview}
+                />
               ))}
             </div>
           )}
