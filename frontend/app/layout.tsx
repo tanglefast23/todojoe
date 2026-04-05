@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   description: "Manage tasks, calendar, and emails",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "JV To Do",
   },
   icons: {
@@ -42,7 +42,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: "cover",
-  themeColor: "#09090b",
+  themeColor: "#f7f7f7",
 };
 
 export default function RootLayout({

@@ -213,13 +213,12 @@ export const TaskItem = memo(function TaskItem({
           isCompleted && "opacity-70"
         )}
       >
-        {/* Top row: Time info and attachment */}
+        {/* Top row: Completed indicator (when completed) + attachment */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>{formatDistanceToNow(new Date(task.createdAt), { addSuffix: true })}</span>
             {isCompleted && task.completedAt && (
-              <span className="ml-2">
-                &#8226; Completed {formatDistanceToNow(new Date(task.completedAt), { addSuffix: true })}
+              <span>
+                Completed {formatDistanceToNow(new Date(task.completedAt), { addSuffix: true })}
               </span>
             )}
           </div>
@@ -301,10 +300,17 @@ export const TaskItem = memo(function TaskItem({
                   className="flex-1 min-w-0 bg-transparent font-medium outline-none resize-none leading-snug border-b border-dashed border-foreground/40 focus:border-foreground"
                 />
               ) : (
-                <button
-                  type="button"
+                <span
+                  role={canEdit ? "button" : undefined}
+                  tabIndex={canEdit ? 0 : undefined}
                   onClick={startEditing}
-                  disabled={!canEdit}
+                  onKeyDown={(e) => {
+                    if (!canEdit) return;
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      startEditing();
+                    }
+                  }}
                   className={cn(
                     "flex-1 min-w-0 text-left font-medium break-words whitespace-pre-wrap rounded",
                     "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
@@ -312,10 +318,10 @@ export const TaskItem = memo(function TaskItem({
                     !canEdit && "cursor-default",
                     isCompleted && "line-through"
                   )}
-                  aria-label={canEdit ? `Edit task: ${task.title}` : task.title}
+                  aria-label={canEdit ? `Edit task: ${task.title}` : undefined}
                 >
                   {task.title}
-                </button>
+                </span>
               )}
               {task.priority === "urgent" && (
                 <Badge className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 shadow-sm flex-shrink-0">

@@ -143,17 +143,12 @@ export const ScheduledEventItem = memo(function ScheduledEventItem({
           isInteractive && "cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         )}
       >
-        {/* Top row: Created time */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>Created {formatDistanceToNow(new Date(event.createdAt), { addSuffix: true })}</span>
-            {isCompleted && event.completedAt && (
-              <span className="ml-2">
-                &#8226; Completed {formatDistanceToNow(new Date(event.completedAt), { addSuffix: true })}
-              </span>
-            )}
+        {/* Completed indicator (only when completed) */}
+        {isCompleted && event.completedAt && (
+          <div className="text-xs text-muted-foreground">
+            Completed {formatDistanceToNow(new Date(event.completedAt), { addSuffix: true })}
           </div>
-        </div>
+        )}
 
         {/* Main content row: event title */}
         <div className="flex items-start gap-2 flex-wrap">
