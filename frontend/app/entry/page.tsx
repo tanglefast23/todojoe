@@ -19,6 +19,10 @@ interface ParsedEventResult {
   description?: string;
 }
 
+interface CreatedEventResult {
+  htmlLink?: string | null;
+}
+
 export default function EntryPage() {
   // Task store actions
   const addTask = useTasksStore((state) => state.addTask);
@@ -32,6 +36,7 @@ export default function EntryPage() {
   const [nlEventError, setNlEventError] = useState<string | null>(null);
   const [nlEventSuccess, setNlEventSuccess] = useState<string | null>(null);
   const [parsedEvent, setParsedEvent] = useState<ParsedEventResult | null>(null);
+  const [createdEvent, setCreatedEvent] = useState<CreatedEventResult | null>(null);
   const nlEventInputRef = useRef<HTMLInputElement>(null);
 
   // Calendar image upload state
@@ -49,6 +54,7 @@ export default function EntryPage() {
     setNlEventError(null);
     setNlEventSuccess(null);
     setParsedEvent(null);
+    setCreatedEvent(null);
 
     try {
       const res = await fetch("/api/events/parse", {
@@ -67,6 +73,7 @@ export default function EntryPage() {
       }
 
       setParsedEvent(data.parsed);
+      setCreatedEvent(data.event ?? null);
       setNlEventSuccess(data.message);
       setNlEventText("");
     } catch (err) {
@@ -254,19 +261,41 @@ export default function EntryPage() {
 
               {/* Success */}
               {nlEventSuccess && parsedEvent && (
-                <div className="mt-3 p-3 text-green-400 bg-green-500/10 rounded-lg text-sm">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <div className="font-medium">{nlEventSuccess}</div>
-                      {parsedEvent.description && (
-                        <div className="text-green-400/70 text-xs mt-1">
-                          Description: {parsedEvent.description}
-                        </div>
-                      )}
+                (() => {
+                  const htmlLink = createdEvent?.htmlLink;
+                  const content = (
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <div className="font-medium">{nlEventSuccess}</div>
+                        {parsedEvent.description && (
+                          <div className="text-green-400/70 text-xs mt-1">
+                            Description: {parsedEvent.description}
+                          </div>
+                        )}
+                        {htmlLink && (
+                          <div className="text-green-400/60 text-xs mt-1">
+                            Tap to open in Google Calendar
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  );
+                  return htmlLink ? (
+                    <a
+                      href={htmlLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 p-3 text-green-400 bg-green-500/10 rounded-lg text-sm block transition-colors hover:bg-green-500/20"
+                    >
+                      {content}
+                    </a>
+                  ) : (
+                    <div className="mt-3 p-3 text-green-400 bg-green-500/10 rounded-lg text-sm">
+                      {content}
+                    </div>
+                  );
+                })()
               )}
             </div>
           </section>

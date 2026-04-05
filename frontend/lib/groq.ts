@@ -200,14 +200,19 @@ export interface ParsedEvent {
   description?: string; // Address, phone, details
 }
 
-export async function parseNaturalLanguageEvent(text: string): Promise<ParsedEvent> {
+export async function parseNaturalLanguageEvent(text: string, timeZone?: string): Promise<ParsedEvent> {
   if (!GROQ_API_KEY) {
     throw new Error("Groq API key not configured");
   }
 
+  // Compute "today" in the user's timezone, not the server's UTC.
+  // Without this, a user in PST at 10pm Sunday sees the server think it's Monday,
+  // which shifts "Tuesday" and other day-of-week references by a day.
   const today = new Date();
-  const todayStr = today.toISOString().split("T")[0];
-  const dayOfWeek = today.toLocaleDateString("en-US", { weekday: "long" });
+  const tz = timeZone || "UTC";
+  // en-CA locale gives YYYY-MM-DD formatting
+  const todayStr = today.toLocaleDateString("en-CA", { timeZone: tz });
+  const dayOfWeek = today.toLocaleDateString("en-US", { timeZone: tz, weekday: "long" });
 
   const systemPrompt = `You are an event parser. Extract calendar event details from natural language.
 Today is ${dayOfWeek}, ${todayStr}.

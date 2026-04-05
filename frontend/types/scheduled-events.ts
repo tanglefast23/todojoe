@@ -13,6 +13,7 @@ export interface ScheduledEvent {
   source: ScheduledEventSource;
   googleEventId?: string | null;
   googleCalendarId?: string | null;
+  htmlLink?: string | null; // URL to open the event in Google Calendar
   lastSyncedAt?: string | null;
   updatedAt: string;
 }

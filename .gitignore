@@ -34,3 +34,4 @@ build/
 frontend/token.json
 credentials2.json
 .vercel
+.env*.local

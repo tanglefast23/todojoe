@@ -37,7 +37,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const parsed = await parseNaturalLanguageEvent(text.trim());
+    // Parse natural language to extract event details (timezone-aware)
+    const parsed = await parseNaturalLanguageEvent(text.trim(), timeZone);
 
     const startDateTime = `${parsed.date}T${parsed.time}:00`;
     let endDateTime: string | undefined;

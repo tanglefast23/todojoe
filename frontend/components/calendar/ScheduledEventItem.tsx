@@ -62,6 +62,15 @@ export const ScheduledEventItem = memo(function ScheduledEventItem({
     setShowDeleteConfirm(true);
   };
 
+  // Tap the card body to open the event in Google Calendar (if it has a link).
+  // Clicks on the checkbox, delete button, etc. stopPropagation so this doesn't fire.
+  const handleCardClick = () => {
+    if (showDeleteConfirm) return;
+    if (event.htmlLink) {
+      window.open(event.htmlLink, "_blank", "noopener,noreferrer");
+    }
+  };
+
   // Determine if this is a Google Calendar event or a local (app-created) event
   const isGoogleEvent = event.source === "google";
 
@@ -106,8 +115,10 @@ export const ScheduledEventItem = memo(function ScheduledEventItem({
         "relative flex flex-col gap-2 p-4 rounded-xl border-2 transition-all",
         getCardStyle(),
         isCompleted && "opacity-70",
-        showDeleteConfirm && "ring-2 ring-destructive"
+        showDeleteConfirm && "ring-2 ring-destructive",
+        event.htmlLink && "cursor-pointer"
       )}
+      onClick={handleCardClick}
       onTouchStart={handlePressStart}
       onTouchEnd={handlePressEnd}
       onMouseDown={handlePressStart}
@@ -143,16 +154,18 @@ export const ScheduledEventItem = memo(function ScheduledEventItem({
 
       {/* Main content row: Checkbox and event description */}
       <div className="flex items-start gap-3">
-        <Checkbox
-          checked={isCompleted}
-          onCheckedChange={handleCheckChange}
-          disabled={!canComplete}
-          className={cn(
-            "h-5 w-5 border-2 mt-0.5 flex-shrink-0",
-            getAccentColor(),
-            isCompleted && "data-[state=checked]:bg-emerald-500"
-          )}
-        />
+        <div onClick={(e) => e.stopPropagation()}>
+          <Checkbox
+            checked={isCompleted}
+            onCheckedChange={handleCheckChange}
+            disabled={!canComplete}
+            className={cn(
+              "h-5 w-5 border-2 mt-0.5 flex-shrink-0",
+              getAccentColor(),
+              isCompleted && "data-[state=checked]:bg-emerald-500"
+            )}
+          />
+        </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start gap-2 flex-wrap">
@@ -178,7 +191,7 @@ export const ScheduledEventItem = memo(function ScheduledEventItem({
       </div>
 
       {showDeleteConfirm && (
-        <div className="flex gap-2">
+        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => onDelete(event.id)}
             className="px-2 py-1 text-xs bg-destructive text-destructive-foreground rounded"

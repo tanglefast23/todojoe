@@ -5,7 +5,6 @@ import { apiHeaders } from "@/lib/api-key";
 import { Header } from "@/components/layout/Header";
 import { Mail, RefreshCw, Trash2, Archive, ChevronRight, AlertCircle, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { LongPressButton } from "@/components/ui/long-press-button";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import type { GmailMessage, GmailMessageFull } from "@/types/gmail";
@@ -201,26 +200,28 @@ export default function GmailPage() {
                         {getPreview(email.snippet)}
                       </p>
                     </div>
-                    {/* Action buttons and chevron - long press to activate */}
+                    {/* Action buttons and chevron */}
                     <div className="flex items-center gap-2 flex-shrink-0 mt-1">
-                      <LongPressButton
-                        onLongPress={() => deleteEmail(email.gmailId)}
-                        duration={800}
-                        className="w-8 h-8 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center transition-colors"
-                        activeClassName="bg-red-500/40 scale-110"
-                        title="Hold to delete"
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteEmail(email.gmailId);
+                        }}
+                        className="w-8 h-8 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center transition-colors hover:bg-red-500/40 active:scale-95"
+                        title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />
-                      </LongPressButton>
-                      <LongPressButton
-                        onLongPress={() => archiveEmail(email.gmailId)}
-                        duration={800}
-                        className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center transition-colors"
-                        activeClassName="bg-amber-500/40 scale-110"
-                        title="Hold to archive"
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          archiveEmail(email.gmailId);
+                        }}
+                        className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center transition-colors hover:bg-amber-500/40 active:scale-95"
+                        title="Archive"
                       >
                         <Archive className="w-4 h-4" />
-                      </LongPressButton>
+                      </button>
                       <ChevronRight className="h-5 w-5 text-muted-foreground" />
                     </div>
                   </div>
