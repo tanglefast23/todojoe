@@ -13,7 +13,6 @@ import {
   Loader2,
   AlertCircle,
   ExternalLink,
-  Gem,
   Cpu,
   Code,
   LineChart,
@@ -42,13 +41,6 @@ interface NewsItem {
   source?: string;
 }
 
-interface CommodityItem {
-  symbol: string;
-  name: string;
-  change: string;
-  isPositive: boolean;
-}
-
 interface InvestmentNewsItem {
   symbol: string;
   headline: string;
@@ -63,7 +55,6 @@ interface DailyData {
     gainers: StockItem[];
     losers: StockItem[];
   };
-  commodities: CommodityItem[];
   investmentNews: InvestmentNewsItem[];
   news: {
     vietnam: NewsItem[];
@@ -365,37 +356,6 @@ export default function DailyPage() {
                   </div>
                 </div>
               </section>
-
-              {/* Commodities Section */}
-              {data.commodities && data.commodities.length > 0 && (
-                <section className="bg-card border border-border rounded-2xl p-4 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Gem className="h-5 w-5 text-cyan-500" />
-                    <h2 className="font-semibold">Commodities</h2>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    {data.commodities.map((item) => (
-                      <div
-                        key={item.symbol}
-                        className="bg-muted/50 rounded-xl p-3 flex items-center justify-between"
-                      >
-                        <div>
-                          <span className="font-medium text-sm">{item.symbol}</span>
-                          <p className="text-xs text-muted-foreground">{item.name}</p>
-                        </div>
-                        <span
-                          className={cn(
-                            "text-sm font-semibold",
-                            item.isPositive ? "text-green-400" : "text-red-400"
-                          )}
-                        >
-                          {item.change}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
 
               {/* Investment News - Only shows if significant news exists */}
               {data.investmentNews && data.investmentNews.length > 0 && (

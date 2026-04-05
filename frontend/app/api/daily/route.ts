@@ -14,9 +14,6 @@ const STOCK_SYMBOLS: string[] = process.env.STOCK_TRACK_SYMBOLS
   ? process.env.STOCK_TRACK_SYMBOLS.split(",").map((s) => s.trim()).filter(Boolean)
   : ["AAPL", "MSFT", "NVDA", "TSLA", "META", "AMZN", "GOOG", "TSM"]; // minimal generic default
 
-// Commodity ETF symbols to track (mining/resources ETFs)
-const COMMODITY_SYMBOLS = ["SILJ", "URA", "COPX", "HBM"];
-
 // Investment symbols loaded from env — keeps positions out of the public repo
 // Set INVESTMENT_WATCH_SYMBOLS=GOOGL,MU,TSLA,... in .env.local
 const INVESTMENT_WATCH_SYMBOLS: string[] = process.env.INVESTMENT_WATCH_SYMBOLS
@@ -33,13 +30,6 @@ export interface NewsItem {
   headline: string;
   url: string;
   source?: string;
-}
-
-export interface CommodityItem {
-  symbol: string;
-  name: string;
-  change: string;
-  isPositive: boolean;
 }
 
 export interface InvestmentNewsItem {
@@ -62,7 +52,6 @@ export interface DailyData {
     gainers: { symbol: string; change: string }[];
     losers: { symbol: string; change: string }[];
   };
-  commodities: CommodityItem[];
   investmentNews: InvestmentNewsItem[];
   news: {
     vietnam: NewsItem[];
@@ -278,21 +267,12 @@ If no significant news is found for any of the tickers, return: {"items": []}`;
   }
 }
 
-// Commodity symbol to display name mapping
-const COMMODITY_NAMES: Record<string, string> = {
-  SILJ: "Silver Miners",
-  URA: "Uranium",
-  COPX: "Copper Miners",
-  HBM: "Hudbay Minerals",
-};
-
 export async function GET() {
   try {
     // Fetch all data in parallel
-    const [cryptoPrices, stockPrices, commodityPrices, news, investmentNews] = await Promise.all([
+    const [cryptoPrices, stockPrices, news, investmentNews] = await Promise.all([
       fetchCryptoPrices(CRYPTO_SYMBOLS),
       fetchStockPrices(STOCK_SYMBOLS),
-      fetchStockPrices(COMMODITY_SYMBOLS),
       fetchNews(),
       fetchInvestmentNews(),
     ]);
@@ -309,18 +289,9 @@ export async function GET() {
     // Calculate top movers from stock data
     const stocks = getTopMovers(stockPrices);
 
-    // Format commodity data for response
-    const commodities: CommodityItem[] = commodityPrices.map((item) => ({
-      symbol: item.symbol,
-      name: COMMODITY_NAMES[item.symbol] || item.symbol,
-      change: `${item.changePercent >= 0 ? "+" : ""}${item.changePercent.toFixed(2)}%`,
-      isPositive: item.changePercent >= 0,
-    }));
-
     const dailyData: DailyData = {
       crypto,
       stocks,
-      commodities,
       investmentNews,
       news,
       generatedAt: new Date().toISOString(),

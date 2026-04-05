@@ -143,7 +143,7 @@ export async function fetchStockPrices(
 }
 
 /**
- * Calculate top 3 gainers and losers from stock data
+ * Calculate top 5 gainers and losers from stock data
  */
 export function getTopMovers(stocks: StockPrice[]): TopMovers {
   // Sort by change percent
@@ -151,19 +151,19 @@ export function getTopMovers(stocks: StockPrice[]): TopMovers {
     (a, b) => b.changePercent - a.changePercent
   );
 
-  // Top 3 gainers (highest positive change)
+  // Top 5 gainers (highest positive change)
   const gainers = sorted
     .filter((s) => s.changePercent > 0)
-    .slice(0, 3)
+    .slice(0, 5)
     .map((s) => ({
       symbol: s.symbol,
       change: `+${s.changePercent.toFixed(2)}%`,
     }));
 
-  // Top 3 losers (most negative change)
+  // Top 5 losers (most negative change)
   const losers = sorted
     .filter((s) => s.changePercent < 0)
-    .slice(-3)
+    .slice(-5)
     .reverse()
     .map((s) => ({
       symbol: s.symbol,
