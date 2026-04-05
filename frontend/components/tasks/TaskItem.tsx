@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type MouseEvent as ReactMouseEvent } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, ImagePlus } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { uploadAttachment } from "@/lib/supabase/queries/storage";
@@ -22,9 +22,9 @@ interface TaskItemProps {
 }
 
 // Gmail-style swipe model — shared with ScheduledEventItem and SwipeableEmailCard
+// Swipe left past SWIPE_THRESHOLD → delete. Swipe right past SWIPE_THRESHOLD → attach.
 const SWIPE_THRESHOLD = 96;
 const DRAG_ACTIVATE_THRESHOLD = 8;
-const LONG_PRESS_MS = 500;
 
 export const TaskItem = memo(function TaskItem({
   task,
@@ -45,15 +45,11 @@ export const TaskItem = memo(function TaskItem({
   const isCompleted = task.status === "completed";
   const canEdit = Boolean(onUpdateTitle) && !isCompleted;
 
-  // Swipe-to-delete state
+  // Swipe state — left past threshold deletes, right past threshold attaches
   const [translateX, setTranslateX] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const dragStartX = useRef<number | null>(null);
   const didDrag = useRef(false);
-
-  // Long-press state
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const didLongPress = useRef(false);
 
   // Reset the draft if the task title changes externally (e.g., Supabase sync)
   useEffect(() => {
@@ -70,13 +66,6 @@ export const TaskItem = memo(function TaskItem({
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
   }, [isEditing]);
-
-  const clearLongPressTimer = useCallback(() => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  }, []);
 
   const openFilePicker = useCallback(() => {
     fileInputRef.current?.click();
@@ -120,15 +109,16 @@ export const TaskItem = memo(function TaskItem({
   };
 
   const startEditing = () => {
-    // Suppress the click if the user was actually swiping or long-pressing
-    if (didDrag.current || didLongPress.current) return;
+    // Suppress the click if the user was actually swiping
+    if (didDrag.current) return;
     if (!canEdit) return;
     setDraftTitle(task.title);
     setIsEditing(true);
   };
 
   const handlePointerDown = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
-    if (!canDelete) return;
+    // Swipe is enabled if either gesture target exists (delete OR attach)
+    if (!canDelete && !onAttachment) return;
     // Never start a drag while inline-editing — let the textarea take input
     if (isEditing) return;
     // Don't start drag on checkboxes, attachment buttons, etc.
@@ -137,33 +127,26 @@ export const TaskItem = memo(function TaskItem({
     if (e.button !== undefined && e.button !== 0) return;
     dragStartX.current = e.clientX;
     didDrag.current = false;
-    didLongPress.current = false;
     setIsAnimating(false);
     (e.currentTarget as HTMLDivElement).setPointerCapture?.(e.pointerId);
-
-    // Start long-press timer — triggers file picker if finger stays still
-    if (onAttachment) {
-      clearLongPressTimer();
-      longPressTimerRef.current = setTimeout(() => {
-        didLongPress.current = true;
-        openFilePicker();
-      }, LONG_PRESS_MS);
-    }
-  }, [canDelete, isEditing, onAttachment, clearLongPressTimer, openFilePicker]);
+  }, [canDelete, isEditing, onAttachment]);
 
   const handlePointerMove = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
     if (dragStartX.current === null) return;
     const dx = e.clientX - dragStartX.current;
-    const clamped = dx > 0 ? 0 : dx;
+    // Only allow directions the user is authorized to trigger:
+    // - left (negative) requires canDelete
+    // - right (positive) requires onAttachment
+    let clamped = dx;
+    if (dx < 0 && !canDelete) clamped = 0;
+    if (dx > 0 && !onAttachment) clamped = 0;
     if (Math.abs(clamped) > DRAG_ACTIVATE_THRESHOLD) {
       didDrag.current = true;
-      clearLongPressTimer(); // cancel long press if finger moved
     }
     setTranslateX(clamped);
-  }, [clearLongPressTimer]);
+  }, [canDelete, onAttachment]);
 
   const handlePointerUp = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
-    clearLongPressTimer();
     if (dragStartX.current === null) return;
     const dx = e.clientX - dragStartX.current;
     dragStartX.current = null;
@@ -174,13 +157,18 @@ export const TaskItem = memo(function TaskItem({
     }
     setIsAnimating(true);
 
-    if (dx <= -SWIPE_THRESHOLD) {
+    if (dx <= -SWIPE_THRESHOLD && canDelete) {
+      // Destructive swipe — fly out left, then delete
       setTranslateX(-window.innerWidth);
       setTimeout(() => onDelete(task.id), 200);
+    } else if (dx >= SWIPE_THRESHOLD && onAttachment) {
+      // Action swipe — snap back, then open file picker
+      setTranslateX(0);
+      openFilePicker();
     } else {
       setTranslateX(0);
     }
-  }, [task.id, onDelete, clearLongPressTimer]);
+  }, [task.id, onDelete, canDelete, onAttachment, openFilePicker]);
 
   const handleDeleteButtonClick = useCallback((e: ReactMouseEvent) => {
     e.stopPropagation();
@@ -234,10 +222,11 @@ export const TaskItem = memo(function TaskItem({
   };
 
   const deleteBgOpacity = Math.min(Math.max(-translateX / SWIPE_THRESHOLD, 0), 1);
+  const attachBgOpacity = Math.min(Math.max(translateX / SWIPE_THRESHOLD, 0), 1);
 
   return (
     <div className="relative overflow-hidden rounded-xl">
-      {/* Hidden file input — triggered by long-press */}
+      {/* Hidden file input — triggered by swipe-right */}
       <input
         ref={fileInputRef}
         type="file"
@@ -260,6 +249,17 @@ export const TaskItem = memo(function TaskItem({
             <Trash2 className="h-5 w-5" />
             <span>Delete</span>
           </button>
+        </div>
+      )}
+
+      {/* Attach zone revealed on right swipe */}
+      {onAttachment && (
+        <div
+          className="absolute inset-0 flex items-center justify-start bg-gradient-to-r from-pink-500 to-purple-500 rounded-xl pl-6 pointer-events-none"
+          style={{ opacity: attachBgOpacity }}
+        >
+          <ImagePlus className="h-5 w-5 text-white" />
+          <span className="ml-2 text-white font-semibold">Attach</span>
         </div>
       )}
 
