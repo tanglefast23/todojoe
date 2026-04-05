@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Sans } from "next/font/google";
+import { Nunito } from "next/font/google";
 import "./globals.css";
 
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
@@ -11,10 +11,10 @@ import { MobileAwareLayout } from "@/components/layout/MobileAwareLayout";
 // TooltipProvider removed - all Radix tooltips replaced with native title attributes
 // to prevent "Maximum update depth exceeded" errors with React 19
 
-const dmSans = DM_Sans({
+const nunito = Nunito({
   variable: "--font-dm-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800", "900"],
   display: "swap",
 });
 
@@ -52,7 +52,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${dmSans.variable} font-sans antialiased`} suppressHydrationWarning>
+      <body className={`${nunito.variable} font-sans antialiased`} suppressHydrationWarning>
         <QueryProvider>
           <SupabaseSyncProvider>
             <FontSizeProvider>

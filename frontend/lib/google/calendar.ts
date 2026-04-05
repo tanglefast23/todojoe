@@ -37,6 +37,7 @@ function googleEventToScheduledEvent(event: calendar_v3.Schema$Event, calendarId
     googleEventId: event.id || null,
     googleCalendarId: calendarId,
     htmlLink: event.htmlLink || null,
+    colorId: event.colorId || null,
     lastSyncedAt: new Date().toISOString(),
     updatedAt: event.updated || new Date().toISOString(),
   };

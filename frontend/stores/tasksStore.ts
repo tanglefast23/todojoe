@@ -27,6 +27,7 @@ interface TasksState {
   completeTask: (id: string) => void;
   uncompleteTask: (id: string) => void;
   deleteTask: (id: string) => void;
+  updateTaskTitle: (id: string, title: string) => void;
 
   // Attachment management
   setTaskAttachment: (taskId: string, url: string) => void;
@@ -129,6 +130,26 @@ export const useTasksStore = create<TasksState>()(
         // Sync to Supabase for cross-device sync
         deleteTaskFromSupabase(id).catch((error) => {
           console.error("[Store] Failed to sync task deletion to Supabase:", error);
+        });
+      },
+
+      updateTaskTitle: (id, title) => {
+        const trimmed = title.trim();
+        if (!trimmed) return; // Ignore empty updates — caller should have validated
+
+        const existing = get().tasks.find((t) => t.id === id);
+        if (!existing || existing.title === trimmed) return; // No-op
+
+        const now = new Date().toISOString();
+        set((state) => ({
+          tasks: state.tasks.map((task) =>
+            task.id === id ? { ...task, title: trimmed, updatedAt: now } : task
+          ),
+        }));
+
+        // Sync to Supabase for cross-device sync
+        updateTask(id, { title: trimmed, updatedAt: now }).catch((error) => {
+          console.error("[Store] Failed to sync task title update to Supabase:", error);
         });
       },
 

@@ -11,6 +11,7 @@ export default function TasksPage() {
   const completeTask = useTasksStore((state) => state.completeTask);
   const uncompleteTask = useTasksStore((state) => state.uncompleteTask);
   const deleteTask = useTasksStore((state) => state.deleteTask);
+  const updateTaskTitle = useTasksStore((state) => state.updateTaskTitle);
   const setTaskAttachment = useTasksStore((state) => state.setTaskAttachment);
   const clearTaskAttachment = useTasksStore((state) => state.clearTaskAttachment);
 
@@ -28,6 +29,11 @@ export default function TasksPage() {
   const handleDelete = useCallback((id: string) => {
     deleteTask(id);
   }, [deleteTask]);
+
+  // Handle inline-editing a task title
+  const handleUpdateTitle = useCallback((id: string, title: string) => {
+    updateTaskTitle(id, title);
+  }, [updateTaskTitle]);
 
   // Handle adding attachment to a task
   const handleAttachment = useCallback((taskId: string, url: string) => {
@@ -53,6 +59,7 @@ export default function TasksPage() {
             onComplete={handleComplete}
             onUncomplete={handleUncomplete}
             onDelete={handleDelete}
+            onUpdateTitle={handleUpdateTitle}
             onAttachment={handleAttachment}
             onClearAttachment={handleClearAttachment}
             canComplete={true}

@@ -9,6 +9,7 @@ interface TaskListProps {
   onComplete: (id: string) => void;
   onUncomplete: (id: string) => void;
   onDelete: (id: string) => void;
+  onUpdateTitle?: (id: string, title: string) => void;
   onAttachment?: (taskId: string, url: string) => void;
   onClearAttachment?: (taskId: string) => void;
   canComplete: boolean;
@@ -20,6 +21,7 @@ export function TaskList({
   onComplete,
   onUncomplete,
   onDelete,
+  onUpdateTitle,
   onAttachment,
   onClearAttachment,
   canComplete,
@@ -84,6 +86,7 @@ export function TaskList({
                     onComplete={onComplete}
                     onUncomplete={onUncomplete}
                     onDelete={onDelete}
+                    onUpdateTitle={onUpdateTitle}
                     onAttachment={onAttachment}
                     onClearAttachment={onClearAttachment}
                     canComplete={canComplete}
@@ -110,6 +113,7 @@ export function TaskList({
                     onComplete={onComplete}
                     onUncomplete={onUncomplete}
                     onDelete={onDelete}
+                    onUpdateTitle={onUpdateTitle}
                     onAttachment={onAttachment}
                     onClearAttachment={onClearAttachment}
                     canComplete={canComplete}

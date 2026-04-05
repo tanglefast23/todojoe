@@ -14,6 +14,7 @@ export interface ScheduledEvent {
   googleEventId?: string | null;
   googleCalendarId?: string | null;
   htmlLink?: string | null; // URL to open the event in Google Calendar
+  colorId?: string | null; // Google Calendar event colorId (1-11)
   lastSyncedAt?: string | null;
   updatedAt: string;
 }
