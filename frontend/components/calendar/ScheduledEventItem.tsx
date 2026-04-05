@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState, useRef, useCallback, type PointerEvent as ReactPointerEvent } from "react";
+import { memo, useState, useRef, useCallback, useEffect, type PointerEvent as ReactPointerEvent } from "react";
 import { Trash2, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ScheduledEvent } from "@/types/scheduled-events";
@@ -16,8 +16,18 @@ interface ScheduledEventItemProps {
   canDelete?: boolean;
 }
 
+// Distance (px) before we commit to a gesture direction.
+const DRAG_ACTIVATE_THRESHOLD = 10;
+// Horizontal distance (px) required to trigger delete on release.
 const SWIPE_THRESHOLD = 96;
-const DRAG_ACTIVATE_THRESHOLD = 8;
+// Horizontal must dominate vertical by this ratio to count as a left-swipe.
+const DIRECTION_LOCK_RATIO = 1.5;
+// A fast leftward flick can also trigger delete even without full distance (px/ms).
+const FLICK_VELOCITY = 0.6;
+// If the card is left partially open (shouldn't normally happen), auto-snap back.
+const AUTO_RESET_MS = 1500;
+
+type GestureMode = "idle" | "swipe" | "scroll";
 
 export const ScheduledEventItem = memo(function ScheduledEventItem({
   event,
@@ -27,6 +37,9 @@ export const ScheduledEventItem = memo(function ScheduledEventItem({
   const [translateX, setTranslateX] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const dragStartX = useRef<number | null>(null);
+  const dragStartY = useRef<number | null>(null);
+  const dragStartTime = useRef(0);
+  const gestureMode = useRef<GestureMode>("idle");
   const didDrag = useRef(false);
 
   const isCompleted = event.status === "completed";
@@ -40,38 +53,92 @@ export const ScheduledEventItem = memo(function ScheduledEventItem({
     if (!canDelete) return;
     if (e.button !== undefined && e.button !== 0) return;
     dragStartX.current = e.clientX;
+    dragStartY.current = e.clientY;
+    dragStartTime.current = e.timeStamp;
+    gestureMode.current = "idle";
     didDrag.current = false;
     setIsAnimating(false);
-    (e.currentTarget as HTMLDivElement).setPointerCapture?.(e.pointerId);
+    // Note: don't capture the pointer yet — we wait until we know this is a
+    // horizontal swipe, so vertical scrolling still works on the ancestor.
   }, [canDelete]);
 
   const handlePointerMove = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
-    if (dragStartX.current === null) return;
+    if (dragStartX.current === null || dragStartY.current === null) return;
+    if (gestureMode.current === "scroll") return;
+
     const dx = e.clientX - dragStartX.current;
-    // Only track left swipes for delete
+    const dy = e.clientY - dragStartY.current;
+
+    if (gestureMode.current === "idle") {
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
+      // Wait until the user has moved enough to infer intent.
+      if (absX < DRAG_ACTIVATE_THRESHOLD && absY < DRAG_ACTIVATE_THRESHOLD) return;
+      // Anything that looks like a scroll (vertical, right-ward, or ambiguous)
+      // must not hijack the card. Require a clearly dominant leftward motion.
+      if (dx >= 0 || absX < absY * DIRECTION_LOCK_RATIO) {
+        gestureMode.current = "scroll";
+        return;
+      }
+      gestureMode.current = "swipe";
+      didDrag.current = true;
+      try {
+        (e.currentTarget as HTMLDivElement).setPointerCapture?.(e.pointerId);
+      } catch {
+        // Ignore — capture is a best-effort optimization.
+      }
+    }
+
+    // In swipe mode: translate the card with the finger (left only).
     const clamped = dx > 0 ? 0 : dx;
-    if (Math.abs(clamped) > DRAG_ACTIVATE_THRESHOLD) didDrag.current = true;
     setTranslateX(clamped);
   }, []);
 
   const handlePointerUp = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
     if (dragStartX.current === null) return;
     const dx = e.clientX - dragStartX.current;
+    const dt = e.timeStamp - dragStartTime.current;
+    const velocity = dt > 0 ? dx / dt : 0; // negative = leftward
+    const wasSwipe = gestureMode.current === "swipe";
+
     dragStartX.current = null;
+    dragStartY.current = null;
+    gestureMode.current = "idle";
+
     try {
       (e.currentTarget as HTMLDivElement).releasePointerCapture?.(e.pointerId);
     } catch {
       // Capture may have already been released
     }
+
+    if (!wasSwipe) {
+      // Tap or scroll — nothing to animate.
+      return;
+    }
+
     setIsAnimating(true);
 
-    if (dx <= -SWIPE_THRESHOLD) {
+    // Strong swipe = past distance threshold OR fast leftward flick.
+    const strongEnough = dx <= -SWIPE_THRESHOLD || velocity <= -FLICK_VELOCITY;
+    if (strongEnough) {
       setTranslateX(-window.innerWidth);
       setTimeout(() => onDelete(event.id), 200);
     } else {
       setTranslateX(0);
     }
   }, [event.id, onDelete]);
+
+  // Safety net: if the card somehow ends up partially offset without an active
+  // gesture (e.g., interrupted pointer sequence), snap it back after a moment.
+  useEffect(() => {
+    if (translateX === 0) return;
+    if (gestureMode.current !== "idle") return;
+    const id = setTimeout(() => {
+      setIsAnimating(true);
+      setTranslateX(0);
+    }, AUTO_RESET_MS);
+    return () => clearTimeout(id);
+  }, [translateX]);
 
   const handleCardClick = useCallback(() => {
     if (didDrag.current) return;
