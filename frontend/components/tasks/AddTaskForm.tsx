@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { cn } from "@/lib/utils";
 import type { TaskPriority } from "@/types/tasks";
 
@@ -15,14 +15,6 @@ export function AddTaskForm({ onAddTask, disabled = false }: AddTaskFormProps) {
   const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  // Auto-focus textarea on mount
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      textareaRef.current?.focus();
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
 
   // Create task with specified priority
   const createTask = (priority: TaskPriority) => {
