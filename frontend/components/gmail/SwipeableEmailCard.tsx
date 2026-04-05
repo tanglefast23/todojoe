@@ -126,7 +126,7 @@ export function SwipeableEmailCard({
           touchAction: "pan-y",
         }}
         className={cn(
-          "group relative rounded-xl border-2 p-4 cursor-pointer select-none",
+          "group relative rounded-xl border-2 px-3 py-2.5 cursor-pointer select-none",
           "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           email.isUnread
             ? "bg-gradient-to-r from-blue-500/15 to-sky-500/15 border-blue-400/40"
@@ -135,12 +135,12 @@ export function SwipeableEmailCard({
           isSelected && "ring-2 ring-blue-400"
         )}
       >
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-2.5">
           {email.isUnread && (
-            <div className="w-2 h-2 rounded-full bg-blue-400 mt-2 flex-shrink-0" />
+            <div className="w-2 h-2 rounded-full bg-blue-400 mt-1.5 flex-shrink-0" />
           )}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-0.5">
               <span
                 className={cn(
                   "truncate",
@@ -161,7 +161,7 @@ export function SwipeableEmailCard({
             >
               {email.subject || "(No subject)"}
             </p>
-            <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+            <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
               {getPreview(email.snippet)}
             </p>
           </div>

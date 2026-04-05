@@ -4,7 +4,7 @@ import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, type P
 import { Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { TaskAttachmentUpload } from "./TaskAttachmentUpload";
+import { uploadAttachment } from "@/lib/supabase/queries/storage";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/types/tasks";
 import { formatDistanceToNow } from "date-fns";
@@ -24,6 +24,7 @@ interface TaskItemProps {
 // Gmail-style swipe model — shared with ScheduledEventItem and SwipeableEmailCard
 const SWIPE_THRESHOLD = 96;
 const DRAG_ACTIVATE_THRESHOLD = 8;
+const LONG_PRESS_MS = 500;
 
 export const TaskItem = memo(function TaskItem({
   task,
@@ -38,7 +39,9 @@ export const TaskItem = memo(function TaskItem({
 }: TaskItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [draftTitle, setDraftTitle] = useState(task.title);
+  const [isUploading, setIsUploading] = useState(false);
   const editRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const isCompleted = task.status === "completed";
   const canEdit = Boolean(onUpdateTitle) && !isCompleted;
 
@@ -47,6 +50,10 @@ export const TaskItem = memo(function TaskItem({
   const [isAnimating, setIsAnimating] = useState(false);
   const dragStartX = useRef<number | null>(null);
   const didDrag = useRef(false);
+
+  // Long-press state
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const didLongPress = useRef(false);
 
   // Reset the draft if the task title changes externally (e.g., Supabase sync)
   useEffect(() => {
@@ -64,6 +71,45 @@ export const TaskItem = memo(function TaskItem({
     el.style.height = `${el.scrollHeight}px`;
   }, [isEditing]);
 
+  const clearLongPressTimer = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
+  const openFilePicker = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Please upload an image (JPEG, PNG, GIF, WebP) or PDF file.");
+      return;
+    }
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert("File size must be less than 5MB.");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const publicUrl = await uploadAttachment(file, `task-${task.id}`);
+      onAttachment?.(task.id, publicUrl);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("Failed to upload file. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleCheckChange = (checked: boolean) => {
     if (!canComplete) return;
     if (checked) {
@@ -74,8 +120,8 @@ export const TaskItem = memo(function TaskItem({
   };
 
   const startEditing = () => {
-    // Suppress the click if the user was actually swiping
-    if (didDrag.current) return;
+    // Suppress the click if the user was actually swiping or long-pressing
+    if (didDrag.current || didLongPress.current) return;
     if (!canEdit) return;
     setDraftTitle(task.title);
     setIsEditing(true);
@@ -91,19 +137,33 @@ export const TaskItem = memo(function TaskItem({
     if (e.button !== undefined && e.button !== 0) return;
     dragStartX.current = e.clientX;
     didDrag.current = false;
+    didLongPress.current = false;
     setIsAnimating(false);
     (e.currentTarget as HTMLDivElement).setPointerCapture?.(e.pointerId);
-  }, [canDelete, isEditing]);
+
+    // Start long-press timer — triggers file picker if finger stays still
+    if (onAttachment) {
+      clearLongPressTimer();
+      longPressTimerRef.current = setTimeout(() => {
+        didLongPress.current = true;
+        openFilePicker();
+      }, LONG_PRESS_MS);
+    }
+  }, [canDelete, isEditing, onAttachment, clearLongPressTimer, openFilePicker]);
 
   const handlePointerMove = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
     if (dragStartX.current === null) return;
     const dx = e.clientX - dragStartX.current;
     const clamped = dx > 0 ? 0 : dx;
-    if (Math.abs(clamped) > DRAG_ACTIVATE_THRESHOLD) didDrag.current = true;
+    if (Math.abs(clamped) > DRAG_ACTIVATE_THRESHOLD) {
+      didDrag.current = true;
+      clearLongPressTimer(); // cancel long press if finger moved
+    }
     setTranslateX(clamped);
-  }, []);
+  }, [clearLongPressTimer]);
 
   const handlePointerUp = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
+    clearLongPressTimer();
     if (dragStartX.current === null) return;
     const dx = e.clientX - dragStartX.current;
     dragStartX.current = null;
@@ -120,7 +180,7 @@ export const TaskItem = memo(function TaskItem({
     } else {
       setTranslateX(0);
     }
-  }, [task.id, onDelete]);
+  }, [task.id, onDelete, clearLongPressTimer]);
 
   const handleDeleteButtonClick = useCallback((e: ReactMouseEvent) => {
     e.stopPropagation();
@@ -131,7 +191,6 @@ export const TaskItem = memo(function TaskItem({
 
   const commitEdit = () => {
     const trimmed = draftTitle.trim();
-    // Revert to original if cleared or unchanged
     if (!trimmed || trimmed === task.title) {
       setDraftTitle(task.title);
       setIsEditing(false);
@@ -158,7 +217,6 @@ export const TaskItem = memo(function TaskItem({
 
   const handleEditInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setDraftTitle(e.target.value);
-    // Auto-resize
     const el = e.target;
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
@@ -179,6 +237,15 @@ export const TaskItem = memo(function TaskItem({
 
   return (
     <div className="relative overflow-hidden rounded-xl">
+      {/* Hidden file input — triggered by long-press */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,.pdf"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
       {/* Delete zone revealed on left swipe */}
       {canDelete && (
         <div
@@ -213,61 +280,21 @@ export const TaskItem = memo(function TaskItem({
           isCompleted && "opacity-70"
         )}
       >
-        {/* Top row: Completed indicator (when completed) + attachment */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            {isCompleted && task.completedAt && (
-              <span>
-                Completed {formatDistanceToNow(new Date(task.completedAt), { addSuffix: true })}
-              </span>
-            )}
+        {/* Completed indicator — only when completed */}
+        {isCompleted && task.completedAt && (
+          <div className="text-xs text-muted-foreground">
+            Completed {formatDistanceToNow(new Date(task.completedAt), { addSuffix: true })}
           </div>
+        )}
 
-          {/* Attachment Section — marked as non-swipeable */}
-          <div className="flex items-center gap-2" data-no-swipe="true">
-            {/* Show thumbnail if attachment exists */}
-            {task.attachmentUrl && (
-              <div className="relative group">
-                <a
-                  href={task.attachmentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="block"
-                >
-                  <img
-                    src={task.attachmentUrl}
-                    alt="Task attachment"
-                    className="h-10 w-10 rounded-lg object-cover border border-border/50 hover:border-pink-400 transition-colors"
-                  />
-                </a>
-                {/* Delete X for attachment */}
-                {onClearAttachment && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onClearAttachment(task.id);
-                    }}
-                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 icon-tactile"
-                    title="Remove attachment"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* Show upload button if no attachment */}
-            {!task.attachmentUrl && onAttachment && (
-              <TaskAttachmentUpload
-                taskId={task.id}
-                onUpload={(url) => onAttachment(task.id, url)}
-              />
-            )}
+        {/* Upload indicator overlay */}
+        {isUploading && (
+          <div className="absolute top-2 right-2 text-xs text-muted-foreground">
+            Uploading…
           </div>
-        </div>
+        )}
 
-        {/* Main content row: Checkbox and task description */}
+        {/* Main content row: checkbox + title + (optional thumbnail) */}
         <div className="flex items-start gap-3">
           <div data-no-swipe="true">
             <Checkbox
@@ -330,6 +357,37 @@ export const TaskItem = memo(function TaskItem({
               )}
             </div>
           </div>
+
+          {/* Attachment thumbnail — only when present */}
+          {task.attachmentUrl && (
+            <div className="relative group flex-shrink-0" data-no-swipe="true">
+              <a
+                href={task.attachmentUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="block"
+              >
+                <img
+                  src={task.attachmentUrl}
+                  alt="Task attachment"
+                  className="h-14 w-14 rounded-lg object-cover border border-border/50 hover:border-pink-400 transition-colors"
+                />
+              </a>
+              {onClearAttachment && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClearAttachment(task.id);
+                  }}
+                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-sm icon-tactile"
+                  title="Remove attachment"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

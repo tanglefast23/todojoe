@@ -163,8 +163,8 @@ export default function GmailPage() {
     <div className="flex flex-col min-h-screen">
       <Header />
 
-      <main className="flex-1 p-6 page-mount">
-        <div className="max-w-4xl mx-auto space-y-6">
+      <main className="flex-1 px-4 py-4 page-mount">
+        <div className="max-w-4xl mx-auto space-y-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Mail className="h-6 w-6" />
@@ -183,7 +183,7 @@ export default function GmailPage() {
 
           {/* Error State */}
           {error && (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 flex items-start gap-3">
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
               <div>
                 <p className="font-medium text-red-500">Unable to fetch emails</p>
@@ -213,7 +213,7 @@ export default function GmailPage() {
 
           {/* Email List */}
           {!isLoading && !error && emails.length > 0 && (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {emails.map((email) => (
                 <SwipeableEmailCard
                   key={email.gmailId}
@@ -277,7 +277,7 @@ export default function GmailPage() {
                 </div>
 
                 {/* Email metadata */}
-                <div className="p-4 border-b space-y-1">
+                <div className="px-4 py-3 border-b space-y-0.5">
                   <h2 id="email-dialog-title" className="text-lg font-bold leading-tight">
                     {selectedEmail.subject || "(No subject)"}
                   </h2>
@@ -290,7 +290,7 @@ export default function GmailPage() {
                 </div>
 
                 {/* Email body */}
-                <div className="flex-1 overflow-y-auto p-4">
+                <div className="flex-1 overflow-y-auto px-4 py-3">
                   {sanitizedBody ? (
                     <div
                       className="prose prose-invert prose-sm max-w-none break-words"

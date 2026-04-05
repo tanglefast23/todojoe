@@ -206,10 +206,10 @@ export default function EntryPage() {
     <div className="flex flex-col min-h-screen">
       <Header />
 
-      <main className="flex-1 p-4 sm:p-5 md:p-6 page-mount">
-        <div className="max-w-3xl mx-auto space-y-6 sm:space-y-7">
+      <main className="flex-1 p-3 sm:p-4 page-mount">
+        <div className="max-w-3xl mx-auto space-y-4">
           {/* Task Section */}
-          <section className="space-y-3">
+          <section className="space-y-2">
             <span className="text-[13px] font-semibold tracking-wide text-indigo-400">
               Task
             </span>
@@ -217,7 +217,7 @@ export default function EntryPage() {
           </section>
 
           {/* Calendar Section */}
-          <section className="space-y-3">
+          <section className="space-y-2">
             <span className="text-[13px] font-semibold tracking-wide text-indigo-400">
               Calendar
             </span>
@@ -225,7 +225,7 @@ export default function EntryPage() {
           </section>
 
           {/* Quick Add Section */}
-          <section className="space-y-3">
+          <section className="space-y-2">
             <span className="text-[13px] font-semibold tracking-wide text-indigo-400">
               Quick Add
             </span>
@@ -323,7 +323,7 @@ export default function EntryPage() {
           </section>
 
           {/* From Image Section */}
-          <section className="space-y-3">
+          <section className="space-y-2">
             <span className="text-[13px] font-semibold tracking-wide text-indigo-400">
               From Image
             </span>

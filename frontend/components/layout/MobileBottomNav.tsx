@@ -10,8 +10,8 @@ import { playClickSound } from "@/lib/audio";
 // Navigation items for mobile bottom nav
 const navItems = [
   { title: "Daily", href: "/daily", icon: Sunrise },
-  { title: "Entry", href: "/entry", icon: PlusCircle },
   { title: "Calendar", href: "/calendar", icon: CalendarDays },
+  { title: "Entry", href: "/entry", icon: PlusCircle },
   { title: "Tasks", href: "/tasks", icon: CheckSquare },
   { title: "Gmail", href: "/gmail", icon: Mail },
 ];

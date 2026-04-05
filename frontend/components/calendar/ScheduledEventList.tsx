@@ -88,21 +88,16 @@ export function ScheduledEventList({
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-5">
       {/* Upcoming Events */}
       {pendingByDay.length > 0 && (
-        <div className="space-y-6">
-          <h2 className="text-lg font-semibold text-indigo-400 flex items-center gap-2">
-            <CalendarDays className="h-5 w-5" />
-            Upcoming
-          </h2>
-
+        <div className="space-y-3">
           {pendingByDay.map((dayGroup) => (
-            <div key={dayGroup.dateKey} className="space-y-3">
-              <h3 className="text-3xl font-bold tracking-tight text-foreground">
+            <div key={dayGroup.dateKey} className="space-y-1.5">
+              <h3 className="text-base font-semibold tracking-tight text-foreground">
                 {dayGroup.displayDate}
               </h3>
-              <div className="space-y-3 pl-1">
+              <div className="space-y-2">
                 {dayGroup.events.map((event) => (
                   <ScheduledEventItem
                     key={event.id}
@@ -122,18 +117,18 @@ export function ScheduledEventList({
 
       {/* Completed Events */}
       {completedByDay.length > 0 && (
-        <div className="space-y-6">
-          <h2 className="text-lg font-semibold text-emerald-400 flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5" />
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold text-emerald-400 flex items-center gap-1.5">
+            <CheckCircle2 className="h-4 w-4" />
             Completed
           </h2>
 
           {completedByDay.map((dayGroup) => (
-            <div key={dayGroup.dateKey} className="space-y-3">
-              <h3 className="text-3xl font-bold tracking-tight text-foreground/70">
+            <div key={dayGroup.dateKey} className="space-y-1.5">
+              <h3 className="text-base font-semibold tracking-tight text-foreground/70">
                 {dayGroup.displayDate}
               </h3>
-              <div className="space-y-3 pl-1">
+              <div className="space-y-2">
                 {dayGroup.events.map((event) => (
                   <ScheduledEventItem
                     key={event.id}

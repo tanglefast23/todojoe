@@ -44,7 +44,7 @@ export function AddTaskForm({ onAddTask, disabled = false }: AddTaskFormProps) {
           disabled={disabled}
           rows={2}
           maxLength={500}
-          className="w-full bg-transparent text-base outline-none placeholder:text-muted-foreground resize-none leading-relaxed"
+          className="w-full bg-transparent text-base outline-none placeholder:text-muted-foreground/50 placeholder:italic placeholder:font-light resize-none leading-relaxed"
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey && window.innerWidth >= 768) {
               e.preventDefault();

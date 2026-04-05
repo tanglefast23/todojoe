@@ -138,7 +138,7 @@ export const ScheduledEventItem = memo(function ScheduledEventItem({
           borderColor: `${eventColor.hex}66`,
         }}
         className={cn(
-          "relative flex flex-col gap-2 p-4 rounded-xl border-2 select-none",
+          "relative flex flex-col gap-1 p-2.5 rounded-lg border select-none",
           isCompleted && "opacity-60",
           isInteractive && "cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         )}
