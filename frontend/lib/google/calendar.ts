@@ -24,6 +24,16 @@ function googleEventToScheduledEvent(event: calendar_v3.Schema$Event, calendarId
   const startTime = event.start?.dateTime || event.start?.date || new Date().toISOString();
   const endTime = event.end?.dateTime || event.end?.date || null;
 
+  // Extract popup reminder offset (minutes before event) if present.
+  // Google returns an array of overrides; we surface the smallest popup offset
+  // since that's the one that would fire first.
+  const popupOverrides = (event.reminders?.overrides || []).filter(
+    (r) => r.method === "popup" && typeof r.minutes === "number"
+  );
+  const reminderMinutes = popupOverrides.length > 0
+    ? Math.min(...popupOverrides.map((r) => r.minutes as number))
+    : null;
+
   return {
     id: crypto.randomUUID(),
     title: event.summary || "Untitled Event",
@@ -38,6 +48,7 @@ function googleEventToScheduledEvent(event: calendar_v3.Schema$Event, calendarId
     googleCalendarId: calendarId,
     htmlLink: event.htmlLink || null,
     colorId: event.colorId || null,
+    reminderMinutes,
     lastSyncedAt: new Date().toISOString(),
     updatedAt: event.updated || new Date().toISOString(),
   };
@@ -159,6 +170,39 @@ export async function updateCalendarEvent(
     calendarId,
     eventId: googleEventId,
     requestBody: event,
+  });
+
+  return googleEventToScheduledEvent(response.data, calendarId);
+}
+
+/**
+ * Set or clear a popup reminder on a Google Calendar event.
+ *
+ * Google reminders are offsets — pass 60 to mean "60 minutes before the
+ * event start". Google computes the absolute fire time from the event's
+ * scheduled start, so the reminder adjusts automatically if the event
+ * moves. Pass null to clear all overrides (and opt out of default).
+ */
+export async function setEventReminder(
+  googleEventId: string,
+  minutes: number | null,
+  calendarId: string = "primary"
+): Promise<ScheduledEvent> {
+  const calendar = await getCalendarClient();
+
+  // PATCH is safer than update() here — it only sends the reminders field
+  // and leaves every other field on the event alone.
+  const response = await calendar.events.patch({
+    calendarId,
+    eventId: googleEventId,
+    requestBody: {
+      reminders: {
+        useDefault: false,
+        overrides: minutes === null
+          ? []
+          : [{ method: "popup", minutes }],
+      },
+    },
   });
 
   return googleEventToScheduledEvent(response.data, calendarId);

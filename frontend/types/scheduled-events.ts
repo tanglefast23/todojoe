@@ -15,6 +15,7 @@ export interface ScheduledEvent {
   googleCalendarId?: string | null;
   htmlLink?: string | null; // URL to open the event in Google Calendar
   colorId?: string | null; // Google Calendar event colorId (1-11)
+  reminderMinutes?: number | null; // Minutes before event for popup reminder (Google events)
   lastSyncedAt?: string | null;
   updatedAt: string;
 }
