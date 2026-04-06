@@ -40,6 +40,15 @@ export interface InvestmentNewsItem {
   significance: "high" | "medium";
 }
 
+export interface MarketMoverItem {
+  headline: string;
+  impactChain: string;
+  affectedSymbols: string[];
+  direction: "positive" | "negative" | "uncertain";
+  url: string | null;
+  source: string;
+}
+
 export interface DailyData {
   crypto: {
     symbol: string;
@@ -53,6 +62,7 @@ export interface DailyData {
     losers: { symbol: string; change: string }[];
   };
   investmentNews: InvestmentNewsItem[];
+  marketMovers: MarketMoverItem[];
   news: {
     vietnam: NewsItem[];
     global: NewsItem[];
@@ -267,14 +277,120 @@ If no significant news is found for any of the tickers, return: {"items": []}`;
   }
 }
 
+/**
+ * Fetch portfolio-impacting geopolitical/macro events from Gemini.
+ * Full analyst autonomy — Gemini decides what's significant enough to flag.
+ * Returns 0-3 items; empty array if nothing noteworthy happened.
+ */
+async function fetchMarketMovers(): Promise<MarketMoverItem[]> {
+  if (!GEMINI_API_KEY || INVESTMENT_WATCH_SYMBOLS.length === 0) {
+    return [];
+  }
+
+  const today = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  const symbolsList = INVESTMENT_WATCH_SYMBOLS.join(", ");
+
+  const prompt = `Today is ${today}. You are a financial analyst monitoring a client's portfolio. Their positions include: ${symbolsList}.
+
+Search for any global event from the last 24 hours that would meaningfully impact one or more of these holdings. Think broadly:
+
+- Geopolitical: wars, sanctions, trade agreements, diplomatic shifts, military actions
+- Monetary: central bank decisions, rate changes, currency crises
+- Commodities: oil price moves, rare earth supply, semiconductor supply chains
+- Regulatory: antitrust actions, tariffs, export controls, new legislation
+- Macro: GDP data, employment reports, consumer confidence, sovereign debt
+
+For each event you find, explain the chain of impact so the client understands WHY it matters to their portfolio. For example: "OPEC announces production cut → oil prices rise → energy costs increase → TSLA manufacturing margins pressured"
+
+Only return events that a professional analyst would flag as portfolio-relevant. Maximum 3 items. If nothing significant happened in the last 24 hours, return an empty array.
+
+Return ONLY valid JSON in this exact format, no other text:
+{
+  "items": [
+    {
+      "headline": "1-2 sentence summary of the event and its significance.",
+      "impactChain": "Event → sector/supply chain affected → which client symbols → expected direction",
+      "affectedSymbols": ["NVDA", "TSM"],
+      "direction": "negative",
+      "url": "https://source-url.com/article",
+      "source": "Reuters"
+    }
+  ]
+}
+
+If no significant macro events were found, return: {"items": []}`;
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          tools: [{ google_search: {} }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 3000,
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error("[Daily API] Market movers Gemini error:", error);
+      return [];
+    }
+
+    const data = await response.json();
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+    if (!content) {
+      console.warn("[Daily API] No market movers response from Gemini");
+      return [];
+    }
+
+    const jsonStr = content.replace(/```json\n?|\n?```/g, "").trim();
+
+    try {
+      const parsed = JSON.parse(jsonStr);
+      const items: MarketMoverItem[] = (parsed.items || []).map((item: Record<string, unknown>) => ({
+        headline: String(item.headline || ""),
+        impactChain: String(item.impactChain || ""),
+        affectedSymbols: Array.isArray(item.affectedSymbols) ? item.affectedSymbols.map(String) : [],
+        direction: ["positive", "negative", "uncertain"].includes(item.direction as string)
+          ? item.direction as MarketMoverItem["direction"]
+          : "uncertain",
+        url: typeof item.url === "string" ? item.url : null,
+        source: String(item.source || "Unknown"),
+      }));
+      return items.slice(0, 3);
+    } catch {
+      console.error("[Daily API] Market movers JSON parse error. Raw:", content);
+      return [];
+    }
+  } catch (error) {
+    console.error("[Daily API] Failed to fetch market movers:", error);
+    return [];
+  }
+}
+
 export async function GET() {
   try {
     // Fetch all data in parallel
-    const [cryptoPrices, stockPrices, news, investmentNews] = await Promise.all([
+    const [cryptoPrices, stockPrices, news, investmentNews, marketMovers] = await Promise.all([
       fetchCryptoPrices(CRYPTO_SYMBOLS),
       fetchStockPrices(STOCK_SYMBOLS),
       fetchNews(),
       fetchInvestmentNews(),
+      fetchMarketMovers(),
     ]);
 
     // Format crypto data for response
@@ -293,6 +409,7 @@ export async function GET() {
       crypto,
       stocks,
       investmentNews,
+      marketMovers,
       news,
       generatedAt: new Date().toISOString(),
     };

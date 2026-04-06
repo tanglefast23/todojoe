@@ -16,6 +16,9 @@ import {
   Cpu,
   Code,
   LineChart,
+  ArrowUp,
+  ArrowDown,
+  Minus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -49,6 +52,15 @@ interface InvestmentNewsItem {
   significance: "high" | "medium";
 }
 
+interface MarketMoverItem {
+  headline: string;
+  impactChain: string;
+  affectedSymbols: string[];
+  direction: "positive" | "negative" | "uncertain";
+  url: string | null;
+  source: string;
+}
+
 interface DailyData {
   crypto: CryptoItem[];
   stocks: {
@@ -56,6 +68,7 @@ interface DailyData {
     losers: StockItem[];
   };
   investmentNews: InvestmentNewsItem[];
+  marketMovers: MarketMoverItem[];
   news: {
     vietnam: NewsItem[];
     global: NewsItem[];
@@ -356,6 +369,66 @@ export default function DailyPage() {
                   </div>
                 </div>
               </section>
+
+              {/* Market Movers — portfolio-impacting geopolitical/macro events */}
+              {data.marketMovers && data.marketMovers.length > 0 && (
+                <section className="bg-card border border-border rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-5 w-5 text-amber-500" />
+                    <h2 className="font-semibold">Market Movers</h2>
+                  </div>
+                  <div className="space-y-3">
+                    {data.marketMovers.map((item, i) => (
+                      <button
+                        key={i}
+                        onClick={() => item.url && handleNewsClick(item.url)}
+                        disabled={!item.url}
+                        className={cn(
+                          "w-full text-left transition-colors",
+                          item.url && "hover:bg-muted/50 cursor-pointer active:bg-muted",
+                          !item.url && "cursor-default"
+                        )}
+                      >
+                        <div className="pl-3 border-l-2 border-amber-500">
+                          {/* Direction + headline */}
+                          <div className="flex items-start gap-2">
+                            <span className="mt-0.5 flex-shrink-0">
+                              {item.direction === "positive" && <ArrowUp className="h-4 w-4 text-green-500" />}
+                              {item.direction === "negative" && <ArrowDown className="h-4 w-4 text-red-500" />}
+                              {item.direction === "uncertain" && <Minus className="h-4 w-4 text-amber-500" />}
+                            </span>
+                            <p className="text-sm font-medium leading-relaxed">{item.headline}</p>
+                          </div>
+                          {/* Impact chain */}
+                          <p className="text-xs text-muted-foreground mt-1 ml-6">{item.impactChain}</p>
+                          {/* Affected symbols + source */}
+                          <div className="flex items-center gap-2 mt-1.5 ml-6 flex-wrap">
+                            {item.affectedSymbols.map((sym) => (
+                              <span
+                                key={sym}
+                                className={cn(
+                                  "text-xs font-bold px-1.5 py-0.5 rounded",
+                                  item.direction === "positive" && "bg-green-500/20 text-green-400",
+                                  item.direction === "negative" && "bg-red-500/20 text-red-400",
+                                  item.direction === "uncertain" && "bg-amber-500/20 text-amber-400"
+                                )}
+                              >
+                                {sym}
+                              </span>
+                            ))}
+                            {item.source && item.url && (
+                              <span className="text-xs text-muted-foreground flex items-center gap-1 ml-auto">
+                                {item.source}
+                                <ExternalLink className="h-3 w-3" />
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
 
               {/* Investment News - Only shows if significant news exists */}
               {data.investmentNews && data.investmentNews.length > 0 && (
