@@ -497,7 +497,6 @@ export const TaskItem = memo(function TaskItem({
                   {task.title}
                 </span>
               )}
-              )}
             </div>
           </div>
 
