@@ -285,11 +285,11 @@ export const ScheduledEventItem = memo(function ScheduledEventItem({
 
   return (
     <>
-      <div className="relative overflow-hidden rounded-lg">
+      <div className="relative overflow-hidden rounded-xl">
         {/* Delete zone revealed on left swipe — fades in with drag distance */}
         {canDelete && (
           <div
-            className="absolute inset-0 flex items-center justify-end bg-red-500 rounded-lg pr-6 pointer-events-none"
+            className="absolute inset-0 flex items-center justify-end bg-red-500 rounded-xl pr-6 pointer-events-none"
             style={{ opacity: deleteBgOpacity }}
           >
             <button
@@ -328,13 +328,12 @@ export const ScheduledEventItem = memo(function ScheduledEventItem({
             transform: `translateX(${translateX}px)`,
             transition: isAnimating ? "transform 200ms ease-out" : "none",
             touchAction: "pan-y",
-            backgroundColor: "hsl(var(--card))",
-            backgroundImage: `linear-gradient(to right, ${eventColor.hex}26, ${eventColor.hex}0d)`,
-            borderColor: `${eventColor.hex}66`,
           }}
           className={cn(
-            "relative flex flex-col gap-1 p-2.5 rounded-lg border select-none",
-            isCompleted && "opacity-60",
+            "relative flex flex-col gap-1 px-3 py-2.5 rounded-xl border-2 select-none",
+            isCompleted
+              ? "bg-card border-border/50 opacity-60"
+              : "bg-gradient-to-r from-blue-500/15 to-sky-500/15 border-blue-400/40 hover:border-blue-400/50",
             isInteractive && "cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           )}
         >

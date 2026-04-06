@@ -336,15 +336,12 @@ export const TaskItem = memo(function TaskItem({
     el.style.height = `${el.scrollHeight}px`;
   };
 
-  // Determine card style based on priority and completion status
+  // Determine card style — consistent with Gmail card styling
   const getCardStyle = () => {
     if (isCompleted) {
-      return "bg-gradient-to-r from-emerald-500/10 to-green-500/10 border-emerald-500/30";
+      return "bg-card border-border/50";
     }
-    if (task.priority === "urgent") {
-      return "bg-gradient-to-r from-orange-500/15 to-red-500/15 border-orange-400/40 hover:border-orange-400/60";
-    }
-    return "bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border-cyan-400/30 hover:border-cyan-400/50";
+    return "bg-gradient-to-r from-blue-500/15 to-sky-500/15 border-blue-400/40 hover:border-blue-400/50";
   };
 
   // Fade the action background in as the card is pulled; fully visible by the
@@ -423,7 +420,7 @@ export const TaskItem = memo(function TaskItem({
           touchAction: "pan-y",
         }}
         className={cn(
-          "relative flex flex-col gap-2 p-4 rounded-xl border-2 card-tactile task-mount select-none",
+          "relative flex flex-col gap-2 px-3 py-2.5 rounded-xl border-2 select-none",
           getCardStyle(),
           isCompleted && "opacity-70"
         )}
@@ -452,10 +449,8 @@ export const TaskItem = memo(function TaskItem({
               className={cn(
                 "h-5 w-5 border-2 mt-0.5 flex-shrink-0",
                 isCompleted
-                  ? "border-emerald-500 data-[state=checked]:bg-emerald-500"
-                  : task.priority === "urgent"
-                    ? "border-orange-400"
-                    : "border-cyan-400"
+                  ? "border-blue-400 data-[state=checked]:bg-blue-400"
+                  : "border-blue-400"
               )}
             />
           </div>
