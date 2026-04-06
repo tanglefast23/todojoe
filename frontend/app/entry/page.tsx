@@ -8,7 +8,7 @@ import { ScheduleTaskForm } from "@/components/tasks/ScheduleTaskForm";
 import { useTasksStore } from "@/stores/tasksStore";
 import { useScheduledEventsStore } from "@/stores/scheduledEventsStore";
 import { Button } from "@/components/ui/button";
-import { CalendarPlus, Loader2, X, CheckCircle2, Zap, Calendar } from "lucide-react";
+import { Loader2, X, CheckCircle2, Calendar } from "lucide-react";
 import type { TaskPriority } from "@/types/tasks";
 
 interface ParsedEventResult {
@@ -31,13 +31,11 @@ export default function EntryPage() {
   const addEvent = useScheduledEventsStore((state) => state.addEvent);
 
   // Natural language event state
-  const [nlEventText, setNlEventText] = useState("");
   const [nlEventLoading, setNlEventLoading] = useState(false);
   const [nlEventError, setNlEventError] = useState<string | null>(null);
   const [nlEventSuccess, setNlEventSuccess] = useState<string | null>(null);
   const [parsedEvent, setParsedEvent] = useState<ParsedEventResult | null>(null);
   const [createdEvent, setCreatedEvent] = useState<CreatedEventResult | null>(null);
-  const nlEventInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-dismiss the Quick Add success card 5s after it appears.
   // Tied to the success state (not the submit handler) so it runs correctly
@@ -60,9 +58,9 @@ export default function EntryPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const calendarFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Handle natural language event creation
-  const handleNlEventSubmit = useCallback(async () => {
-    if (!nlEventText.trim()) return;
+  // Handle natural language event creation — called by ScheduleTaskForm's Quick Add button
+  const handleNlEventSubmitFromTitle = useCallback(async (title: string) => {
+    if (!title.trim()) return;
 
     setNlEventLoading(true);
     setNlEventError(null);
@@ -75,7 +73,7 @@ export default function EntryPage() {
         method: "POST",
         headers: apiHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
-          text: nlEventText.trim(),
+          text: title.trim(),
           timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }),
       });
@@ -89,29 +87,12 @@ export default function EntryPage() {
       setParsedEvent(data.parsed);
       setCreatedEvent(data.event ?? null);
       setNlEventSuccess(data.message);
-      setNlEventText("");
-
-      // Return focus to the input so the user can immediately type the
-      // next event without hunting for it (esp. on mobile where the
-      // soft keyboard may have been dismissed on submit).
-      nlEventInputRef.current?.focus();
     } catch (err) {
       setNlEventError(err instanceof Error ? err.message : "Failed to create event");
     } finally {
       setNlEventLoading(false);
     }
-  }, [nlEventText]);
-
-  // Handle Enter key for natural language input
-  const handleNlEventKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        handleNlEventSubmit();
-      }
-    },
-    [handleNlEventSubmit]
-  );
+  }, []);
 
   // Handle calendar image upload and process
   const handleCalendarImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -216,110 +197,62 @@ export default function EntryPage() {
             <AddTaskForm onAddTask={handleAddTask} />
           </section>
 
-          {/* Calendar Section */}
+          {/* Calendar Section — includes Quick Add + Schedule buttons */}
           <section className="space-y-2">
             <span className="text-lg font-semibold tracking-wide text-blue-400">
               Calendar
             </span>
-            <ScheduleTaskForm onScheduleTask={handleScheduleEvent} />
-          </section>
+            <ScheduleTaskForm
+              onScheduleTask={handleScheduleEvent}
+              onQuickAdd={handleNlEventSubmitFromTitle}
+              quickAddLoading={nlEventLoading}
+            />
 
-          {/* Quick Add Section */}
-          <section className="space-y-2">
-            <span className="text-lg font-semibold tracking-wide text-blue-400">
-              Quick Add
-            </span>
-            <div className="bg-card border-[3px] border-border rounded-xl p-3 sm:p-4">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                  <Zap className="h-5 w-5 text-blue-400 flex-shrink-0" />
-                  <input
-                    ref={nlEventInputRef}
-                    type="text"
-                    value={nlEventText}
-                    onChange={(e) => setNlEventText(e.target.value)}
-                    onKeyDown={handleNlEventKeyDown}
-                    placeholder="Dentist tomorrow at 3pm..."
-                    aria-label="Describe a calendar event in natural language"
-                    className="flex-1 bg-transparent text-sm outline-none min-w-0 placeholder:text-muted-foreground/50 placeholder:italic placeholder:font-light"
-                    disabled={nlEventLoading}
-                  />
-                  {nlEventText && !nlEventLoading && (
-                    <button
-                      onClick={() => setNlEventText("")}
-                      aria-label="Clear input"
-                      className="p-2 -m-1 hover:bg-muted rounded flex items-center justify-center flex-shrink-0"
-                    >
-                      <X className="h-4 w-4 text-muted-foreground" />
-                    </button>
-                  )}
-                </div>
-                <button
-                  onClick={handleNlEventSubmit}
-                  disabled={!nlEventText.trim() || nlEventLoading}
-                  aria-label={nlEventLoading ? "Creating event" : "Add event"}
-                  className="flex items-center gap-1.5 h-11 px-3 sm:px-4 rounded-lg bg-blue-500 text-white text-sm font-medium transition-all hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-                >
-                  {nlEventLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span className="hidden sm:inline">Creating...</span>
-                    </>
-                  ) : (
-                    <>
-                      <CalendarPlus className="h-4 w-4" />
-                      <span className="hidden sm:inline">Add</span>
-                    </>
-                  )}
-                </button>
+            {/* Quick Add Error */}
+            {nlEventError && (
+              <div className="p-3 text-red-400 bg-red-500/10 rounded-lg text-sm">
+                {nlEventError}
               </div>
+            )}
 
-              {/* Error */}
-              {nlEventError && (
-                <div className="mt-3 p-3 text-red-400 bg-red-500/10 rounded-lg text-sm">
-                  {nlEventError}
-                </div>
-              )}
-
-              {/* Success */}
-              {nlEventSuccess && parsedEvent && (
-                (() => {
-                  const htmlLink = createdEvent?.htmlLink;
-                  const content = (
-                    <div className="flex items-start gap-2">
-                      <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <div className="font-medium">{nlEventSuccess}</div>
-                        {parsedEvent.description && (
-                          <div className="text-green-400/70 text-xs mt-1">
-                            Description: {parsedEvent.description}
-                          </div>
-                        )}
-                        {htmlLink && (
-                          <div className="text-green-400/60 text-xs mt-1">
-                            Tap to open in Google Calendar
-                          </div>
-                        )}
-                      </div>
+            {/* Quick Add Success */}
+            {nlEventSuccess && parsedEvent && (
+              (() => {
+                const htmlLink = createdEvent?.htmlLink;
+                const content = (
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="font-medium">{nlEventSuccess}</div>
+                      {parsedEvent.description && (
+                        <div className="text-green-400/70 text-xs mt-1">
+                          Description: {parsedEvent.description}
+                        </div>
+                      )}
+                      {htmlLink && (
+                        <div className="text-green-400/60 text-xs mt-1">
+                          Tap to open in Google Calendar
+                        </div>
+                      )}
                     </div>
-                  );
-                  return htmlLink ? (
-                    <a
-                      href={htmlLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-3 p-3 text-green-400 bg-green-500/10 rounded-lg text-sm block transition-colors hover:bg-green-500/20"
-                    >
-                      {content}
-                    </a>
-                  ) : (
-                    <div className="mt-3 p-3 text-green-400 bg-green-500/10 rounded-lg text-sm">
-                      {content}
-                    </div>
-                  );
-                })()
-              )}
-            </div>
+                  </div>
+                );
+                return htmlLink ? (
+                  <a
+                    href={htmlLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3 text-green-400 bg-green-500/10 rounded-lg text-sm block transition-colors hover:bg-green-500/20"
+                  >
+                    {content}
+                  </a>
+                ) : (
+                  <div className="p-3 text-green-400 bg-green-500/10 rounded-lg text-sm">
+                    {content}
+                  </div>
+                );
+              })()
+            )}
           </section>
 
           {/* From Image Section */}

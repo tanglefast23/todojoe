@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { format } from "date-fns";
-import { CalendarIcon, Clock } from "lucide-react";
+import { CalendarIcon, Clock, Zap, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -15,12 +15,14 @@ import { cn } from "@/lib/utils";
 
 interface ScheduleTaskFormProps {
   onScheduleTask: (title: string, scheduledAt: string) => void;
+  onQuickAdd?: (title: string) => void;
+  quickAddLoading?: boolean;
   disabled?: boolean;
 }
 
 type ScheduleStep = "date" | "time";
 
-export function ScheduleTaskForm({ onScheduleTask, disabled = false }: ScheduleTaskFormProps) {
+export function ScheduleTaskForm({ onScheduleTask, onQuickAdd, quickAddLoading = false, disabled = false }: ScheduleTaskFormProps) {
   const [title, setTitle] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -44,6 +46,13 @@ export function ScheduleTaskForm({ onScheduleTask, disabled = false }: ScheduleT
     const trimmedTitle = title.trim();
     if (!trimmedTitle) return;
     setIsDialogOpen(true);
+  };
+
+  const handleQuickAddClick = () => {
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle || !onQuickAdd) return;
+    onQuickAdd(trimmedTitle);
+    setTitle("");
   };
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -124,23 +133,46 @@ export function ScheduleTaskForm({ onScheduleTask, disabled = false }: ScheduleT
           />
         </div>
 
-        {/* Schedule Button - only visible when the calendar field is focused */}
+        {/* Action Buttons - only visible when the calendar field is focused */}
         {isFocused && (
-        <button
-          type="button"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={handleScheduleClick}
-          disabled={disabled || !title.trim()}
-          className={cn(
-            "w-full py-3 text-[15px] font-medium rounded-xl border-[1.5px] transition-all flex items-center justify-center gap-2",
-            title.trim()
-              ? "bg-card border-border text-muted-foreground hover:bg-muted"
-              : "bg-card border-border text-muted-foreground/50 cursor-not-allowed"
-          )}
-        >
-          <CalendarIcon className="h-[18px] w-[18px]" />
-          Schedule
-        </button>
+          <div className="flex gap-2">
+            {onQuickAdd && (
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={handleQuickAddClick}
+                disabled={disabled || !title.trim() || quickAddLoading}
+                className={cn(
+                  "flex-1 py-3 text-[15px] font-medium rounded-xl border-[1.5px] transition-all flex items-center justify-center gap-2",
+                  title.trim() && !quickAddLoading
+                    ? "bg-card border-border text-muted-foreground hover:bg-muted"
+                    : "bg-card border-border text-muted-foreground/50 cursor-not-allowed"
+                )}
+              >
+                {quickAddLoading ? (
+                  <Loader2 className="h-[18px] w-[18px] animate-spin" />
+                ) : (
+                  <Zap className="h-[18px] w-[18px]" />
+                )}
+                {quickAddLoading ? "Adding..." : "Quick Add"}
+              </button>
+            )}
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={handleScheduleClick}
+              disabled={disabled || !title.trim()}
+              className={cn(
+                "flex-1 py-3 text-[15px] font-medium rounded-xl border-[1.5px] transition-all flex items-center justify-center gap-2",
+                title.trim()
+                  ? "bg-card border-border text-muted-foreground hover:bg-muted"
+                  : "bg-card border-border text-muted-foreground/50 cursor-not-allowed"
+              )}
+            >
+              <CalendarIcon className="h-[18px] w-[18px]" />
+              Schedule
+            </button>
+          </div>
         )}
       </div>
 
@@ -151,12 +183,12 @@ export function ScheduleTaskForm({ onScheduleTask, disabled = false }: ScheduleT
             <DialogTitle className="flex items-center gap-2">
               {step === "date" ? (
                 <>
-                  <CalendarIcon className="h-5 w-5 text-indigo-400" />
+                  <CalendarIcon className="h-5 w-5 text-blue-400" />
                   Pick a Date
                 </>
               ) : (
                 <>
-                  <Clock className="h-5 w-5 text-indigo-400" />
+                  <Clock className="h-5 w-5 text-blue-400" />
                   Pick a Time
                 </>
               )}
@@ -197,7 +229,7 @@ export function ScheduleTaskForm({ onScheduleTask, disabled = false }: ScheduleT
                         className={cn(
                           "min-h-11 p-3 rounded-lg text-sm font-medium transition-all",
                           selectedHour === hour
-                            ? "bg-indigo-500 text-white"
+                            ? "bg-blue-500 text-white"
                             : "bg-muted hover:bg-muted/80"
                         )}
                       >
@@ -219,7 +251,7 @@ export function ScheduleTaskForm({ onScheduleTask, disabled = false }: ScheduleT
                         className={cn(
                           "min-h-11 p-3 rounded-lg text-sm font-medium transition-all",
                           selectedMinute === minute
-                            ? "bg-indigo-500 text-white"
+                            ? "bg-blue-500 text-white"
                             : "bg-muted hover:bg-muted/80"
                         )}
                       >
@@ -241,7 +273,7 @@ export function ScheduleTaskForm({ onScheduleTask, disabled = false }: ScheduleT
                         className={cn(
                           "min-h-11 p-3 rounded-lg text-sm font-medium transition-all",
                           selectedPeriod === period
-                            ? "bg-indigo-500 text-white"
+                            ? "bg-blue-500 text-white"
                             : "bg-muted hover:bg-muted/80"
                         )}
                       >
@@ -254,7 +286,7 @@ export function ScheduleTaskForm({ onScheduleTask, disabled = false }: ScheduleT
                 {/* Time Preview */}
                 <div className="text-center pt-2 border-t">
                   <p className="text-sm text-muted-foreground">Scheduled for:</p>
-                  <p className="text-xl font-bold text-indigo-400">
+                  <p className="text-xl font-bold text-blue-400">
                     {selectedHour}:{selectedMinute} {selectedPeriod}
                   </p>
                 </div>
@@ -272,7 +304,7 @@ export function ScheduleTaskForm({ onScheduleTask, disabled = false }: ScheduleT
                 <button
                   type="button"
                   onClick={handleConfirmSchedule}
-                  className="flex-1 px-4 py-3 rounded-xl bg-indigo-500 text-white font-medium transition-all hover:bg-indigo-600"
+                  className="flex-1 px-4 py-3 rounded-xl bg-blue-500 text-white font-medium transition-all hover:bg-blue-600"
                 >
                   Confirm
                 </button>
