@@ -3,7 +3,6 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type MouseEvent as ReactMouseEvent } from "react";
 import { Trash2, ImagePlus } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
 import { uploadAttachment } from "@/lib/supabase/queries/storage";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/types/tasks";
