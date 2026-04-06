@@ -3,6 +3,7 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type MouseEvent as ReactMouseEvent } from "react";
 import { Trash2, ImagePlus } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { uploadAttachment } from "@/lib/supabase/queries/storage";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/types/tasks";
@@ -20,10 +21,17 @@ interface TaskItemProps {
   canDelete?: boolean;
 }
 
-// Gmail-style swipe model — shared with ScheduledEventItem and SwipeableEmailCard
-// Swipe left past SWIPE_THRESHOLD → delete. Swipe right past SWIPE_THRESHOLD → attach.
-const SWIPE_THRESHOLD = 96;
+// Two-stage swipe model:
+//  - Pull past REVEAL_THRESHOLD → the action button is parked open for the user
+//    to tap (auto-collapses after REVEAL_HOLD_MS if they don't).
+//  - Pull past AUTO_THRESHOLD → fire the action immediately on release.
+// This makes accidental left-swipes much harder to turn into deletes.
+const REVEAL_THRESHOLD = 64;
+const AUTO_THRESHOLD = 220;
+const REVEAL_OFFSET = 88; // how far the card parks when revealing an action
+const REVEAL_HOLD_MS = 2000;
 const DRAG_ACTIVATE_THRESHOLD = 8;
+const LONG_PRESS_MS = 500;
 
 export const TaskItem = memo(function TaskItem({
   task,
@@ -44,11 +52,51 @@ export const TaskItem = memo(function TaskItem({
   const isCompleted = task.status === "completed";
   const canEdit = Boolean(onUpdateTitle) && !isCompleted;
 
-  // Swipe state — left past threshold deletes, right past threshold attaches
+  // Swipe state — partial pull reveals an action button; hard pull auto-fires
   const [translateX, setTranslateX] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [revealed, setRevealed] = useState<"none" | "delete" | "attach">("none");
   const dragStartX = useRef<number | null>(null);
+  const dragStartY = useRef<number | null>(null);
   const didDrag = useRef(false);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearLongPress = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }, []);
+
+  const clearRevealTimer = useCallback(() => {
+    if (revealTimer.current) {
+      clearTimeout(revealTimer.current);
+      revealTimer.current = null;
+    }
+  }, []);
+
+  const collapseReveal = useCallback(() => {
+    clearRevealTimer();
+    setIsAnimating(true);
+    setTranslateX(0);
+    setRevealed("none");
+  }, [clearRevealTimer]);
+
+  const scheduleRevealAutoCollapse = useCallback(() => {
+    clearRevealTimer();
+    revealTimer.current = setTimeout(() => {
+      collapseReveal();
+    }, REVEAL_HOLD_MS);
+  }, [clearRevealTimer, collapseReveal]);
+
+  // Clean up any pending timers on unmount
+  useEffect(() => {
+    return () => {
+      clearLongPress();
+      clearRevealTimer();
+    };
+  }, [clearLongPress, clearRevealTimer]);
 
   // Reset the draft if the task title changes externally (e.g., Supabase sync)
   useEffect(() => {
@@ -107,74 +155,153 @@ export const TaskItem = memo(function TaskItem({
     }
   };
 
-  const startEditing = () => {
-    // Suppress the click if the user was actually swiping
-    if (didDrag.current) return;
+  const startEditing = useCallback(() => {
     if (!canEdit) return;
     setDraftTitle(task.title);
     setIsEditing(true);
-  };
+  }, [canEdit, task.title]);
+
+  const fireDelete = useCallback(() => {
+    clearRevealTimer();
+    setIsAnimating(true);
+    setTranslateX(-window.innerWidth);
+    setTimeout(() => onDelete(task.id), 200);
+  }, [task.id, onDelete, clearRevealTimer]);
+
+  const fireAttach = useCallback(() => {
+    clearRevealTimer();
+    setIsAnimating(true);
+    setTranslateX(0);
+    setRevealed("none");
+    openFilePicker();
+  }, [openFilePicker, clearRevealTimer]);
 
   const handlePointerDown = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
-    // Swipe is enabled if either gesture target exists (delete OR attach)
-    if (!canDelete && !onAttachment) return;
     // Never start a drag while inline-editing — let the textarea take input
     if (isEditing) return;
     // Don't start drag on checkboxes, attachment buttons, etc.
     const target = e.target as HTMLElement;
     if (target.closest('[data-no-swipe="true"]')) return;
     if (e.button !== undefined && e.button !== 0) return;
+
+    // If the card is currently parked open and the user taps the card body
+    // (not the action button, which has data-no-swipe), collapse it.
+    if (revealed !== "none") {
+      collapseReveal();
+      return;
+    }
+
     dragStartX.current = e.clientX;
+    dragStartY.current = e.clientY;
     didDrag.current = false;
     setIsAnimating(false);
-    (e.currentTarget as HTMLDivElement).setPointerCapture?.(e.pointerId);
-  }, [canDelete, isEditing, onAttachment]);
+
+    // Long press → edit. Only arm if editing is allowed and the pointer is on
+    // the title area. We don't capture the pointer yet so vertical scrolling
+    // still works until we know it's a horizontal swipe.
+    if (canEdit) {
+      clearLongPress();
+      longPressTimer.current = setTimeout(() => {
+        longPressTimer.current = null;
+        if (didDrag.current) return;
+        startEditing();
+      }, LONG_PRESS_MS);
+    }
+  }, [isEditing, revealed, collapseReveal, canEdit, clearLongPress, startEditing]);
 
   const handlePointerMove = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
     if (dragStartX.current === null) return;
     const dx = e.clientX - dragStartX.current;
+    const dy = dragStartY.current !== null ? e.clientY - dragStartY.current : 0;
+
+    // If movement exceeds the activation threshold in any direction, cancel
+    // any pending long-press — the user is gesturing, not holding.
+    if (Math.abs(dx) > DRAG_ACTIVATE_THRESHOLD || Math.abs(dy) > DRAG_ACTIVATE_THRESHOLD) {
+      clearLongPress();
+    }
+
     // Only allow directions the user is authorized to trigger:
     // - left (negative) requires canDelete
     // - right (positive) requires onAttachment
     let clamped = dx;
     if (dx < 0 && !canDelete) clamped = 0;
     if (dx > 0 && !onAttachment) clamped = 0;
-    if (Math.abs(clamped) > DRAG_ACTIVATE_THRESHOLD) {
+
+    // Commit to horizontal swipe only once it clearly dominates vertical motion.
+    if (!didDrag.current) {
+      if (Math.abs(clamped) <= DRAG_ACTIVATE_THRESHOLD) return;
+      if (Math.abs(clamped) < Math.abs(dy)) return; // user is scrolling
       didDrag.current = true;
+      try {
+        (e.currentTarget as HTMLDivElement).setPointerCapture?.(e.pointerId);
+      } catch {
+        // best-effort
+      }
     }
+
+    // Light rubber-banding past the auto threshold so the user feels the limit
     setTranslateX(clamped);
-  }, [canDelete, onAttachment]);
+  }, [canDelete, onAttachment, clearLongPress]);
 
   const handlePointerUp = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
     if (dragStartX.current === null) return;
     const dx = e.clientX - dragStartX.current;
     dragStartX.current = null;
+    dragStartY.current = null;
+    clearLongPress();
     try {
       (e.currentTarget as HTMLDivElement).releasePointerCapture?.(e.pointerId);
     } catch {
       // Capture may have already been released
     }
+
+    if (!didDrag.current) {
+      // Wasn't a drag — let click/long-press handlers do their thing
+      setIsAnimating(true);
+      setTranslateX(0);
+      return;
+    }
+
     setIsAnimating(true);
 
-    if (dx <= -SWIPE_THRESHOLD && canDelete) {
-      // Destructive swipe — fly out left, then delete
-      setTranslateX(-window.innerWidth);
-      setTimeout(() => onDelete(task.id), 200);
-    } else if (dx >= SWIPE_THRESHOLD && onAttachment) {
-      // Action swipe — snap back, then open file picker
-      setTranslateX(0);
-      openFilePicker();
-    } else {
-      setTranslateX(0);
+    // Hard left swipe → auto delete
+    if (dx <= -AUTO_THRESHOLD && canDelete) {
+      fireDelete();
+      return;
     }
-  }, [task.id, onDelete, canDelete, onAttachment, openFilePicker]);
+    // Hard right swipe → auto attach
+    if (dx >= AUTO_THRESHOLD && onAttachment) {
+      fireAttach();
+      return;
+    }
+    // Partial left → park open to reveal delete button for REVEAL_HOLD_MS
+    if (dx <= -REVEAL_THRESHOLD && canDelete) {
+      setTranslateX(-REVEAL_OFFSET);
+      setRevealed("delete");
+      scheduleRevealAutoCollapse();
+      return;
+    }
+    // Partial right → park open to reveal attach button
+    if (dx >= REVEAL_THRESHOLD && onAttachment) {
+      setTranslateX(REVEAL_OFFSET);
+      setRevealed("attach");
+      scheduleRevealAutoCollapse();
+      return;
+    }
+    // Not far enough — snap back
+    setTranslateX(0);
+    setRevealed("none");
+  }, [canDelete, onAttachment, fireDelete, fireAttach, scheduleRevealAutoCollapse, clearLongPress]);
 
   const handleDeleteButtonClick = useCallback((e: ReactMouseEvent) => {
     e.stopPropagation();
-    setIsAnimating(true);
-    setTranslateX(-window.innerWidth);
-    setTimeout(() => onDelete(task.id), 200);
-  }, [task.id, onDelete]);
+    fireDelete();
+  }, [fireDelete]);
+
+  const handleAttachButtonClick = useCallback((e: ReactMouseEvent) => {
+    e.stopPropagation();
+    fireAttach();
+  }, [fireAttach]);
 
   const commitEdit = () => {
     const trimmed = draftTitle.trim();
@@ -209,19 +336,18 @@ export const TaskItem = memo(function TaskItem({
     el.style.height = `${el.scrollHeight}px`;
   };
 
-  // Determine card style based on priority and completion status
+  // Determine card style — consistent with Gmail card styling
   const getCardStyle = () => {
     if (isCompleted) {
-      return "bg-gradient-to-r from-emerald-500/10 to-green-500/10 border-emerald-500/30";
+      return "bg-card border-border/50";
     }
-    if (task.priority === "urgent") {
-      return "bg-orange-500/20 border-orange-400/50 hover:border-orange-400/70";
-    }
-    return "bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border-cyan-400/30 hover:border-cyan-400/50";
+    return "bg-gradient-to-r from-blue-500/15 to-sky-500/15 border-blue-400/40 hover:border-blue-400/50";
   };
 
-  const deleteBgOpacity = Math.min(Math.max(-translateX / SWIPE_THRESHOLD, 0), 1);
-  const attachBgOpacity = Math.min(Math.max(translateX / SWIPE_THRESHOLD, 0), 1);
+  // Fade the action background in as the card is pulled; fully visible by the
+  // reveal threshold so the button is obvious as soon as it parks open.
+  const deleteBgOpacity = Math.min(Math.max(-translateX / REVEAL_THRESHOLD, 0), 1);
+  const attachBgOpacity = Math.min(Math.max(translateX / REVEAL_THRESHOLD, 0), 1);
 
   return (
     <div className="relative overflow-hidden rounded-xl">
@@ -241,9 +367,16 @@ export const TaskItem = memo(function TaskItem({
           style={{ opacity: deleteBgOpacity }}
         >
           <button
+            type="button"
+            data-no-swipe="true"
             onClick={handleDeleteButtonClick}
-            className="flex items-center gap-2 text-white font-semibold pointer-events-auto"
+            className={cn(
+              "flex items-center gap-2 text-white font-semibold",
+              revealed === "delete" ? "pointer-events-auto" : "pointer-events-none"
+            )}
             aria-label={`Delete task: ${task.title}`}
+            aria-hidden={revealed !== "delete"}
+            tabIndex={revealed === "delete" ? 0 : -1}
           >
             <Trash2 className="h-5 w-5" />
             <span>Delete</span>
@@ -257,8 +390,21 @@ export const TaskItem = memo(function TaskItem({
           className="absolute inset-0 flex items-center justify-start bg-gradient-to-r from-pink-500 to-purple-500 rounded-xl pl-6 pointer-events-none"
           style={{ opacity: attachBgOpacity }}
         >
-          <ImagePlus className="h-5 w-5 text-white" />
-          <span className="ml-2 text-white font-semibold">Attach</span>
+          <button
+            type="button"
+            data-no-swipe="true"
+            onClick={handleAttachButtonClick}
+            className={cn(
+              "flex items-center gap-2 text-white font-semibold",
+              revealed === "attach" ? "pointer-events-auto" : "pointer-events-none"
+            )}
+            aria-label={`Attach file to task: ${task.title}`}
+            aria-hidden={revealed !== "attach"}
+            tabIndex={revealed === "attach" ? 0 : -1}
+          >
+            <ImagePlus className="h-5 w-5" />
+            <span>Attach</span>
+          </button>
         </div>
       )}
 
@@ -274,7 +420,7 @@ export const TaskItem = memo(function TaskItem({
           touchAction: "pan-y",
         }}
         className={cn(
-          "relative flex flex-col gap-2 p-4 rounded-xl border-2 card-tactile task-mount select-none",
+          "relative flex flex-col gap-2 px-3 py-2.5 rounded-xl border-2 select-none",
           getCardStyle(),
           isCompleted && "opacity-70"
         )}
@@ -303,10 +449,8 @@ export const TaskItem = memo(function TaskItem({
               className={cn(
                 "h-5 w-5 border-2 mt-0.5 flex-shrink-0",
                 isCompleted
-                  ? "border-emerald-500 data-[state=checked]:bg-emerald-500"
-                  : task.priority === "urgent"
-                    ? "border-orange-400"
-                    : "border-cyan-400"
+                  ? "border-blue-400 data-[state=checked]:bg-blue-400"
+                  : "border-blue-400"
               )}
             />
           </div>
@@ -329,9 +473,9 @@ export const TaskItem = memo(function TaskItem({
                 <span
                   role={canEdit ? "button" : undefined}
                   tabIndex={canEdit ? 0 : undefined}
-                  onClick={startEditing}
                   onKeyDown={(e) => {
                     if (!canEdit) return;
+                    // Keyboard users still get a direct edit entrypoint
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
                       startEditing();
@@ -340,14 +484,19 @@ export const TaskItem = memo(function TaskItem({
                   className={cn(
                     "flex-1 min-w-0 text-left font-medium break-words whitespace-pre-wrap rounded",
                     "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                    canEdit && "cursor-text",
+                    canEdit && "cursor-default",
                     !canEdit && "cursor-default",
                     isCompleted && "line-through"
                   )}
-                  aria-label={canEdit ? `Edit task: ${task.title}` : undefined}
+                  aria-label={canEdit ? `Hold to edit task: ${task.title}` : undefined}
                 >
                   {task.title}
                 </span>
+              )}
+              {task.priority === "urgent" && (
+                <Badge className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 shadow-sm flex-shrink-0">
+                  Urgent
+                </Badge>
               )}
             </div>
           </div>

@@ -210,7 +210,7 @@ export default function EntryPage() {
         <div className="max-w-3xl mx-auto space-y-4">
           {/* Task Section */}
           <section className="space-y-2">
-            <span className="text-[13px] font-semibold tracking-wide text-blue-400">
+            <span className="text-lg font-semibold tracking-wide text-blue-400">
               Task
             </span>
             <AddTaskForm onAddTask={handleAddTask} />
@@ -218,7 +218,7 @@ export default function EntryPage() {
 
           {/* Calendar Section */}
           <section className="space-y-2">
-            <span className="text-[13px] font-semibold tracking-wide text-blue-400">
+            <span className="text-lg font-semibold tracking-wide text-blue-400">
               Calendar
             </span>
             <ScheduleTaskForm onScheduleTask={handleScheduleEvent} />
@@ -226,10 +226,10 @@ export default function EntryPage() {
 
           {/* Quick Add Section */}
           <section className="space-y-2">
-            <span className="text-[13px] font-semibold tracking-wide text-blue-400">
+            <span className="text-lg font-semibold tracking-wide text-blue-400">
               Quick Add
             </span>
-            <div className="bg-card border border-border rounded-xl p-3 sm:p-4">
+            <div className="bg-card border-[3px] border-border rounded-xl p-3 sm:p-4">
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                   <Zap className="h-5 w-5 text-blue-400 flex-shrink-0" />
@@ -324,10 +324,10 @@ export default function EntryPage() {
 
           {/* From Image Section */}
           <section className="space-y-2">
-            <span className="text-[13px] font-semibold tracking-wide text-blue-400">
+            <span className="text-lg font-semibold tracking-wide text-blue-400">
               From Image
             </span>
-            <div className="bg-card border border-border rounded-xl p-3 sm:p-4">
+            <div className="bg-card border-[3px] border-border rounded-xl p-3 sm:p-4">
               {/* Image Preview */}
               {imagePreview && (
                 <div className="mb-4 relative inline-block max-w-full">
