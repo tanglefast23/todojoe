@@ -355,18 +355,26 @@ export const ScheduledEventItem = memo(function ScheduledEventItem({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setShowPicker(true);
+                  e.preventDefault();
+                  updateReminder(hasReminder ? null : 60);
                 }}
+                onPointerDown={(e) => e.stopPropagation()}
                 className={cn(
-                  "flex-shrink-0 mt-0.5 p-1 rounded-full transition-colors",
+                  "flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border transition-colors",
                   hasReminder
-                    ? "text-amber-500"
-                    : "text-muted-foreground/40 hover:text-muted-foreground"
+                    ? "bg-amber-500/15 text-amber-600 border-amber-500/30"
+                    : "bg-muted text-muted-foreground border-border"
                 )}
-                aria-label={hasReminder ? "Edit reminder" : "Set reminder"}
+                aria-label={hasReminder ? "Remove reminder" : "Set 1hr reminder"}
                 data-no-swipe="true"
               >
-                <Bell className="h-4 w-4" />
+                <Bell className="h-3.5 w-3.5" />
+                {hasReminder ? (
+                  reminderMinutes! < 60 ? `${reminderMinutes}m` :
+                  reminderMinutes === 60 ? "1h" :
+                  reminderMinutes === 1440 ? "1d" :
+                  `${Math.round(reminderMinutes! / 60)}h`
+                ) : "Remind"}
               </button>
             )}
           </div>
