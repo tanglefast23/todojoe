@@ -341,6 +341,9 @@ export const TaskItem = memo(function TaskItem({
     if (isCompleted) {
       return "bg-card border-border/50";
     }
+    if (task.priority === "urgent") {
+      return "bg-orange-500/20 border-orange-400/50 hover:border-orange-400/70";
+    }
     return "bg-gradient-to-r from-blue-500/15 to-sky-500/15 border-blue-400/40 hover:border-blue-400/50";
   };
 
@@ -418,6 +421,8 @@ export const TaskItem = memo(function TaskItem({
           transform: `translateX(${translateX}px)`,
           transition: isAnimating ? "transform 200ms ease-out" : "none",
           touchAction: "pan-y",
+          WebkitTouchCallout: "none",
+          WebkitUserSelect: "none",
         }}
         className={cn(
           "relative flex flex-col gap-2 px-3 py-2.5 rounded-xl border-2 select-none",
@@ -493,10 +498,6 @@ export const TaskItem = memo(function TaskItem({
                   {task.title}
                 </span>
               )}
-              {task.priority === "urgent" && (
-                <Badge className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 shadow-sm flex-shrink-0">
-                  Urgent
-                </Badge>
               )}
             </div>
           </div>

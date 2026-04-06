@@ -328,6 +328,8 @@ export const ScheduledEventItem = memo(function ScheduledEventItem({
             transform: `translateX(${translateX}px)`,
             transition: isAnimating ? "transform 200ms ease-out" : "none",
             touchAction: "pan-y",
+            WebkitTouchCallout: "none",
+            WebkitUserSelect: "none",
           }}
           className={cn(
             "relative flex flex-col gap-1 px-3 py-2.5 rounded-xl border-2 select-none",
