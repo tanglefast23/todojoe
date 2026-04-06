@@ -3,7 +3,6 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type MouseEvent as ReactMouseEvent } from "react";
 import { Trash2, ImagePlus } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
 import { uploadAttachment } from "@/lib/supabase/queries/storage";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/types/tasks";
@@ -216,7 +215,7 @@ export const TaskItem = memo(function TaskItem({
       return "bg-gradient-to-r from-emerald-500/10 to-green-500/10 border-emerald-500/30";
     }
     if (task.priority === "urgent") {
-      return "bg-gradient-to-r from-orange-500/15 to-red-500/15 border-orange-400/40 hover:border-orange-400/60";
+      return "bg-orange-500/20 border-orange-400/50 hover:border-orange-400/70";
     }
     return "bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border-cyan-400/30 hover:border-cyan-400/50";
   };
@@ -349,11 +348,6 @@ export const TaskItem = memo(function TaskItem({
                 >
                   {task.title}
                 </span>
-              )}
-              {task.priority === "urgent" && (
-                <Badge className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 shadow-sm flex-shrink-0">
-                  Urgent
-                </Badge>
               )}
             </div>
           </div>

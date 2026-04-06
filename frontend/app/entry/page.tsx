@@ -210,7 +210,7 @@ export default function EntryPage() {
         <div className="max-w-3xl mx-auto space-y-4">
           {/* Task Section */}
           <section className="space-y-2">
-            <span className="text-[13px] font-semibold tracking-wide text-indigo-400">
+            <span className="text-[13px] font-semibold tracking-wide text-blue-400">
               Task
             </span>
             <AddTaskForm onAddTask={handleAddTask} />
@@ -218,7 +218,7 @@ export default function EntryPage() {
 
           {/* Calendar Section */}
           <section className="space-y-2">
-            <span className="text-[13px] font-semibold tracking-wide text-indigo-400">
+            <span className="text-[13px] font-semibold tracking-wide text-blue-400">
               Calendar
             </span>
             <ScheduleTaskForm onScheduleTask={handleScheduleEvent} />
@@ -226,13 +226,13 @@ export default function EntryPage() {
 
           {/* Quick Add Section */}
           <section className="space-y-2">
-            <span className="text-[13px] font-semibold tracking-wide text-indigo-400">
+            <span className="text-[13px] font-semibold tracking-wide text-blue-400">
               Quick Add
             </span>
             <div className="bg-card border border-border rounded-xl p-3 sm:p-4">
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                  <Zap className="h-5 w-5 text-indigo-400 flex-shrink-0" />
+                  <Zap className="h-5 w-5 text-blue-400 flex-shrink-0" />
                   <input
                     ref={nlEventInputRef}
                     type="text"
@@ -258,7 +258,7 @@ export default function EntryPage() {
                   onClick={handleNlEventSubmit}
                   disabled={!nlEventText.trim() || nlEventLoading}
                   aria-label={nlEventLoading ? "Creating event" : "Add event"}
-                  className="flex items-center gap-1.5 h-11 px-3 sm:px-4 rounded-lg bg-indigo-500 text-white text-sm font-medium transition-all hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                  className="flex items-center gap-1.5 h-11 px-3 sm:px-4 rounded-lg bg-blue-500 text-white text-sm font-medium transition-all hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                 >
                   {nlEventLoading ? (
                     <>
@@ -324,7 +324,7 @@ export default function EntryPage() {
 
           {/* From Image Section */}
           <section className="space-y-2">
-            <span className="text-[13px] font-semibold tracking-wide text-indigo-400">
+            <span className="text-[13px] font-semibold tracking-wide text-blue-400">
               From Image
             </span>
             <div className="bg-card border border-border rounded-xl p-3 sm:p-4">
@@ -360,7 +360,7 @@ export default function EntryPage() {
                 <button
                   onClick={() => calendarFileInputRef.current?.click()}
                   disabled={isLoading}
-                  className="flex items-center justify-center gap-2 h-11 px-4 rounded-lg bg-card border border-border text-indigo-400 text-sm font-medium transition-all hover:bg-muted disabled:opacity-50 flex-shrink-0 self-start sm:self-auto"
+                  className="flex items-center justify-center gap-2 h-11 px-4 rounded-lg bg-card border border-border text-blue-400 text-sm font-medium transition-all hover:bg-muted disabled:opacity-50 flex-shrink-0 self-start sm:self-auto"
                 >
                   {isLoading ? (
                     <>

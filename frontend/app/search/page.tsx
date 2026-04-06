@@ -162,7 +162,7 @@ export default function SearchPage() {
           {/* Page Title */}
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Sparkles className="h-6 w-6 text-indigo-400" />
+              <Sparkles className="h-6 w-6 text-blue-400" />
               AI Search
             </h1>
             {results.length > 0 && (
@@ -182,7 +182,7 @@ export default function SearchPage() {
           <div className="bg-card border border-border rounded-xl p-3 sm:p-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                <Sparkles className="h-5 w-5 text-indigo-400 flex-shrink-0" />
+                <Sparkles className="h-5 w-5 text-blue-400 flex-shrink-0" />
                 <input
                   ref={calendarInputRef}
                   type="text"
@@ -209,7 +209,7 @@ export default function SearchPage() {
                 onClick={handleCalendarSearch}
                 disabled={!calendarQuery.trim() || isCalendarLoading}
                 aria-label={isCalendarLoading ? "Searching" : "Search"}
-                className="flex items-center gap-1.5 h-11 px-3 sm:px-4 rounded-lg bg-indigo-500 text-white text-sm font-medium transition-all hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                className="flex items-center gap-1.5 h-11 px-3 sm:px-4 rounded-lg bg-blue-500 text-white text-sm font-medium transition-all hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
               >
                 {isCalendarLoading ? (
                   <>
@@ -279,7 +279,7 @@ export default function SearchPage() {
 
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                <Paperclip className="h-5 w-5 text-indigo-400 flex-shrink-0" />
+                <Paperclip className="h-5 w-5 text-blue-400 flex-shrink-0" />
                 <input
                   ref={attachmentInputRef}
                   type="text"
@@ -317,7 +317,7 @@ export default function SearchPage() {
                 aria-label="Attach image"
                 className={cn(
                   "flex items-center justify-center h-11 w-11 rounded-lg hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0",
-                  image && "text-indigo-400"
+                  image && "text-blue-400"
                 )}
               >
                 {image ? (
@@ -331,7 +331,7 @@ export default function SearchPage() {
                 onClick={handleAttachmentSearch}
                 disabled={!image || isAttachmentLoading}
                 aria-label={isAttachmentLoading ? "Analyzing" : "Analyze"}
-                className="flex items-center gap-1.5 h-11 px-3 sm:px-4 rounded-lg bg-indigo-500 text-white text-sm font-medium transition-all hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                className="flex items-center gap-1.5 h-11 px-3 sm:px-4 rounded-lg bg-blue-500 text-white text-sm font-medium transition-all hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
               >
                 {isAttachmentLoading ? (
                   <>
@@ -424,7 +424,7 @@ function SearchResultCard({
       {/* Response */}
       <div className="p-4">
         <div className="flex items-start gap-3">
-          <div className="w-7 h-7 rounded-full bg-indigo-500 flex items-center justify-center flex-shrink-0">
+          <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
             <Sparkles className="h-3.5 w-3.5 text-white" />
           </div>
           <div className="flex-1 prose prose-invert prose-sm max-w-none">

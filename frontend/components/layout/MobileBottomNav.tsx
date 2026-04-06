@@ -41,7 +41,7 @@ export const MobileBottomNav = memo(function MobileBottomNav() {
               className={cn(
                 "flex flex-col items-center justify-center gap-1 transition-colors",
                 isActive
-                  ? "text-indigo-400"
+                  ? "text-blue-400"
                   : "text-muted-foreground hover:text-foreground"
               )}
               aria-label={item.title}
@@ -51,7 +51,7 @@ export const MobileBottomNav = memo(function MobileBottomNav() {
               <div className="flex items-center justify-center w-11 h-11">
                 {isActive ? (
                   // Active state: circular background with larger icon
-                  <div className="flex items-center justify-center w-11 h-11 rounded-full bg-indigo-500 transition-all">
+                  <div className="flex items-center justify-center w-11 h-11 rounded-full bg-blue-500 transition-all">
                     <item.icon className="h-6 w-6 text-white" />
                   </div>
                 ) : (
@@ -61,7 +61,7 @@ export const MobileBottomNav = memo(function MobileBottomNav() {
               </div>
               <span className={cn(
                 "text-[11px] font-medium",
-                isActive && "text-indigo-400",
+                isActive && "text-blue-400",
                 isEntry && isActive && "font-semibold"
               )}>
                 {item.title}

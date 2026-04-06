@@ -248,7 +248,7 @@ export default function DailyPage() {
           {/* Loading State */}
           {loading && !data && (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+              <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
               <p className="text-muted-foreground">Fetching your daily briefing...</p>
             </div>
           )}
@@ -444,10 +444,10 @@ export default function DailyPage() {
               {data.news.tech && data.news.tech.length > 0 && (
                 <section className="bg-card border border-border rounded-2xl p-4 space-y-3">
                   <div className="flex items-center gap-2">
-                    <Cpu className="h-5 w-5 text-indigo-500" />
+                    <Cpu className="h-5 w-5 text-blue-500" />
                     <h2 className="font-semibold">Tech</h2>
                   </div>
-                  {renderNewsSection(data.news.tech, "border-indigo-500/50")}
+                  {renderNewsSection(data.news.tech, "border-blue-500/50")}
                 </section>
               )}
 
@@ -455,10 +455,10 @@ export default function DailyPage() {
               {data.news.vibeCoding && data.news.vibeCoding.length > 0 && (
                 <section className="bg-card border border-border rounded-2xl p-4 space-y-3">
                   <div className="flex items-center gap-2">
-                    <Code className="h-5 w-5 text-indigo-500" />
+                    <Code className="h-5 w-5 text-blue-500" />
                     <h2 className="font-semibold">Vibe Coding & Claude Code</h2>
                   </div>
-                  {renderNewsSection(data.news.vibeCoding, "border-indigo-500/50")}
+                  {renderNewsSection(data.news.vibeCoding, "border-blue-500/50")}
                 </section>
               )}
 

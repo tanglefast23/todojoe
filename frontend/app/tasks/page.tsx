@@ -51,7 +51,7 @@ export default function TasksPage() {
 
       <main className="flex-1 p-5 md:p-6 page-mount">
         <div className="max-w-3xl mx-auto space-y-6">
-          <h1 className="text-[13px] font-semibold tracking-wide text-indigo-400">Tasks</h1>
+          <h1 className="text-[13px] font-semibold tracking-wide text-blue-400">Tasks</h1>
 
           {/* Task List */}
           <TaskList

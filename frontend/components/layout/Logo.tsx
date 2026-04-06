@@ -89,7 +89,7 @@ export function Logo({ className, showText = true, size = "md" }: LogoProps) {
       {showText && (
         <span
           className={cn(
-            "whitespace-nowrap text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400",
+            "whitespace-nowrap text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500",
             textSizes[size]
           )}
           style={{

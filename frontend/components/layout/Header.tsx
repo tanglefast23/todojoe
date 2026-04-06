@@ -44,7 +44,7 @@ export function Header() {
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium btn-tactile",
                 isActive
-                  ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/30"
+                  ? "bg-blue-500/10 text-blue-400 border border-blue-500/30"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               )}
             >

@@ -128,25 +128,25 @@
   --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.4);
   --shadow-glow: 0 0 20px oklch(0.65 0.15 265 / 0.2);
 
-  /* Pencil Design System - Deep black with indigo accents */
-  --background: #0D0D0D;
+  /* Dark mode — deep blue-black with blue accents */
+  --background: #0a0f1a;
   --foreground: #FFFFFF;
-  --card: #1A1A1A;
+  --card: #111827;
   --card-foreground: #FFFFFF;
-  --popover: #1A1A1A;
+  --popover: #111827;
   --popover-foreground: #FFFFFF;
-  --primary: #6366F1;
+  --primary: #3b82f6;
   --primary-foreground: #FFFFFF;
-  --secondary: #1A1A1A;
+  --secondary: #1e293b;
   --secondary-foreground: #FFFFFF;
-  --muted: #1A1A1A;
+  --muted: #1e293b;
   --muted-foreground: #9CA3AF;
-  --accent: #818CF8;
+  --accent: #60a5fa;
   --accent-foreground: #FFFFFF;
   --destructive: #EF4444;
-  --border: #2D2D2D;
-  --input: #2D2D2D;
-  --ring: #6366F1;
+  --border: #1e3a5f;
+  --input: #1e3a5f;
+  --ring: #3b82f6;
   /* Sophisticated chart colors for dark */
   --chart-1: oklch(0.65 0.15 265);
   --chart-2: oklch(0.70 0.16 145);
@@ -159,14 +159,14 @@
   /* Refined gain/loss for dark */
   --gain: oklch(0.65 0.18 155);
   --loss: oklch(0.65 0.20 25);
-  --sidebar: #0D0D0D;
+  --sidebar: #0a0f1a;
   --sidebar-foreground: #FFFFFF;
-  --sidebar-primary: #6366F1;
+  --sidebar-primary: #3b82f6;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #1A1A1A;
+  --sidebar-accent: #1e293b;
   --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: #2D2D2D;
-  --sidebar-ring: #6366F1;
+  --sidebar-border: #1e3a5f;
+  --sidebar-ring: #3b82f6;
 }
 
 @theme inline {
