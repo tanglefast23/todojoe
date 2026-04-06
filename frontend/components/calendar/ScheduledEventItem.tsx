@@ -346,13 +346,28 @@ export const ScheduledEventItem = memo(function ScheduledEventItem({
             </div>
           )}
 
-          {/* Title row with bell indicator */}
-          <div className="flex items-start gap-2 flex-wrap">
+          {/* Title row with bell button */}
+          <div className="flex items-start gap-2">
             <span className={cn("font-medium flex-1 min-w-0", isCompleted && "line-through")}>
               {event.title}
             </span>
-            {hasReminder && (
-              <Bell className="h-3.5 w-3.5 flex-shrink-0 mt-1 text-amber-500" aria-label="Reminder set" />
+            {isGoogleEvent && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowPicker(true);
+                }}
+                className={cn(
+                  "flex-shrink-0 mt-0.5 p-1 rounded-full transition-colors",
+                  hasReminder
+                    ? "text-amber-500"
+                    : "text-muted-foreground/40 hover:text-muted-foreground"
+                )}
+                aria-label={hasReminder ? "Edit reminder" : "Set reminder"}
+                data-no-swipe="true"
+              >
+                <Bell className="h-4 w-4" />
+              </button>
             )}
           </div>
 
