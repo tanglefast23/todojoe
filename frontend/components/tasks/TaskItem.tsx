@@ -453,8 +453,12 @@ export const TaskItem = memo(function TaskItem({
               className={cn(
                 "h-5 w-5 border-2 mt-0.5 flex-shrink-0",
                 isCompleted
-                  ? "border-blue-400 data-[state=checked]:bg-blue-400"
-                  : "border-blue-400"
+                  ? task.priority === "urgent"
+                    ? "border-orange-400 data-[state=checked]:bg-orange-400"
+                    : "border-blue-400 data-[state=checked]:bg-blue-400"
+                  : task.priority === "urgent"
+                    ? "border-orange-400"
+                    : "border-blue-400"
               )}
             />
           </div>
