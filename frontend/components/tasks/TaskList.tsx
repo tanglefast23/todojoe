@@ -73,8 +73,8 @@ export function TaskList({
       {hasPendingTasks && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Urgent Tasks Column - First (top on mobile, left on desktop) */}
-          <div className="rounded-2xl bg-gradient-to-br from-orange-500/5 to-red-500/5 p-4">
-            <h3 className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500 mb-3">
+          <div className="rounded-2xl bg-card/50 p-4">
+            <h3 className="text-sm font-semibold text-orange-400 mb-3">
               Urgent ({urgentTasks.length})
             </h3>
             {urgentTasks.length > 0 ? (
@@ -100,8 +100,8 @@ export function TaskList({
           </div>
 
           {/* Normal Tasks Column - Second (bottom on mobile, right on desktop) */}
-          <div className="rounded-2xl bg-gradient-to-br from-cyan-500/5 to-blue-500/5 p-4">
-            <h3 className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-3">
+          <div className="rounded-2xl bg-card/50 p-4">
+            <h3 className="text-sm font-semibold text-blue-400 mb-3">
               Normal ({normalTasks.length})
             </h3>
             {normalTasks.length > 0 ? (
@@ -136,7 +136,7 @@ export function TaskList({
       {/* Completed Tasks */}
       {completedTasks.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-500">
+          <h3 className="text-sm font-semibold text-muted-foreground">
             Completed ({completedTasks.length})
           </h3>
           <div className="space-y-3 stagger-snap">
