@@ -23,6 +23,15 @@ interface CreatedEventResult {
   htmlLink?: string | null;
 }
 
+interface PendingImageEvent {
+  title: string;
+  date: string;
+  time: string;
+  location: string;
+  description: string;
+  startIso: string | null;
+}
+
 export default function EntryPage() {
   // Task store actions
   const addTask = useTasksStore((state) => state.addTask);
@@ -56,6 +65,8 @@ export default function EntryPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [pendingImageEvents, setPendingImageEvents] = useState<PendingImageEvent[]>([]);
+  const [isConfirming, setIsConfirming] = useState(false);
   const calendarFileInputRef = useRef<HTMLInputElement>(null);
 
   // Handle natural language event creation — called by ScheduleTaskForm's Quick Add button
@@ -102,6 +113,7 @@ export default function EntryPage() {
     // Reset states
     setError(null);
     setSuccess(null);
+    setPendingImageEvents([]);
 
     // Check file size (max 4MB)
     if (file.size > 4 * 1024 * 1024) {
@@ -139,8 +151,14 @@ export default function EntryPage() {
           throw new Error(data.error || "Failed to process image");
         }
 
-        setSuccess(data.response);
-        // Clear preview after success
+        // If the API returned pending events, store them for confirmation
+        if (data.pendingEvents?.length) {
+          setPendingImageEvents(data.pendingEvents);
+          setSuccess(null);
+        } else {
+          setSuccess(data.response);
+        }
+        // Clear preview after processing
         setTimeout(() => {
           setImagePreview(null);
         }, 500);
@@ -162,9 +180,64 @@ export default function EntryPage() {
     setImagePreview(null);
     setError(null);
     setSuccess(null);
+    setPendingImageEvents([]);
     if (calendarFileInputRef.current) {
       calendarFileInputRef.current.value = "";
     }
+  }, []);
+
+  // Confirm pending image events — create them in Google Calendar
+  const handleConfirmImageEvents = useCallback(async () => {
+    if (pendingImageEvents.length === 0) return;
+    setIsConfirming(true);
+    setError(null);
+
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const created: string[] = [];
+    const failed: string[] = [];
+
+    for (const evt of pendingImageEvents) {
+      if (!evt.startIso) {
+        failed.push(evt.title);
+        continue;
+      }
+      try {
+        const res = await fetch("/api/google/calendar/events", {
+          method: "POST",
+          headers: apiHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({
+            title: evt.title,
+            startTime: evt.startIso,
+            description: [evt.description, evt.location ? `Location: ${evt.location}` : ""]
+              .filter(Boolean)
+              .join("\n"),
+            timeZone: tz,
+          }),
+        });
+        if (!res.ok) throw new Error("API error");
+        created.push(evt.title);
+      } catch {
+        failed.push(evt.title);
+      }
+    }
+
+    setPendingImageEvents([]);
+    setIsConfirming(false);
+
+    if (created.length > 0 && failed.length === 0) {
+      setSuccess(`Added ${created.length} event${created.length > 1 ? "s" : ""} to Google Calendar.`);
+    } else if (created.length > 0) {
+      setSuccess(`Added ${created.length} event${created.length > 1 ? "s" : ""}. ${failed.length} failed.`);
+    } else {
+      setError("Failed to create calendar events. Please try again.");
+    }
+  }, [pendingImageEvents]);
+
+  // Cancel pending image events
+  const handleCancelImageEvents = useCallback(() => {
+    setPendingImageEvents([]);
+    setError(null);
+    setSuccess(null);
   }, []);
 
   // Handle adding a new task
@@ -316,6 +389,55 @@ export default function EntryPage() {
               {error && (
                 <div className="mt-3 p-3 text-red-400 bg-red-500/10 rounded-lg text-sm">
                   {error}
+                </div>
+              )}
+
+              {/* Pending events — awaiting confirmation */}
+              {pendingImageEvents.length > 0 && (
+                <div className="mt-3 p-3 bg-green-500/10 rounded-lg text-sm">
+                  <div className="flex items-start gap-2 text-green-400">
+                    <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="font-medium">
+                        Found {pendingImageEvents.length} event{pendingImageEvents.length > 1 ? "s" : ""} — confirm to add to calendar:
+                      </div>
+                      <ul className="mt-2 space-y-1">
+                        {pendingImageEvents.map((evt, i) => (
+                          <li key={i}>
+                            <span className="font-semibold">{evt.title}</span>
+                            {" — "}
+                            {evt.date} {evt.time}
+                            {evt.location ? ` @ ${evt.location}` : ""}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-3 ml-6">
+                    <Button
+                      size="sm"
+                      onClick={handleConfirmImageEvents}
+                      disabled={isConfirming}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      {isConfirming ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                          Adding...
+                        </>
+                      ) : (
+                        "Confirm"
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleCancelImageEvents}
+                      disabled={isConfirming}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
                 </div>
               )}
 
