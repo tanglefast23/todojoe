@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { CalendarIcon, Clock, Zap, Loader2 } from "lucide-react";
+import { apiHeaders } from "@/lib/api-key";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -13,8 +14,16 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
+interface CalendarOption {
+  id: string;
+  name: string;
+  primary: boolean;
+}
+
+const PREFERRED_CALENDAR_KEY = "preferred-calendar-id";
+
 interface ScheduleTaskFormProps {
-  onScheduleTask: (title: string, scheduledAt: string) => void;
+  onScheduleTask: (title: string, scheduledAt: string, calendarId?: string) => void;
   onQuickAdd?: (title: string) => void;
   quickAddLoading?: boolean;
   disabled?: boolean;
@@ -31,9 +40,48 @@ export function ScheduleTaskForm({ onScheduleTask, onQuickAdd, quickAddLoading =
   const [selectedPeriod, setSelectedPeriod] = useState<"AM" | "PM">("PM");
   const [step, setStep] = useState<ScheduleStep>("date");
   const [isFocused, setIsFocused] = useState(false);
+  const [calendars, setCalendars] = useState<CalendarOption[]>([]);
+  const [selectedCalendarId, setSelectedCalendarId] = useState<string | null>(null);
+  const [calendarsLoading, setCalendarsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Fetch writable calendars when dialog opens
+  const fetchCalendars = useCallback(async () => {
+    if (calendars.length > 0) return; // already loaded
+    setCalendarsLoading(true);
+    try {
+      const res = await fetch("/api/google/calendar/list", {
+        headers: apiHeaders(),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const list: CalendarOption[] = data.calendars ?? [];
+      setCalendars(list);
+
+      // Restore last-used calendar, or fall back to primary
+      const stored = localStorage.getItem(PREFERRED_CALENDAR_KEY);
+      const match = list.find((c) => c.id === stored);
+      if (match) {
+        setSelectedCalendarId(match.id);
+      } else {
+        const primary = list.find((c) => c.primary);
+        setSelectedCalendarId(primary?.id ?? list[0]?.id ?? null);
+      }
+    } catch {
+      // Silently fail — calendar picker just won't show
+    } finally {
+      setCalendarsLoading(false);
+    }
+  }, [calendars.length]);
+
+  // Fetch calendars when dialog opens
+  useEffect(() => {
+    if (isDialogOpen) {
+      fetchCalendars();
+    }
+  }, [isDialogOpen, fetchCalendars]);
 
   // Reset state when dialog closes
   useEffect(() => {
@@ -80,7 +128,12 @@ export function ScheduleTaskForm({ onScheduleTask, onQuickAdd, quickAddLoading =
     const trimmedTitle = title.trim();
     if (!trimmedTitle) return;
 
-    onScheduleTask(trimmedTitle, scheduledDate.toISOString());
+    // Persist calendar preference
+    if (selectedCalendarId) {
+      localStorage.setItem(PREFERRED_CALENDAR_KEY, selectedCalendarId);
+    }
+
+    onScheduleTask(trimmedTitle, scheduledDate.toISOString(), selectedCalendarId ?? undefined);
 
     // Reset form
     setTitle("");
@@ -214,6 +267,36 @@ export function ScheduleTaskForm({ onScheduleTask, onQuickAdd, quickAddLoading =
                   {selectedDate ? format(selectedDate, "EEEE, MMMM d, yyyy") : ""}
                 </p>
               </div>
+
+              {/* Calendar Picker */}
+              {calendars.length > 0 && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground mb-2 block">Calendar</label>
+                  <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+                    {calendars.map((cal) => (
+                      <button
+                        key={cal.id}
+                        type="button"
+                        onClick={() => setSelectedCalendarId(cal.id)}
+                        className={cn(
+                          "min-h-9 px-3 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap flex-shrink-0",
+                          selectedCalendarId === cal.id
+                            ? "bg-blue-500 text-white"
+                            : "bg-muted hover:bg-muted/80"
+                        )}
+                      >
+                        {cal.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {calendarsLoading && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Loading calendars...
+                </div>
+              )}
 
               {/* Time Picker - Mobile Friendly */}
               <div className="space-y-4">

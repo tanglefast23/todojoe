@@ -250,7 +250,7 @@ export default function EntryPage() {
 
   // Handle scheduling a new event — save locally AND create in Google Calendar
   const handleScheduleEvent = useCallback(
-    (title: string, scheduledAt: string) => {
+    (title: string, scheduledAt: string, calendarId?: string) => {
       addEvent(title, scheduledAt);
 
       // Also create in Google Calendar (fire-and-forget — local store is source of truth)
@@ -260,6 +260,7 @@ export default function EntryPage() {
         body: JSON.stringify({
           title,
           startTime: scheduledAt,
+          calendarId: calendarId || "primary",
           timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }),
       }).catch((err) => {

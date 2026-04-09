@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { apiHeaders } from "@/lib/api-key";
 import type { ScheduledEvent } from "@/types/scheduled-events";
 import { getEventColor } from "@/lib/google/event-colors";
+import { useCalendarPrefsStore } from "@/stores/calendarPrefsStore";
 import { format, formatDistanceToNow, isPast } from "date-fns";
 
 interface ScheduledEventItemProps {
@@ -15,6 +16,8 @@ interface ScheduledEventItemProps {
   onDelete: (id: string) => void;
   canComplete: boolean;
   canDelete?: boolean;
+  /** Google Calendar default background color for this event's calendar */
+  calendarBackgroundColor?: string | null;
 }
 
 // Distance (px) before we commit to a gesture direction.
@@ -47,6 +50,7 @@ export const ScheduledEventItem = memo(function ScheduledEventItem({
   event,
   onDelete,
   canDelete = true,
+  calendarBackgroundColor,
 }: ScheduledEventItemProps) {
   const [translateX, setTranslateX] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -76,7 +80,9 @@ export const ScheduledEventItem = memo(function ScheduledEventItem({
   const scheduledDate = new Date(event.scheduledAt);
   const isOverdue = isPast(scheduledDate) && !isCompleted;
   const isGoogleEvent = event.source === "google";
-  const eventColor = getEventColor(event.source, event.colorId);
+  const calendarId = event.googleCalendarId || "primary";
+  const colorOverride = useCalendarPrefsStore((s) => s.getColorOverride(calendarId));
+  const eventColor = getEventColor(event.source, event.colorId, colorOverride, calendarBackgroundColor);
 
   const clearPressTimers = useCallback(() => {
     if (longPressTimer.current) {
@@ -330,12 +336,16 @@ export const ScheduledEventItem = memo(function ScheduledEventItem({
             touchAction: "pan-y",
             WebkitTouchCallout: "none",
             WebkitUserSelect: "none",
+            ...(!isCompleted && {
+              backgroundColor: `${eventColor.hex}15`,
+              borderColor: `${eventColor.hex}66`,
+            }),
           }}
           className={cn(
             "relative flex flex-col gap-1 px-3 py-2.5 rounded-xl border-2 select-none",
             isCompleted
               ? "bg-card border-border/50 opacity-60"
-              : "bg-gradient-to-r from-blue-500/15 to-sky-500/15 border-blue-400/40 hover:border-blue-400/50",
+              : "hover:brightness-110",
             isInteractive && "cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           )}
         >

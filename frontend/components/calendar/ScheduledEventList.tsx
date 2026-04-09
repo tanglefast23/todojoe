@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { ScheduledEventItem } from "./ScheduledEventItem";
 import type { ScheduledEvent } from "@/types/scheduled-events";
+import type { CalendarInfo } from "@/lib/google/calendar";
 import { CalendarDays, CheckCircle2 } from "lucide-react";
 import {
   format,
@@ -18,6 +19,8 @@ interface ScheduledEventListProps {
   onUncomplete: (id: string) => void;
   onDelete: (id: string) => void;
   canComplete: boolean;
+  /** Map of Google Calendar ID → calendar info (for background colors) */
+  calendarMap?: Record<string, CalendarInfo>;
 }
 
 interface EventsByDay {
@@ -60,6 +63,7 @@ export function ScheduledEventList({
   onUncomplete,
   onDelete,
   canComplete,
+  calendarMap = {},
 }: ScheduledEventListProps) {
   // Separate, sort, and group events by day
   const { pendingByDay, completedByDay } = useMemo(() => {
@@ -107,6 +111,7 @@ export function ScheduledEventList({
                     onDelete={onDelete}
                     canComplete={canComplete}
                     canDelete={true}
+                    calendarBackgroundColor={event.googleCalendarId ? calendarMap[event.googleCalendarId]?.backgroundColor : undefined}
                   />
                 ))}
               </div>
@@ -138,6 +143,7 @@ export function ScheduledEventList({
                     onDelete={onDelete}
                     canComplete={canComplete}
                     canDelete={true}
+                    calendarBackgroundColor={event.googleCalendarId ? calendarMap[event.googleCalendarId]?.backgroundColor : undefined}
                   />
                 ))}
               </div>

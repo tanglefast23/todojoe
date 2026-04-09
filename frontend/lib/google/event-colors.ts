@@ -35,12 +35,25 @@ export const LOCAL_EVENT_COLOR: EventColor = {
   hex: "#3b82f6",
 };
 
-/** Resolve an event's color from its source + colorId. */
+/**
+ * Resolve an event's display color.
+ * Priority: event colorId > local calendar override > Google calendar default > app blue.
+ */
 export function getEventColor(
   source: "google" | "local",
   colorId?: string | null,
+  calendarColorOverride?: string | null,
+  calendarBackgroundColor?: string | null,
 ): EventColor {
   if (source === "local") return LOCAL_EVENT_COLOR;
   if (colorId && GOOGLE_EVENT_COLORS[colorId]) return GOOGLE_EVENT_COLORS[colorId];
+  if (calendarColorOverride) return { name: "Custom", hex: calendarColorOverride };
+  if (calendarBackgroundColor) return { name: "Calendar", hex: calendarBackgroundColor };
   return DEFAULT_GOOGLE_EVENT_COLOR;
 }
+
+/** All available colors for the color picker (Google event palette). */
+export const PICKER_COLORS: EventColor[] = [
+  DEFAULT_GOOGLE_EVENT_COLOR,
+  ...Object.values(GOOGLE_EVENT_COLORS),
+];

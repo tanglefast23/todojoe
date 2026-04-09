@@ -1,16 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import { Download, Upload, Trash2 } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Download, Upload, Trash2, Loader2 } from "lucide-react";
 
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useTasksStore } from "@/stores/tasksStore";
 import { useScheduledEventsStore } from "@/stores/scheduledEventsStore";
+import { useCalendarPrefsStore } from "@/stores/calendarPrefsStore";
+import { PICKER_COLORS } from "@/lib/google/event-colors";
+import { apiHeaders } from "@/lib/api-key";
 import type { Task } from "@/types/tasks";
 import type { ScheduledEvent } from "@/types/scheduled-events";
+import type { CalendarInfo } from "@/lib/google/calendar";
 
 interface BackupFile {
   version: string;
@@ -68,12 +73,66 @@ function validateBackup(data: unknown): { ok: true; data: BackupFile } | { ok: f
   return { ok: true, data: obj as unknown as BackupFile };
 }
 
+// Long-press duration to open color picker (ms)
+const COLOR_LONG_PRESS_MS = 500;
+
 export default function SettingsPage() {
   const tasksStore = useTasksStore();
   const scheduledEventsStore = useScheduledEventsStore();
+  const calendarPrefs = useCalendarPrefsStore();
 
   const [clearDataOpen, setClearDataOpen] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+
+  // Google Calendars state
+  const [calendars, setCalendars] = useState<CalendarInfo[]>([]);
+  const [calendarsLoading, setCalendarsLoading] = useState(false);
+  const [calendarsError, setCalendarsError] = useState<string | null>(null);
+  const [colorPickerCalId, setColorPickerCalId] = useState<string | null>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Fetch Google Calendar list
+  const fetchCalendars = useCallback(async () => {
+    setCalendarsLoading(true);
+    setCalendarsError(null);
+    try {
+      const res = await fetch("/api/google/calendar/list", { headers: apiHeaders() });
+      if (!res.ok) throw new Error("Failed to fetch calendars");
+      const data = await res.json();
+      setCalendars(data.calendars || []);
+    } catch (err) {
+      setCalendarsError(err instanceof Error ? err.message : "Failed to load calendars");
+    } finally {
+      setCalendarsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCalendars();
+  }, [fetchCalendars]);
+
+  const handleColorDotPointerDown = useCallback((calId: string) => {
+    longPressTimerRef.current = setTimeout(() => {
+      setColorPickerCalId(calId);
+    }, COLOR_LONG_PRESS_MS);
+  }, []);
+
+  const handleColorDotPointerUp = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
+  const handlePickColor = useCallback((calId: string, hex: string) => {
+    calendarPrefs.setColorOverride(calId, hex);
+    setColorPickerCalId(null);
+  }, [calendarPrefs]);
+
+  const handleClearColorOverride = useCallback((calId: string) => {
+    calendarPrefs.setColorOverride(calId, null);
+    setColorPickerCalId(null);
+  }, [calendarPrefs]);
 
   const handleExport = () => {
     // Export all data
@@ -194,6 +253,111 @@ export default function SettingsPage() {
                   Import Data
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Google Calendars */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Google Calendars</CardTitle>
+              <CardDescription>
+                Choose which calendars show on the Calendar page. Long-press a color to change it.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {calendarsLoading && (
+                <div className="flex items-center gap-2 text-muted-foreground text-sm py-4">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading calendars...
+                </div>
+              )}
+              {calendarsError && (
+                <div className="text-red-400 text-sm py-2">{calendarsError}</div>
+              )}
+              {!calendarsLoading && calendars.length > 0 && (
+                <div className="space-y-1">
+                  {calendars.map((cal) => {
+                    const pref = calendarPrefs.getPref(cal.id);
+                    const displayColor = pref.colorOverride || cal.backgroundColor;
+                    return (
+                      <div key={cal.id} className="relative">
+                        <div className="flex items-center gap-3 py-2.5 px-1">
+                          {/* Color dot — long press to open picker */}
+                          <button
+                            onPointerDown={() => handleColorDotPointerDown(cal.id)}
+                            onPointerUp={handleColorDotPointerUp}
+                            onPointerCancel={handleColorDotPointerUp}
+                            onContextMenu={(e) => e.preventDefault()}
+                            className="w-5 h-5 rounded-full flex-shrink-0 border-2 border-background shadow-sm transition-transform active:scale-110"
+                            style={{ backgroundColor: displayColor }}
+                            aria-label={`Change color for ${cal.name}`}
+                          />
+
+                          {/* Calendar name */}
+                          <span className="flex-1 text-sm font-medium truncate">
+                            {cal.name}
+                            {cal.primary && (
+                              <span className="ml-1.5 text-xs text-muted-foreground">(Primary)</span>
+                            )}
+                          </span>
+
+                          {/* Visibility toggle */}
+                          <Switch
+                            checked={pref.visible}
+                            onCheckedChange={() => calendarPrefs.toggleVisibility(cal.id)}
+                            aria-label={`Toggle ${cal.name} visibility`}
+                          />
+                        </div>
+
+                        {/* Color picker — shown on long-press */}
+                        {colorPickerCalId === cal.id && (
+                          <div
+                            className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center"
+                            onClick={() => setColorPickerCalId(null)}
+                          >
+                            <div
+                              className="bg-background border-t sm:border sm:rounded-xl rounded-t-2xl w-full sm:max-w-sm sm:mx-4 p-4 pb-6 sm:pb-4"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <h3 className="font-semibold mb-3 text-sm">
+                                Color for {cal.name}
+                              </h3>
+                              <div className="grid grid-cols-6 gap-3">
+                                {PICKER_COLORS.map((color) => (
+                                  <button
+                                    key={color.hex}
+                                    onClick={() => handlePickColor(cal.id, color.hex)}
+                                    className="w-10 h-10 rounded-full transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-400"
+                                    style={{
+                                      backgroundColor: color.hex,
+                                      boxShadow: displayColor === color.hex ? `0 0 0 3px ${color.hex}44, 0 0 0 5px var(--foreground)` : undefined,
+                                    }}
+                                    aria-label={color.name}
+                                    title={color.name}
+                                  />
+                                ))}
+                              </div>
+                              {pref.colorOverride && (
+                                <button
+                                  onClick={() => handleClearColorOverride(cal.id)}
+                                  className="mt-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                  Reset to default
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {!calendarsLoading && calendars.length === 0 && !calendarsError && (
+                <p className="text-sm text-muted-foreground py-2">
+                  No Google calendars found. Make sure Google Calendar is connected.
+                </p>
+              )}
             </CardContent>
           </Card>
 

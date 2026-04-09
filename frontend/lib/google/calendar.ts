@@ -225,7 +225,15 @@ export async function deleteCalendarEvent(
 /**
  * Get list of calendars
  */
-export async function getCalendarList(): Promise<{ id: string; name: string; primary: boolean }[]> {
+export interface CalendarInfo {
+  id: string;
+  name: string;
+  primary: boolean;
+  accessRole: string;
+  backgroundColor: string;
+}
+
+export async function getCalendarList(): Promise<CalendarInfo[]> {
   const calendar = await getCalendarClient();
 
   const response = await calendar.calendarList.list();
@@ -235,5 +243,7 @@ export async function getCalendarList(): Promise<{ id: string; name: string; pri
     id: cal.id || "",
     name: cal.summary || "Unnamed Calendar",
     primary: cal.primary || false,
+    accessRole: cal.accessRole || "reader",
+    backgroundColor: cal.backgroundColor || "#1a73e8",
   }));
 }

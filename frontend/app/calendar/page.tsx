@@ -6,8 +6,10 @@ import { RefreshCw } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { ScheduledEventList } from "@/components/calendar/ScheduledEventList";
 import { useScheduledEventsStore } from "@/stores/scheduledEventsStore";
+import { useCalendarPrefsStore } from "@/stores/calendarPrefsStore";
 import { Button } from "@/components/ui/button";
 import type { ScheduledEvent } from "@/types/scheduled-events";
+import type { CalendarInfo } from "@/lib/google/calendar";
 
 export default function CalendarPage() {
   // Local scheduled events state
@@ -16,23 +18,39 @@ export default function CalendarPage() {
   const uncompleteEvent = useScheduledEventsStore((state) => state.uncompleteEvent);
   const deleteEvent = useScheduledEventsStore((state) => state.deleteEvent);
 
+  // Calendar visibility prefs
+  const calendarPrefs = useCalendarPrefsStore();
+
   // Google Calendar events state
   const [googleEvents, setGoogleEvents] = useState<ScheduledEvent[]>([]);
+  const [calendarMap, setCalendarMap] = useState<Record<string, CalendarInfo>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch Google Calendar events
+  // Fetch Google Calendar events + calendar list (for colors)
   const fetchGoogleEvents = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/google/calendar/events", { headers: apiHeaders() });
-      if (!response.ok) {
-        const data = await response.json();
+      const [eventsRes, listRes] = await Promise.all([
+        fetch("/api/google/calendar/events", { headers: apiHeaders() }),
+        fetch("/api/google/calendar/list", { headers: apiHeaders() }),
+      ]);
+      if (!eventsRes.ok) {
+        const data = await eventsRes.json();
         throw new Error(data.error || "Failed to fetch calendar events");
       }
-      const data: { events?: ScheduledEvent[]; error?: string } = await response.json();
-      setGoogleEvents(data.events || []);
+      const eventsData: { events?: ScheduledEvent[] } = await eventsRes.json();
+      setGoogleEvents(eventsData.events || []);
+
+      if (listRes.ok) {
+        const listData: { calendars?: CalendarInfo[] } = await listRes.json();
+        const map: Record<string, CalendarInfo> = {};
+        for (const cal of listData.calendars || []) {
+          map[cal.id] = cal;
+        }
+        setCalendarMap(map);
+      }
     } catch (err) {
       console.error("Error fetching Google Calendar events:", err);
       setError(err instanceof Error ? err.message : "Failed to fetch events");
@@ -54,6 +72,10 @@ export default function CalendarPage() {
     const now = Date.now();
     return [...localEvents, ...googleEvents]
       .filter((event) => {
+        // Filter out events from hidden calendars
+        if (event.source === "google" && event.googleCalendarId) {
+          if (!calendarPrefs.isVisible(event.googleCalendarId)) return false;
+        }
         const endMs = event.endAt ? new Date(event.endAt).getTime() : null;
         const startMs = new Date(event.scheduledAt).getTime();
         const effectiveEnd = endMs ?? startMs;
@@ -62,7 +84,7 @@ export default function CalendarPage() {
       .sort(
         (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
       );
-  }, [localEvents, googleEvents]);
+  }, [localEvents, googleEvents, calendarPrefs]);
 
   // Handle completing an event
   const handleComplete = useCallback((id: string) => {
@@ -111,6 +133,7 @@ export default function CalendarPage() {
             onUncomplete={handleUncomplete}
             onDelete={handleDelete}
             canComplete={true}
+            calendarMap={calendarMap}
           />
         </div>
       </main>
