@@ -49,8 +49,8 @@ export async function POST(request: NextRequest) {
       if (isEventCreationRequest(query)) {
         console.log("[Search API] Event creation requested, extracting details as JSON");
 
-        // Get structured JSON from Gemini
-        const jsonResponse = await queryGeminiVision(query, image, true);
+        // Get structured JSON from Gemini (pass user timezone for fallback)
+        const jsonResponse = await queryGeminiVision(query, image, true, timeZone);
         console.log("[Search API] Gemini JSON response:", jsonResponse);
 
         try {
@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
             title: sanitizeEventField(e.title, 100),
             date: sanitizeEventField(e.date, 10),
             time: sanitizeEventField(e.time, 8),
+            timezone: sanitizeEventField(e.timezone, 50) || timeZone || "UTC",
             location: sanitizeEventField(e.location, 200),
             description: sanitizeEventField(e.description, 500),
           }));
@@ -89,14 +90,17 @@ export async function POST(request: NextRequest) {
           const pendingEvents = events.filter(
             (e) => e.title && e.date && e.time
           ).map((eventData) => {
-            const startDateTime = new Date(`${eventData.date}T${eventData.time}:00`);
+            // Keep the local time string — Google Calendar will interpret it
+            // correctly when paired with the event's timezone.
+            const localDateTimeStr = `${eventData.date}T${eventData.time}:00`;
             return {
               title: eventData.title,
               date: eventData.date,
               time: eventData.time,
+              timezone: eventData.timezone,
               location: eventData.location || "",
               description: eventData.description || "",
-              startIso: isNaN(startDateTime.getTime()) ? null : startDateTime.toISOString(),
+              startLocal: localDateTimeStr,
             };
           });
 
@@ -107,7 +111,7 @@ export async function POST(request: NextRequest) {
           }
 
           const summary = pendingEvents.map(e =>
-            `**${e.title}** — ${e.date} ${e.time}${e.location ? ` @ ${e.location}` : ""}`
+            `**${e.title}** — ${e.date} ${e.time} (${e.timezone})${e.location ? ` @ ${e.location}` : ""}`
           ).join("\n");
 
           return NextResponse.json({

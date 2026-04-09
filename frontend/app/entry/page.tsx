@@ -27,9 +27,10 @@ interface PendingImageEvent {
   title: string;
   date: string;
   time: string;
+  timezone: string;
   location: string;
   description: string;
-  startIso: string | null;
+  startLocal: string;
 }
 
 export default function EntryPage() {
@@ -192,12 +193,11 @@ export default function EntryPage() {
     setIsConfirming(true);
     setError(null);
 
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const created: string[] = [];
     const failed: string[] = [];
 
     for (const evt of pendingImageEvents) {
-      if (!evt.startIso) {
+      if (!evt.startLocal) {
         failed.push(evt.title);
         continue;
       }
@@ -207,11 +207,11 @@ export default function EntryPage() {
           headers: apiHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             title: evt.title,
-            startTime: evt.startIso,
+            startTime: evt.startLocal,
             description: [evt.description, evt.location ? `Location: ${evt.location}` : ""]
               .filter(Boolean)
               .join("\n"),
-            timeZone: tz,
+            timeZone: evt.timezone,
           }),
         });
         if (!res.ok) throw new Error("API error");
@@ -248,10 +248,23 @@ export default function EntryPage() {
     [addTask]
   );
 
-  // Handle scheduling a new event
+  // Handle scheduling a new event — save locally AND create in Google Calendar
   const handleScheduleEvent = useCallback(
     (title: string, scheduledAt: string) => {
       addEvent(title, scheduledAt);
+
+      // Also create in Google Calendar (fire-and-forget — local store is source of truth)
+      fetch("/api/google/calendar/events", {
+        method: "POST",
+        headers: apiHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          title,
+          startTime: scheduledAt,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        }),
+      }).catch((err) => {
+        console.error("[Entry] Failed to create Google Calendar event:", err);
+      });
     },
     [addEvent]
   );
@@ -407,6 +420,7 @@ export default function EntryPage() {
                             <span className="font-semibold">{evt.title}</span>
                             {" — "}
                             {evt.date} {evt.time}
+                            <span className="text-green-400/60"> ({evt.timezone.replace(/^America\//, "")})</span>
                             {evt.location ? ` @ ${evt.location}` : ""}
                           </li>
                         ))}

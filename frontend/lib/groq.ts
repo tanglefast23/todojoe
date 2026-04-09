@@ -103,13 +103,16 @@ export function isGroqConfigured(): boolean {
 export async function queryGeminiVision(
   query: string,
   imageBase64: string,
-  returnJson: boolean = false
+  returnJson: boolean = false,
+  userTimeZone?: string
 ): Promise<string> {
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
   if (!GEMINI_API_KEY) {
     throw new Error("Gemini API key not configured for vision. Please add GEMINI_API_KEY to environment variables.");
   }
+
+  const userTz = userTimeZone || "UTC";
 
   const jsonInstructions = returnJson ? `
 IMPORTANT: You MUST respond with ONLY a valid JSON array of ALL events found, no other text:
@@ -118,10 +121,15 @@ IMPORTANT: You MUST respond with ONLY a valid JSON array of ALL events found, no
     "title": "Event name here",
     "date": "YYYY-MM-DD",
     "time": "HH:MM",
+    "timezone": "IANA timezone string",
     "location": "Location or null if not found",
     "description": "Brief description or null"
   }
 ]
+TIMEZONE RULES:
+- For flights: each event's time is in the LOCAL timezone of that leg's airport. Use the airport code or city to determine the IANA timezone (e.g. EWR/JFK/LGA → "America/New_York", LAX/SFO → "America/Los_Angeles", SEA → "America/Los_Angeles", ORD → "America/Chicago").
+- For other events: infer the timezone from the location/city if visible. If no location context is available, use "${userTz}" as the default.
+- Always return a valid IANA timezone string (e.g. "America/New_York"), never UTC offsets like "GMT-5".
 If there are multiple events (like multiple flights, sessions, etc.), include ALL of them as separate objects in the array.
 Do NOT include any markdown formatting, code blocks, or explanatory text. ONLY the JSON array.` : `
 Format your response clearly. If you're extracting event details, present them in a structured way that's easy to read.`;
@@ -130,10 +138,12 @@ Format your response clearly. If you're extracting event details, present them i
 When the user asks you to create a calendar event from an image, extract the following details:
 - Event title/name
 - Date (in YYYY-MM-DD format)
-- Time (in HH:MM format, 24-hour)
+- Time (in HH:MM format, 24-hour, in the event's local timezone)
+- Timezone (IANA timezone, inferred from location/airport)
 - Location (if visible)
 - Description/details
 ${jsonInstructions}
+The user's default timezone is ${userTz}.
 Today's date is ${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}.`;
 
   // Extract the base64 data and mime type from the data URL
